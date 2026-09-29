@@ -406,7 +406,7 @@
    Firestore, keyed by normalized address.
    ========================================================================= */
 const CONFIG = {
-  SHEETS_API_KEY: "PASTE_YOUR_API_KEY_HERE",
+  SHEETS_API_KEY: "AIzaSyB7oi16sfduaeHMTRRZiv8Q9xM_TQtOKy4",
   ZOMBIE_SHEET_ID: "1BM9MKOJwVuxUly8Bm3PflhOvB-4VyX6qPXU4XqiVIh4",
   STACKED_SHEET_ID: "1rDAfbBICSCB1xQeozNZo5lNJs2n7lJLDbOP2Ssr_cbw",
 };
@@ -975,7 +975,7 @@ function render() {
   document.getElementById('tab-zombie').classList.toggle('active', tab === 'zombie');
   document.getElementById('tab-stacked').classList.toggle('active', tab === 'stacked');
   document.getElementById('setup-banner').style.display =
-    (!CONFIG.SHEETS_API_KEY || CONFIG.SHEETS_API_KEY === 'PASTE_YOUR_API_KEY_HERE') ? 'block' : 'none';
+    (!CONFIG.SHEETS_API_KEY || CONFIG.SHEETS_API_KEY === 'AIzaSyB7oi16sfduaeHMTRRZiv8Q9xM_TQtOKy4') ? 'block' : 'none';
   updateTabCounts();
 
   const note = document.getElementById('sheet-note');
