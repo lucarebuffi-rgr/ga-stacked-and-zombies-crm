@@ -186,6 +186,21 @@
   .detail-section > .section-label { font-size: 11px; color: #8a97a8; font-weight: 700; margin-bottom: 9px; text-transform: uppercase; letter-spacing: .08em; }
   .whyhot-box { background: #0b1626; border: 1px solid #1e3554; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.65; }
   .tree-box { background: #0b1626; border: 1px solid rgba(212,168,67,.28); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.75; white-space: pre-wrap; }
+  .ftree { position: relative; padding: 6px 0 6px 26px; margin-top: 4px; }
+  .ftree::before { content: ''; position: absolute; left: 9px; top: 14px; bottom: 14px; width: 2px; border-radius: 2px; background: linear-gradient(180deg, #f3dda0, #d4a843 40%, #8a6a2a); }
+  .ft-branch { position: relative; margin-bottom: 16px; }
+  .ft-branch:last-child { margin-bottom: 4px; }
+  .ft-branch::before { content: ''; position: absolute; left: -17px; top: 26px; width: 17px; height: 2px; background: #d4a843; border-radius: 2px; }
+  .ft-branch-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #d4a843; font-weight: 700; margin-bottom: 8px; }
+  .ft-leaves { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ft-card { background: #0d1b2e; border: 1px solid #3a5a85; border-radius: 10px; padding: 8px 12px; min-width: 110px; max-width: 220px; }
+  .ft-card .ft-name { color: #f3e9d2; font-weight: 700; font-size: 13px; line-height: 1.35; }
+  .ft-card .ft-rel { color: #8a97a8; font-size: 11px; margin-top: 2px; text-transform: capitalize; }
+  .ft-card .ft-phone { color: #9fb3cc; font-size: 11px; margin-top: 2px; }
+  .ft-card.deceased { border: 1px solid #d4a843; background: linear-gradient(135deg, rgba(212,168,67,0.22), rgba(212,168,67,0.06)); }
+  .ft-card.deceased .ft-name { color: #f3dda0; }
+  .ft-card.spouse { border-color: #b98a5f; }
+  .ft-notes { margin-top: 4px; font-size: 12px; color: #8a97a8; line-height: 1.6; border-top: 1px dashed #3a5a85; padding-top: 10px; }
   .tree-hint { font-size: 12px; color: #8a97a8; margin-top: 7px; }
 
   .fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
@@ -1144,7 +1159,7 @@ function renderDetail(lead) {
       ${isZombie ? `
       <div class="detail-section">
         <div class="section-label">🌳 Family Tree</div>
-        ${lead.familyTree && !treeDrafts[lead.key] ? `<div class="tree-box">${escapeHtml(lead.familyTree)}</div>
+        ${lead.familyTree && !treeDrafts[lead.key] ? `${familyTreeHTML(lead.familyTree)}
         <div class="tree-hint">Last updated ${lead.familyTreeUpdatedAt ? timeAgo(lead.familyTreeUpdatedAt) : '—'}</div>` : ''}
         <textarea class="note-input" rows="3" style="margin-top:8px;" placeholder="Paste the family tree from RESEARCHER here (spouse, children, heirs…)" data-tree-input="${escapeHtml(lead.key)}">${escapeHtml(treeDrafts[lead.key] !== undefined ? treeDrafts[lead.key] : (lead.familyTree || ''))}</textarea>
         <div class="detail-actions">
@@ -1252,6 +1267,76 @@ async function savePhone(key, value) {
   if (v) { logActivity(tab, lead, 'phone', `Phone saved: ${formatPhone(v)}`); showToast('Phone saved'); }
 }
 
+function parseFamilyTreeText(text) {
+  if (!text) return null;
+  var lines = String(text).split('\n');
+  var deceased = '';
+  var hm = /^(.+?)\s*\(deceased\)\s*—/.exec(lines[0] || '');
+  if (hm) deceased = hm[1].trim();
+  var heirs = [];
+  for (var i = 0; i < lines.length; i++) {
+    var t = lines[i].trim();
+    if (t.charAt(0) !== '|') continue;
+    if (/^\|[\s\-:|]+\|$/.test(t)) continue;
+    var parts = t.split('|');
+    var cells = parts.slice(1, parts.length - 1).map(function (c) { return c.trim(); });
+    if (cells.length < 3) continue;
+    if (/heir first name/i.test(cells[0])) continue;
+    heirs.push({ firstName: cells[0] || '', lastName: cells[1] || '', relationship: cells[2] || '', phone: cells[3] || '' });
+  }
+  if (!heirs.length) return null;
+  var notes = '';
+  var ni = -1;
+  for (var j = 0; j < lines.length; j++) { if (lines[j].trim().toLowerCase().indexOf('notes:') === 0) { ni = j; break; } }
+  if (ni >= 0) notes = lines.slice(ni).join('\n').replace(/^notes:\s*/i, '').trim();
+  return { deceased: deceased, heirs: heirs, notes: notes };
+}
+function ftRelGroup(rel) {
+  var r = String(rel || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (r === 'spouse' || r === 'wife' || r === 'husband') return 'spouse';
+  if (r === 'parent' || r === 'father' || r === 'mother') return 'parents';
+  if (r === 'sibling' || r === 'brother' || r === 'sister' || r === 'sisterinlaw' || r === 'brotherinlaw') return 'siblings';
+  if (r === 'child' || r === 'son' || r === 'daughter' || r === 'stepchild' || r === 'stepson' || r === 'stepdaughter') return 'children';
+  if (r === 'grandchild' || r === 'grandson' || r === 'granddaughter') return 'grandchildren';
+  if (r.indexOf('niece') === 0 || r.indexOf('nephew') === 0) return 'niblings';
+  return 'other';
+}
+function familyTreeHTML(text) {
+  var data = parseFamilyTreeText(text);
+  if (!data) return '<div class="tree-box">' + escapeHtml(text) + '</div>';
+  var groups = { parents: [], siblings: [], children: [], grandchildren: [], niblings: [], other: [] };
+  var spouse = null;
+  data.heirs.forEach(function (h) {
+    var g = ftRelGroup(h.relationship);
+    if (g === 'spouse') { if (!spouse) spouse = h; else groups.other.push(h); }
+    else groups[g].push(h);
+  });
+  var card = function (h, cls, relLabel) {
+    var name = ((h.firstName || '') + ' ' + (h.lastName || '')).trim() || '—';
+    return '<div class="ft-card ' + (cls || '') + '"><div class="ft-name">' + escapeHtml(name) + '</div>' +
+      '<div class="ft-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
+      (h.phone ? '<div class="ft-phone">' + escapeHtml(h.phone) + '</div>' : '') + '</div>';
+  };
+  var branch = function (label, cardsHTML) {
+    if (!cardsHTML) return '';
+    return '<div class="ft-branch">' + (label ? '<div class="ft-branch-label">' + escapeHtml(label) + '</div>' : '') +
+      '<div class="ft-leaves">' + cardsHTML + '</div></div>';
+  };
+  var html = '<div class="ftree">';
+  html += branch('Parents', groups.parents.map(function (h) { return card(h); }).join(''));
+  var root = '';
+  if (data.deceased) root += '<div class="ft-card deceased"><div class="ft-name">' + escapeHtml(data.deceased) + '</div><div class="ft-rel">Deceased</div></div>';
+  if (spouse) root += card(spouse, 'spouse', 'Spouse');
+  root += groups.siblings.map(function (h) { return card(h); }).join('');
+  html += branch('', root);
+  html += branch('Children', groups.children.map(function (h) { return card(h); }).join(''));
+  html += branch('Grandchildren', groups.grandchildren.map(function (h) { return card(h); }).join(''));
+  html += branch('Nieces & Nephews', groups.niblings.map(function (h) { return card(h); }).join(''));
+  html += branch('Extended Family', groups.other.map(function (h) { return card(h); }).join(''));
+  html += '</div>';
+  if (data.notes) html += '<div class="ft-notes">' + escapeHtml(data.notes) + '</div>';
+  return html;
+}
 async function saveFamilyTree(key) {
   const ta = document.querySelector(`[data-tree-input="${CSS.escape(key)}"]`);
   const text = (ta ? ta.value : '').trim();
