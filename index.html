@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GA Hot Leads CRM — Zombies &amp; Stacked</title>
+
+<!-- Firebase (no build step — loaded straight from Google's CDN) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0d1b2e; color: #e8ecf1; font-family: 'Inter', system-ui, sans-serif; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  button { cursor: pointer; font-family: inherit; }
+  select, textarea, input { font-family: inherit; }
+  a { text-decoration: none; }
+  ::selection { background: #d4a84355; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #22385a; border-radius: 4px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+  /* ---------- App shell ---------- */
+  #app-screen { display: block; min-height: 100vh; }
+  .header {
+    border-bottom: 1px solid #1b3151; padding: 20px 24px; position: sticky; top: 0;
+    background: rgba(13,27,46,0.93); backdrop-filter: blur(8px); z-index: 20;
+  }
+  .header-inner, .content { max-width: 1100px; margin: 0 auto; }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .eyebrow { font-size: 12px; letter-spacing: 0.14em; color: #d4a843; font-weight: 700; text-transform: uppercase; }
+  .header-inner h1 { margin: 2px 0 0; font-size: 22px; font-weight: 800; }
+  .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .btn-gold {
+    background: #d4a843; color: #0d1b2e; border: none; border-radius: 8px; padding: 10px 16px;
+    font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .btn-ghost {
+    background: none; border: 1px solid #22385a; color: #8a97a8; border-radius: 8px; padding: 9px 14px; font-size: 13px;
+  }
+  .btn-ghost:hover { border-color: #3a5a85; color: #e8ecf1; }
+  .sync-note { font-size: 12px; color: #8a97a8; display: flex; align-items: center; gap: 4px; }
+  .sync-note.error { color: #d9534f; }
+
+  /* ---------- Tabs ---------- */
+  .tabs { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+  .tab-btn {
+    background: #142640; border: 1px solid #22385a; color: #8a97a8; border-radius: 10px;
+    padding: 10px 16px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn .tab-count { font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #0d1b2e; padding: 2px 8px; border-radius: 12px; }
+  .tab-btn.active { background: #1b3151; color: #e8ecf1; border-color: #d4a843; }
+  .tab-btn.active .tab-count { color: #d4a843; }
+
+  .content { padding: 20px 24px 80px; }
+
+  /* ---------- Setup banner ---------- */
+  .setup-banner {
+    background: #3a2c12; border: 1px solid #d4a843; border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+  }
+  .setup-banner h3 { margin: 0 0 8px; font-size: 15px; color: #d4a843; }
+  .setup-banner ol { margin: 0; padding-left: 20px; font-size: 13px; color: #e8ecf1; line-height: 1.7; }
+  .setup-banner code { font-family: 'JetBrains Mono', monospace; background: #0d1b2e; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+
+  /* ---------- Stats ---------- */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 20px; }
+  .stat-card { background: #142640; border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; text-align: left; color: #e8ecf1; width: 100%; }
+  .stat-card.active { background: #1b3151; border-color: #d4a843; }
+  .stat-value { font-size: 20px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+  .stat-label { font-size: 11px; color: #8a97a8; margin-top: 2px; line-height: 1.2; }
+
+  /* ---------- Controls ---------- */
+  .controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-wrap { position: relative; flex: 1 1 220px; }
+  .search-wrap input {
+    width: 100%; padding: 9px 12px 9px 32px; border-radius: 8px; border: 1px solid #22385a;
+    background: #142640; color: #e8ecf1; font-size: 14px;
+  }
+  .search-wrap span { position: absolute; left: 10px; top: 9px; color: #8a97a8; }
+  .controls select {
+    padding: 9px 12px; border-radius: 8px; border: 1px solid #22385a; background: #142640; color: #e8ecf1; font-size: 14px;
+  }
+  .sheet-note { font-size: 12px; color: #8a97a8; margin-bottom: 14px; }
+  .sheet-note a { color: #d4a843; }
+
+  /* ---------- Cards ---------- */
+  .lead-card { background: #1c3252; border: 1px solid #3a5a85; border-radius: 12px; overflow: hidden; margin-bottom: 10px; box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+  .lead-card.is-fire { border-color: #e0954a; }
+  .lead-row { padding: 14px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; cursor: pointer; }
+  .fire-btn { background: none; border: none; font-size: 18px; opacity: 0.35; padding: 2px; }
+  .fire-btn.active { opacity: 1; }
+  .lead-main { flex: 1 1 260px; min-width: 0; }
+  .lead-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .lead-name { font-weight: 800; font-size: 16px; }
+  .status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+  .substage-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #d4a84322; color: #d4a843; border: 1px solid #d4a84355; white-space: nowrap; }
+  .fire-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #e0954a22; color: #e0954a; border: 1px solid #e0954a55; white-space: nowrap; }
+  .lead-address { font-size: 13px; color: #aeb9c7; margin-top: 4px; }
+  .lead-whyhot { font-size: 12px; color: #8a97a8; margin-top: 4px; font-style: italic; }
+
+  /* motivation code badges */
+  .code-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .code-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid;
+    font-family: 'JetBrains Mono', monospace; white-space: nowrap;
+  }
+  .code-badge .code-date { font-weight: 400; opacity: 0.85; margin-left: 4px; }
+
+  .call-link { font-size: 14px; color: #7fb3d9; font-weight: 700; white-space: nowrap; }
+  .quick-link-btn {
+    width: 34px; height: 34px; border-radius: 8px; border: 1px solid #22385a; background: #142640;
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .quick-link-btn:hover { border-color: #3a5a85; }
+  .call-meta { font-size: 11px; color: #8a97a8; text-align: right; line-height: 1.5; white-space: nowrap; }
+  .toggle-btn { background: none; border: none; color: #8a97a8; font-size: 18px; padding: 4px; }
+
+  /* ---------- Expanded detail ---------- */
+  .lead-detail { border-top: 1px solid #3a5a85; padding: 16px; background: #16294a; }
+  .status-track { display: flex; gap: 4px; margin-bottom: 14px; flex-wrap: wrap; }
+  .status-step {
+    font-size: 12px; font-weight: 700; padding: 7px 12px; border-radius: 20px; border: 1px solid #22385a;
+    cursor: pointer; color: #8a97a8; white-space: nowrap;
+  }
+  .status-step:hover { border-color: currentColor; }
+  .substage-track { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+  .substage-step {
+    font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 8px; border: 1px solid #22385a;
+    cursor: pointer; color: #8a97a8;
+  }
+  .substage-step.active { background: #d4a843; border-color: #d4a843; color: #0d1b2e; }
+
+  .detail-section { margin-bottom: 16px; }
+  .detail-section > .section-label { font-size: 12px; color: #8a97a8; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .whyhot-box { background: #0d1b2e; border: 1px solid #22385a; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.6; }
+  .tree-box { background: #0d1b2e; border: 1px solid #3a5a85; border-radius: 8px; padding: 10px 12px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+  .tree-hint { font-size: 12px; color: #8a97a8; margin-top: 6px; }
+
+  .fin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .fin-field label { display: block; font-size: 11px; color: #8a97a8; margin-bottom: 4px; font-weight: 600; }
+  .fin-field input, .fin-field select {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #22385a;
+    background: #0d1b2e; color: #e8ecf1; font-size: 14px;
+  }
+
+  .outcome-row { margin-top: 14px; margin-bottom: 8px; }
+  .outcome-row select {
+    width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #22385a;
+    background: #0d1b2e; color: #e8ecf1; font-size: 14px;
+  }
+  .note-input {
+    width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid #22385a;
+    background: #0d1b2e; color: #e8ecf1; font-size: 14px; resize: vertical;
+  }
+  .detail-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+  .log-call-btn {
+    background: #d4a843; color: #0d1b2e; border: none; border-radius: 8px; padding: 10px 18px; font-weight: 700; font-size: 14px;
+  }
+  .reset-btn { background: none; border: 1px solid #d9534f; color: #d9534f; border-radius: 8px; padding: 9px 14px; font-size: 13px; }
+  .save-tree-btn { background: #1b3151; border: 1px solid #d4a843; color: #d4a843; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700; }
+
+  .notes-list { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .note-entry { font-size: 13px; border-left: 2px solid #22385a; padding-left: 10px; }
+  .note-meta { font-size: 11px; color: #8a97a8; margin-bottom: 2px; }
+  .note-outcome { font-weight: 700; color: #d4a843; margin-left: 6px; }
+  .note-text { margin-top: 2px; line-height: 1.5; }
+
+  /* ---------- Tasks ---------- */
+  .task-form { margin-top: 16px; border-top: 1px solid #22385a; padding-top: 12px; }
+  .task-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .task-item {
+    display: flex; align-items: flex-start; gap: 10px; background: #0d1b2e; border: 1px solid #22385a;
+    border-radius: 8px; padding: 8px 10px;
+  }
+  .task-item.is-done { opacity: 0.5; }
+  .task-item.is-done .task-name { text-decoration: line-through; }
+  .task-item-body { flex: 1; min-width: 0; }
+  .task-name { font-size: 13px; font-weight: 600; }
+  .task-when { font-size: 11px; color: #8a97a8; margin-top: 2px; }
+  .task-notes-text { font-size: 12px; color: #aeb9c7; margin-top: 4px; }
+  .task-edit-btn, .task-delete-btn { background: none; border: none; color: #8a97a8; font-size: 13px; padding: 2px 4px; }
+  .task-form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .task-form-row input { padding: 8px 10px; border-radius: 8px; border: 1px solid #22385a; background: #0d1b2e; color: #e8ecf1; font-size: 13px; }
+  .task-form-row input[type="text"] { flex: 1 1 160px; }
+  .task-form textarea { width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid #22385a; background: #0d1b2e; color: #e8ecf1; font-size: 13px; resize: vertical; margin-bottom: 8px; }
+  .add-task-btn { background: #1b3151; border: 1px solid #3a5a85; color: #e8ecf1; border-radius: 8px; padding: 9px 14px; font-size: 13px; font-weight: 700; }
+  .task-cancel-edit-btn { background: none; border: 1px solid #22385a; color: #8a97a8; border-radius: 8px; padding: 9px 14px; font-size: 13px; }
+
+  /* ---------- Empty / loading ---------- */
+  .empty-state { text-align: center; color: #8a97a8; padding: 60px 20px; font-size: 15px; }
+  .empty-state .big { font-size: 42px; margin-bottom: 12px; }
+
+  /* ---------- Toasts ---------- */
+  #toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  .toast {
+    background: #1b3151; border: 1px solid #3a5a85; color: #e8ecf1; border-radius: 10px;
+    padding: 10px 18px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  }
+  .toast.error { border-color: #d9534f; background: #3a1e1e; }
+
+  /* ---------- Agenda / directors / bulk (ported from probates CRM) ---------- */
+  .agenda-row { display: flex; gap: 10px; margin: 2px 0 12px; flex-wrap: wrap; }
+  .agenda-btn { background: #142640; border: 1px solid #2c4a75; color: #e8ecf1; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .agenda-btn:hover { border-color: #d4a843; }
+  .agenda-btn.active { border-color: #d4a843; background: #1d3350; color: #d4a843; }
+  .agenda-btn .count { font-family: 'JetBrains Mono', monospace; }
+  #agenda-controls { display: none; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .agenda-back { background: none; border: 1px solid #2c4a75; color: #d4a843; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .agenda-back:hover { border-color: #d4a843; }
+  #agenda-director-filter, #director-filter, #added-date-filter {
+    background: #142640; border: 1px solid #2c4a75; color: #e8ecf1; border-radius: 10px;
+    padding: 9px 12px; font-size: 13px;
+  }
+  .date-filter-wrap { display: flex; align-items: center; gap: 6px; }
+  .date-filter-wrap label { font-size: 12px; color: #8a97a8; font-weight: 600; }
+  .mini-clear { background: none; border: none; color: #8a97a8; font-size: 14px; cursor: pointer; padding: 4px; }
+  .mini-clear:hover { color: #ff9d9a; }
+  .dormant-badge { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #d9534f22; color: #e07a77; border: 1px solid #d9534f55; white-space: nowrap; }
+  .director-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: #7fb3d922; color: #7fb3d9; border: 1px solid #7fb3d955; white-space: nowrap; }
+  .hidden-badge { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 20px; background: #8a97a822; color: #8a97a8; border: 1px solid #8a97a855; white-space: nowrap; }
+  .lead-checkbox { width: 16px; height: 16px; accent-color: #d4a843; cursor: pointer; flex: 0 0 auto; }
+  .bulk-bar { display: flex; align-items: center; gap: 14px; margin: 10px 0 16px; font-size: 13px; color: #8a97a8; flex-wrap: wrap; }
+  .bulk-bar label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .btn-danger { background: #3a1e1e; border: 1px solid #d9534f; color: #ff9d9a; border-radius: 10px; padding: 9px 14px; font-size: 13px; font-weight: 700; cursor: pointer; }
+  .btn-danger:disabled { opacity: .4; cursor: default; }
+  .btn-text { background: none; border: none; color: #d4a843; font-size: 13px; font-weight: 700; cursor: pointer; padding: 9px 4px; }
+  .unhide-btn { background: none; border: 1px solid #4caf82; color: #4caf82; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(4,10,20,.78); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal-card { background: #142640; border: 1px solid #2c4a75; border-radius: 14px; width: 100%; max-width: 480px; box-shadow: 0 12px 40px rgba(0,0,0,.6); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 0; }
+  .modal-header h2 { margin: 0; font-size: 18px; color: #e8ecf1; }
+  .modal-close-btn { background: none; border: none; color: #8a97a8; font-size: 18px; cursor: pointer; }
+  .modal-body { padding: 16px 18px; }
+  .modal-field { margin-bottom: 12px; flex: 1; min-width: 0; }
+  .modal-field label { display: block; font-size: 12px; color: #8a97a8; font-weight: 700; margin-bottom: 6px; }
+  .modal-field input, .modal-field textarea { width: 100%; background: #0d1b2e; border: 1px solid #2c4a75; color: #e8ecf1; border-radius: 8px; padding: 10px 12px; font-size: 14px; box-sizing: border-box; font-family: inherit; }
+  .modal-field-row { display: flex; gap: 12px; }
+  .modal-error { color: #ff9d9a; font-size: 13px; min-height: 18px; margin-top: 4px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 0 18px 18px; }
+  .money-input { position: relative; }
+  .money-prefix { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #8a97a8; font-size: 13px; pointer-events: none; }
+  .money-input input { padding-left: 24px !important; }
+  .drive-link-row { display: flex; gap: 8px; align-items: center; }
+  .drive-link-row input { flex: 1; background: #0d1b2e; border: 1px solid #22385a; color: #e8ecf1; border-radius: 8px; padding: 8px 10px; font-size: 13px; }
+  .drive-open-btn { display: inline-flex; align-items: center; gap: 6px; background: #1b3151; border: 1px solid #3a5a85; color: #e8ecf1; border-radius: 8px; padding: 8px 12px; font-size: 13px; text-decoration: none; }
+  .drive-open-btn:hover { border-color: #d4a843; }
+  .drive-edit-btn { background: none; border: none; color: #8a97a8; font-size: 14px; cursor: pointer; }
+  .drive-carousel { display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding-bottom: 4px; }
+  .drive-thumb-link { flex: 0 0 auto; }
+  .drive-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 6px; border: 1px solid #3a5a85; display: block; }
+  .drive-carousel-msg { font-size: 12px; color: #8a97a8; margin-top: 8px; }
+  .photo-section { margin-top: 16px; }
+
+  /* ---------- Report mode ---------- */
+  #report-screen { display: none; min-height: 100vh; }
+  .report-day { margin-bottom: 22px; }
+  .report-day h3 { font-size: 14px; color: #d4a843; margin: 0 0 8px; }
+  .report-entry { background: #142640; border: 1px solid #22385a; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13px; }
+  .report-entry .r-time { color: #8a97a8; font-size: 11px; margin-right: 8px; font-family: 'JetBrains Mono', monospace; }
+  .report-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+  .report-table th, .report-table td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #22385a; font-size: 13px; }
+  .report-table th { color: #8a97a8; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; }
+  .report-table td.num { font-family: 'JetBrains Mono', monospace; }
+  .feed-row { display: flex; gap: 10px; align-items: baseline; background: #142640; border: 1px solid #22385a; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; font-size: 13px; flex-wrap: wrap; }
+  .feed-time { color: #8a97a8; font-size: 11px; font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+  .feed-director { color: #d4a843; font-size: 12px; font-weight: 700; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div id="app-screen">
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="eyebrow">Royal Groups Realty</div>
+        <h1>GA Hot Leads CRM</h1>
+      </div>
+      <div class="header-actions">
+        <span class="sync-note" id="user-chip" style="display:none;"></span>
+        <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
+        <button class="btn-gold" id="add-lead-btn">+ Add Lead</button>
+        <span class="sync-note" id="sync-note"><span class="spin">⟳</span> Loading sheets…</span>
+        <button class="btn-ghost" id="refresh-btn">⟳ Refresh sheets</button>
+        <a class="btn-ghost" href="?report=1" style="display:inline-flex;align-items:center;">📊 Report</a>
+      </div>
+    </div>
+    <div class="header-inner">
+      <div class="tabs">
+        <button class="tab-btn" id="tab-zombie">🧟 Zombies <span class="tab-count" id="count-zombie">–</span></button>
+        <button class="tab-btn" id="tab-stacked">📚 Stacked <span class="tab-count" id="count-stacked">–</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="setup-banner" id="setup-banner" style="display:none;">
+      <h3>⚙️ One-time setup needed</h3>
+      <ol>
+        <li>In Google Drive, set <b>both</b> lead sheets to <b>Anyone with the link → Viewer</b> (GA ZOMBIE LEADS and GA STACKED LEADS).</li>
+        <li>Create a Google Cloud API key with the <b>Google Sheets API</b> enabled (restrict the key to the Sheets API), then paste it into <code>CONFIG.SHEETS_API_KEY</code> at the top of this file's script. For property photo thumbnails, also enable the <b>Google Drive API</b> on the same key and share each property's Drive folder as "Anyone with the link".</li>
+        <li>Republish the site. Sheets are read live and read-only — statuses, notes, calls, tasks and family trees are stored separately in Firestore.</li>
+      </ol>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+
+    <div class="agenda-row">
+      <button class="agenda-btn" id="today-tasks-btn">📅 Today's Tasks (<span class="count" id="today-count">0</span>)</button>
+      <button class="agenda-btn" id="tomorrow-tasks-btn">📅 Tomorrow's Tasks (<span class="count" id="tomorrow-count">0</span>)</button>
+      <button class="agenda-btn" id="dormant-tasks-btn">📅 Dormant Tasks 😴 (<span class="count" id="dormant-count">0</span>)</button>
+    </div>
+
+    <div id="agenda-controls">
+      <button class="agenda-back" id="agenda-back-btn">← Back to leads</button>
+      <select id="agenda-director-filter">
+        <option value="all">All Directors</option>
+        <option value="unassigned">Unassigned</option>
+      </select>
+    </div>
+
+    <div id="leads-controls">
+    <div class="controls">
+      <div class="search-wrap"><span>🔍</span><input type="text" id="search-input" placeholder="Search address, city, zip, why hot…" /></div>
+      <select id="status-filter"></select>
+      <select id="code-filter"></select>
+      <select id="director-filter"></select>
+      <div class="date-filter-wrap">
+        <label for="added-date-filter">Added:</label>
+        <input type="date" id="added-date-filter" />
+        <button class="mini-clear" id="added-date-clear" title="Clear date filter">✕</button>
+      </div>
+      <select id="sort-select">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="az">Address A–Z</option>
+      </select>
+    </div>
+    <div class="bulk-bar">
+      <label><input type="checkbox" id="select-all-checkbox" class="lead-checkbox" /> Select all</label>
+      <button class="btn-danger" id="delete-selected-btn" disabled>Delete Selected (0)</button>
+      <button class="btn-text" id="toggle-hidden-btn" style="display:none;"></button>
+    </div>
+    </div>
+    <div class="sheet-note" id="sheet-note"></div>
+
+    <div id="lead-list"></div>
+  </div>
+</div>
+
+<div id="report-screen">
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="eyebrow">Royal Groups Realty</div>
+        <h1>Activity Report — Hot Leads</h1>
+        <div style="font-size:13px; color:#8a97a8; margin-bottom:4px;">Calls logged, stage changes, and dial clicks, attributed by each lead's assigned director.</div>
+      </div>
+      <div class="header-actions">
+        <button class="agenda-btn" data-report-range="1">Today</button>
+        <button class="agenda-btn" data-report-range="7">Last 7 Days</button>
+        <button class="agenda-btn" data-report-range="30">Last 30 Days</button>
+        <button class="agenda-btn" data-report-range="0">All Time</button>
+        <a class="btn-ghost" href="." style="display:inline-flex;align-items:center;">← Back</a>
+      </div>
+    </div>
+  </div>
+  <div class="content"><div id="report-body"></div></div>
+</div>
+
+<div id="add-lead-overlay" class="modal-overlay">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h2>Add a Lead</h2>
+      <button class="modal-close-btn" id="add-lead-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field"><label>Phone</label><input type="text" id="new-lead-phone" placeholder="(555) 555-5555" /></div>
+      <div class="modal-field"><label>Property Address</label><input type="text" id="new-lead-address" /></div>
+      <div class="modal-field-row">
+        <div class="modal-field"><label>City</label><input type="text" id="new-lead-city" /></div>
+        <div class="modal-field" style="flex:0 0 90px;"><label>State</label><input type="text" id="new-lead-state" maxlength="2" value="GA" style="text-transform:uppercase;" /></div>
+        <div class="modal-field" style="flex:0 0 110px;"><label>Zip</label><input type="text" id="new-lead-zip" /></div>
+      </div>
+      <div class="modal-field"><label>Why Hot (optional)</label><textarea id="new-lead-whyhot" rows="2" placeholder="What makes this lead hot?"></textarea></div>
+      <div class="modal-error" id="add-lead-error"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="add-lead-cancel">Cancel</button>
+      <button class="btn-gold" id="add-lead-save">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIG — Luca: paste your Google Sheets API key on the SHEETS_API_KEY line.
+   The two sheet IDs below are already filled in. The nightly pipeline keeps
+   writing to these sheets; this app only READS them (never writes).
+   Interactive data (statuses, notes, calls, tasks, family trees) lives in
+   Firestore, keyed by normalized address.
+   ========================================================================= */
+const CONFIG = {
+  SHEETS_API_KEY: "PASTE_YOUR_API_KEY_HERE",
+  ZOMBIE_SHEET_ID: "1BM9MKOJwVuxUly8Bm3PflhOvB-4VyX6qPXU4XqiVIh4",
+  STACKED_SHEET_ID: "1rDAfbBICSCB1xQeozNZo5lNJs2n7lJLDbOP2Ssr_cbw",
+};
+
+/* ---------------- Firebase (same project as the probates CRM) ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDNpa-2O0RduvXa5qmmIfFoioKG4gyoCOs",
+  authDomain: "rgr-crm-941ab.firebaseapp.com",
+  projectId: "rgr-crm-941ab",
+  storageBucket: "rgr-crm-941ab.firebasestorage.app",
+  messagingSenderId: "970218702810",
+  appId: "1:970218702810:web:03409e8b0e971bb0b6e2e3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+/* ---------------- Auth: Google sign-in, Luca-only data ----------------
+   Firestore rules (firestore.rules) allow READS and WRITES only from Luca's
+   Google account. The overlay (statuses, notes, phones, tasks, family trees,
+   manual leads) and the activity report load ONLY while he is signed in;
+   signing out unsubscribes and clears them from the screen. The lead list
+   itself still comes from the link-shared sheets, which are public anyway. */
+const LUCA_EMAIL = 'luca.rebuffi@royalgroupsrealty.com';
+let currentUser = null;
+auth.onAuthStateChanged(u => {
+  currentUser = u;
+  const btn = document.getElementById('auth-btn');
+  const chip = document.getElementById('user-chip');
+  if (u) {
+    btn.style.display = 'none';
+    chip.style.display = 'inline';
+    chip.textContent = '👤 ' + (u.email || 'signed in');
+    // Overlay + report subscriptions start only after sign-in (async callback,
+    // so isReportMode below is always initialized by the time this runs).
+    if (isReportMode) renderReport();
+    else startOverlayListening();
+  } else {
+    btn.style.display = 'inline-flex';
+    chip.style.display = 'none';
+    stopOverlayListening();
+    if (isReportMode) renderReportLocked();
+  }
+});
+function requireAuth() {
+  if (currentUser) return true;
+  showToast('Sign in with Google to save changes', 'error');
+  const btn = document.getElementById('auth-btn');
+  if (btn) btn.click();
+  return false;
+}
+// keep the console clean when a write is blocked for sign-in
+window.addEventListener('unhandledrejection', e => {
+  if (e && e.reason && e.reason.message === 'not-signed-in') e.preventDefault();
+});
+
+/* ---------------- Config: tabs ---------------- */
+const TABS = {
+  zombie:  { label: 'Zombies', emoji: '🧟', collection: 'zombieLeads',  sheetId: () => CONFIG.ZOMBIE_SHEET_ID,  codes: ['CV','L','PF','TD','WS'] },
+  stacked: { label: 'Stacked', emoji: '📚', collection: 'stackedLeads', sheetId: () => CONFIG.STACKED_SHEET_ID, codes: ['P','PF','CV','L','WS','TD'] },
+};
+
+/* Motivation codes — P=Probates, PF=Pre-Foreclosures, CV=Code Violations,
+   L=Liens, WS=Water Shutoffs, TD=Tax Delinquencies (2+ yrs) */
+const CODE_META = {
+  P:  { label: 'Probates',          color: '#c084fc' },
+  PF: { label: 'Pre-Foreclosures',  color: '#e0954a' },
+  CV: { label: 'Code Violations',   color: '#5b8fd4' },
+  L:  { label: 'Liens',             color: '#7fb3d9' },
+  WS: { label: 'Water Shutoffs',    color: '#4caf82' },
+  TD: { label: 'Tax Delinquencies', color: '#d4a843' },
+};
+/* Canonical badge display order */
+const CODE_ORDER = ['P','PF','CV','L','WS','TD'];
+
+/* ---------------- Config: statuses & call outcomes (same as probates CRM) ---------------- */
+const STATUSES = [
+  { id: 'new',            label: 'New',              color: '#5b8fd4' },
+  { id: 'trying',         label: 'Trying to Reach',  color: '#e0954a' },
+  { id: 'callback',       label: 'Qualified Leads',  color: '#7fb3d9' },
+  { id: 'followup',       label: 'Follow Ups',       color: '#c084fc' },
+  { id: 'under_contract', label: 'Under Contract',   color: '#d4a843' },
+  { id: 'not_interested', label: 'Not Interested',   color: '#8a97a8' },
+  { id: 'dead',           label: 'Dead / Bad Number',color: '#d9534f' },
+  { id: 'deal',           label: 'Closed',           color: '#4caf82' },
+];
+const STATUS_MAP = Object.fromEntries(STATUSES.map(s => [s.id, s]));
+const SUBSTAGES = { callback: ['Must Underwrite', 'Submit Offer'] };
+
+/* ---------------- Ported from the probates CRM: directors, agenda, photos ---------------- */
+const DIRECTORS = ['Luca Rebuffi', 'Jalen Albright', 'Salena Carter', 'Ricky Roland', 'Tony Oddo'];
+// Stages where a lead with no open task shows the "no task scheduled" warning on its collapsed row.
+const DORMANT_INDICATOR_STAGES = ['callback', 'followup', 'under_contract'];
+// Stages where the property-photos (Google Drive) section appears on the expanded card.
+const PHOTO_STAGES = ['callback', 'followup', 'under_contract', 'deal'];
+const OUTCOMES = [
+  { id: 'no_answer',          label: 'No Answer',            status: 'trying' },
+  { id: 'voicemail',          label: 'Left Voicemail',       status: 'trying' },
+  { id: 'busy',               label: 'Busy / Call Back',     status: 'trying' },
+  { id: 'talked',             label: 'Talked — Working It',  status: 'callback' },
+  { id: 'callback_scheduled', label: 'Scheduled Callback',   status: 'callback' },
+  { id: 'not_interested',     label: 'Not Interested',       status: 'not_interested' },
+  { id: 'wrong_number',       label: 'Wrong / Bad Number',   status: 'dead' },
+  { id: 'deal',               label: 'Deal Closed',          status: 'deal' },
+];
+const OUTCOME_MAP = Object.fromEntries(OUTCOMES.map(o => [o.id, o]));
+
+/* ---------------- Helpers ---------------- */
+function escapeHtml(s) {
+  return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function digitsOnly(s) { return (s || '').replace(/\D/g, ''); }
+function formatPhone(raw) {
+  const d = digitsOnly(raw);
+  if (d.length === 10) return `(${d.slice(0,3)}) ${d.slice(3,6)}-${d.slice(6)}`;
+  if (d.length === 11 && d[0] === '1') return `(${d.slice(1,4)}) ${d.slice(4,7)}-${d.slice(7)}`;
+  return raw || '';
+}
+function timeAgo(iso) {
+  if (!iso) return null;
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.round(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.round(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+function makeId() {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+  return 'id-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+}
+function showToast(msg, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (kind === 'error' ? ' error' : '');
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+/* Match sheet columns BY HEADER LABEL, never by position */
+function normalizeHeader(h) { return (h || '').toLowerCase().replace(/[^a-z]/g, ''); }
+/* Normalized address key — one doc per address, ever */
+function normalizeAddressKey(address, city, state, zip) {
+  const raw = [address, city, state, zip].filter(Boolean).join(' ').toLowerCase();
+  let key = raw.replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return key.slice(0, 200) || 'unknown';
+}
+function fullAddressStr(lead) {
+  return [lead.address, lead.city, lead.state, lead.zip].filter(Boolean).join(', ');
+}
+function parseSheetDate(s) {
+  // MM/DD/YYYY as written by the pipeline
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec((s || '').trim());
+  if (!m) return 0;
+  return new Date(+m[3], +m[1] - 1, +m[2]).getTime();
+}
+function localDateStr(d) {
+  const p = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+function formatTaskDate(iso) {
+  if (!iso) return 'No date';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+function formatTaskTime(t) {
+  if (!t) return '';
+  let [h, m] = t.split(':').map(Number);
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2, '0')} ${ap}`;
+}
+
+/* ---------------- State ---------------- */
+let tab = 'zombie';
+let sheetRows = { zombie: [], stacked: [] };   // parsed from Google Sheets (read-only master)
+let overlays  = { zombie: {}, stacked: {} };   // Firestore interactive layer, keyed by addrKey
+let expandedKey = null;
+let search = '';
+let statusFilter = 'active';
+let codeFilter = 'all';
+let directorFilter = 'all';
+let agendaDirectorFilter = 'all';
+let addedDateFilter = '';
+let sortBy = 'newest';
+let viewMode = 'leads'; // 'leads' | 'today' | 'tomorrow' | 'dormant'
+let selectedIds = new Set();
+let showHidden = false;
+let editingDriveLink = {}; // key -> true while the drive URL is being edited
+const driveCache = {}; // folderId -> { status: 'done'|'error', files: [...], name }
+let drafts = {};
+let taskDrafts = {};
+let treeDrafts = {}; // per-lead in-progress family tree text, survives re-renders until saved
+let editingTask = {};
+let sheetError = null;
+let lastSyncAt = null;
+
+const ACTIVE_STATUSES = ['new','trying','callback','followup','under_contract'];
+
+/* ---------------- Google Sheets (live, read-only) ---------------- */
+async function fetchSheetRows(sheetId) {
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/A1:Z10000?key=${encodeURIComponent(CONFIG.SHEETS_API_KEY)}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    const err = new Error(`Sheets API ${res.status}`);
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  const json = await res.json();
+  return json.values || [];
+}
+
+/* Parse rows by matching columns BY HEADER LABEL (never position).
+   Zombie header:  Address | City | State | Postal Code | CV | L | PF | TD | WS | Why Hot | Date Flagged
+   Stacked header: Address | City | State | Postal Code | (blank) | CV | L | P | PF | TD | WS */
+function parseSheet(values, tabId) {
+  if (!values.length) return [];
+  const header = values[0].map(normalizeHeader);
+  const colIdx = {};
+  header.forEach((h, i) => { if (h && !(h in colIdx)) colIdx[h] = i; });
+  const get = (row, name) => {
+    const i = colIdx[name];
+    return (i === undefined ? '' : (row[i] || '')).trim();
+  };
+  const rows = [];
+  for (let r = 1; r < values.length; r++) {
+    const row = values[r];
+    const address = get(row, 'address');
+    if (!address) continue;
+    const city = get(row, 'city'), state = get(row, 'state'), zip = get(row, 'postalcode');
+    const codes = {};
+    for (const code of TABS[tabId].codes) {
+      const d = get(row, code.toLowerCase());
+      if (d) codes[code] = d;
+    }
+    rows.push({
+      key: normalizeAddressKey(address, city, state, zip),
+      address, city, state, zip,
+      codes,
+      whyHot: tabId === 'zombie' ? get(row, 'whyhot') : '',
+      dateFlagged: tabId === 'zombie' ? get(row, 'dateflagged') : '',
+      tab: tabId,
+    });
+  }
+  return rows;
+}
+
+function newestCodeDate(lead) {
+  let best = 0;
+  for (const code of Object.keys(lead.codes)) {
+    const t = parseSheetDate(lead.codes[code]);
+    if (t > best) best = t;
+  }
+  const flagged = parseSheetDate(lead.dateFlagged);
+  if (flagged > best) best = flagged;
+  return best;
+}
+
+async function loadSheets() {
+  const note = document.getElementById('sync-note');
+  note.innerHTML = '<span class="spin">⟳</span> Loading sheets…';
+  note.classList.remove('error');
+  sheetError = null;
+  try {
+    const [zVals, sVals] = await Promise.all([
+      fetchSheetRows(CONFIG.ZOMBIE_SHEET_ID),
+      fetchSheetRows(CONFIG.STACKED_SHEET_ID),
+    ]);
+    sheetRows.zombie = parseSheet(zVals, 'zombie');
+    sheetRows.stacked = parseSheet(sVals, 'stacked');
+    lastSyncAt = new Date().toISOString();
+    note.textContent = `Synced from sheets · ${timeAgo(lastSyncAt)}`;
+    updateTabCounts();
+    render();
+  } catch (e) {
+    console.error(e);
+    sheetError = e;
+    if (e.status === 403) {
+      note.textContent = 'Sheets blocked (403) — set both sheets to "Anyone with the link → Viewer"';
+    } else if (e.status === 400 && /API key/i.test(e.body || '')) {
+      note.textContent = 'Bad API key — check CONFIG.SHEETS_API_KEY';
+    } else {
+      note.textContent = 'Sheet sync error — retrying keeps Firestore data intact';
+    }
+    note.classList.add('error');
+    render();
+  }
+}
+
+/* ---------------- Firestore interactive overlay ---------------- */
+let unsubs = [];
+function startOverlayListening() {
+  unsubs.forEach(u => u && u());
+  unsubs = [];
+  for (const tabId of ['zombie', 'stacked']) {
+    const coll = TABS[tabId].collection;
+    unsubs.push(db.collection(coll).onSnapshot(snap => {
+      const map = {};
+      snap.docs.forEach(d => { map[d.id] = { key: d.id, ...d.data() }; });
+      overlays[tabId] = map;
+      render();
+    }, err => {
+      console.error(err);
+      showToast('Firestore sync error', 'error');
+    }));
+  }
+}
+
+function stopOverlayListening() {
+  unsubs.forEach(u => u && u());
+  unsubs = [];
+  overlays = { zombie: {}, stacked: {} };
+  if (!isReportMode && typeof render === 'function') render();
+}
+function mergedLead(tabId, row) {
+  const ov = overlays[tabId][row.key] || {};
+  return { ...row, ...ov, status: ov.status || 'new' };
+}
+// Manual leads: added via "+ Add Lead", stored ONLY in the Firestore overlay
+// (the sheets stay read-only, so a manual lead has no sheet row).
+function manualLeads(tabId) {
+  const sheetKeys = new Set(sheetRows[tabId].map(r => r.key));
+  return Object.values(overlays[tabId])
+    .filter(ov => ov.manual && ov.key && !sheetKeys.has(ov.key))
+    .map(ov => ({
+      key: ov.key, tab: tabId, manual: true,
+      address: ov.address || '', city: ov.city || '', state: ov.state || '', zip: ov.zip || '',
+      codes: {}, whyHot: ov.whyHot || '', dateFlagged: '',
+      ...ov, status: ov.status || 'new',
+    }));
+}
+function allLeads(tabId) {
+  return sheetRows[tabId].map(row => mergedLead(tabId, row)).concat(manualLeads(tabId));
+}
+function hasOpenTask(lead) { return (lead.tasks || []).some(t => !t.done); }
+function earliestCodeDate(lead) {
+  let best = 0;
+  for (const code of Object.keys(lead.codes || {})) {
+    const t = parseSheetDate(lead.codes[code]);
+    if (t && (!best || t < best)) best = t;
+  }
+  const flagged = parseSheetDate(lead.dateFlagged);
+  if (flagged && (!best || flagged < best)) best = flagged;
+  return best;
+}
+// Effective "added" date (YYYY-MM-DD): manual leads use addedAt; sheet leads use
+// Date Flagged (zombies) or their earliest motivation date (stacked).
+function addedDateStr(lead) {
+  if (lead.addedAt) {
+    const d = new Date(lead.addedAt);
+    if (!isNaN(d)) return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  const t = earliestCodeDate(lead);
+  if (!t) return '';
+  const d = new Date(t);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function saveOverlay(tabId, key, data) {
+  if (!requireAuth()) return Promise.reject(new Error('not-signed-in'));
+  return db.collection(TABS[tabId].collection).doc(key).set(
+    { ...data, updatedAt: new Date().toISOString() }, { merge: true });
+}
+function logActivity(tabId, lead, action, detail) {
+  if (!currentUser) return; // activity log is Luca-only; never write signed out
+  db.collection('hotLeadsActivityLog').add({
+    tab: tabId,
+    leadKey: lead.key,
+    address: fullAddressStr(lead),
+    director: lead.acquisitionDirector || 'Unassigned',
+    action, detail: detail || '',
+    ts: new Date().toISOString(),
+  }).catch(e => console.error('activity log failed', e));
+}
+
+/* ---------------- Rendering ---------------- */
+function getFiltered() {
+  let list = allLeads(tab);
+  if (!showHidden) list = list.filter(l => !l.hidden);
+  const q = search.trim().toLowerCase();
+  if (q) {
+    list = list.filter(l =>
+      (l.address + ' ' + l.city + ' ' + l.state + ' ' + l.zip + ' ' + (l.whyHot || '')).toLowerCase().includes(q));
+  }
+  if (statusFilter === 'active') list = list.filter(l => ACTIVE_STATUSES.includes(l.status));
+  else if (statusFilter !== 'all') list = list.filter(l => l.status === statusFilter);
+  if (codeFilter !== 'all') list = list.filter(l => l.codes[codeFilter]);
+  if (directorFilter === 'unassigned') list = list.filter(l => !l.acquisitionDirector);
+  else if (directorFilter !== 'all') list = list.filter(l => l.acquisitionDirector === directorFilter);
+  if (addedDateFilter) list = list.filter(l => addedDateStr(l) === addedDateFilter);
+  list.sort((a, b) => {
+    if (sortBy === 'az') return a.address.localeCompare(b.address);
+    const da = newestCodeDate(a), dbb = newestCodeDate(b);
+    return sortBy === 'oldest' ? da - dbb : dbb - da;
+  });
+  return list;
+}
+
+function renderStats() {
+  const list = allLeads(tab);
+  const counts = {};
+  STATUSES.forEach(s => counts[s.id] = 0);
+  list.forEach(l => { counts[l.status] = (counts[l.status] || 0) + 1; });
+  const grid = document.getElementById('stats-grid');
+  const cards = [
+    { id: 'all', label: 'Total ' + TABS[tab].label, value: list.length },
+    ...STATUSES.map(s => ({ id: s.id, label: s.label, value: counts[s.id] || 0, color: s.color })),
+  ];
+  grid.innerHTML = cards.map(c => {
+    return `<button class="stat-card ${statusFilter === c.id || (c.id === 'all' && statusFilter === 'all') ? 'active' : ''}"
+      data-stat-filter="${c.id}" ${c.color ? `style="border-left:3px solid ${c.color}"` : ''}>
+      <div class="stat-value">${c.value}</div><div class="stat-label">${escapeHtml(c.label)}</div></button>`;
+  }).join('');
+  grid.querySelectorAll('[data-stat-filter]').forEach(el => {
+    el.addEventListener('click', () => {
+      statusFilter = el.getAttribute('data-stat-filter');
+      render();
+    });
+  });
+}
+
+function renderFilters() {
+  const sf = document.getElementById('status-filter');
+  sf.innerHTML = `<option value="active" ${statusFilter === 'active' ? 'selected' : ''}>Active only</option>
+    <option value="all" ${statusFilter === 'all' ? 'selected' : ''}>All statuses</option>` +
+    STATUSES.map(s => `<option value="${s.id}" ${statusFilter === s.id ? 'selected' : ''}>${s.label}</option>`).join('');
+  const cf = document.getElementById('code-filter');
+  cf.innerHTML = `<option value="all">All motivations</option>` +
+    TABS[tab].codes.map(c => `<option value="${c}" ${codeFilter === c ? 'selected' : ''}>${c} — ${CODE_META[c].label}</option>`).join('');
+  const df = document.getElementById('director-filter');
+  df.innerHTML = `<option value="all">All Directors</option>
+    <option value="unassigned" ${directorFilter === 'unassigned' ? 'selected' : ''}>Unassigned</option>` +
+    DIRECTORS.map(d => `<option value="${escapeHtml(d)}" ${directorFilter === d ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('');
+  document.getElementById('sort-select').value = sortBy;
+}
+
+/* ---------------- Agenda (ported from probates CRM) ---------------- */
+function localDateStrOffset(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return localDateStr(d);
+}
+function getAllTasksFor(dateStr) {
+  const items = [];
+  allLeads(tab).forEach(lead => {
+    (lead.tasks || []).forEach(task => {
+      if (task.date === dateStr) items.push({ lead, task });
+    });
+  });
+  items.sort((a, b) => (a.task.time || '99:99').localeCompare(b.task.time || '99:99'));
+  return items;
+}
+function getDormantTasks() {
+  const todayStr = localDateStrOffset(0);
+  const items = [];
+  allLeads(tab).forEach(lead => {
+    (lead.tasks || []).forEach(task => {
+      if (!task.done && task.date && task.date < todayStr) items.push({ lead, task });
+    });
+  });
+  items.sort((a, b) => (a.task.date + (a.task.time || '99:99')).localeCompare(b.task.date + (b.task.time || '99:99')));
+  return items;
+}
+function renderAgendaToggle() {
+  const todayStr = localDateStrOffset(0);
+  const tomorrowStr = localDateStrOffset(1);
+  document.getElementById('today-count').textContent = getAllTasksFor(todayStr).filter(i => !i.task.done).length;
+  document.getElementById('tomorrow-count').textContent = getAllTasksFor(tomorrowStr).filter(i => !i.task.done).length;
+  document.getElementById('dormant-count').textContent = getDormantTasks().length;
+  document.getElementById('today-tasks-btn').classList.toggle('active', viewMode === 'today');
+  document.getElementById('tomorrow-tasks-btn').classList.toggle('active', viewMode === 'tomorrow');
+  document.getElementById('dormant-tasks-btn').classList.toggle('active', viewMode === 'dormant');
+}
+function renderAgenda() {
+  const container = document.getElementById('lead-list');
+  const isDormantView = viewMode === 'dormant';
+  let items = isDormantView ? getDormantTasks() : getAllTasksFor(viewMode === 'today' ? localDateStrOffset(0) : localDateStrOffset(1));
+  if (agendaDirectorFilter === 'unassigned') items = items.filter(i => !i.lead.acquisitionDirector);
+  else if (agendaDirectorFilter !== 'all') items = items.filter(i => i.lead.acquisitionDirector === agendaDirectorFilter);
+  if (!items.length) {
+    container.innerHTML = `<div class="empty-state">${isDormantView ? 'No dormant tasks — everything is on track.' : `No tasks scheduled for ${viewMode === 'today' ? 'today' : 'tomorrow'}.`}</div>`;
+    return;
+  }
+  // One card per lead even if that lead has more than one qualifying task.
+  const seen = new Set();
+  const agendaLeads = [];
+  items.forEach(({ lead }) => { if (!seen.has(lead.key)) { seen.add(lead.key); agendaLeads.push(lead); } });
+  container.innerHTML = agendaLeads.map(lead => renderCard(lead)).join('');
+}
+function renderBulkBar() {
+  const btn = document.getElementById('delete-selected-btn');
+  btn.textContent = `Delete Selected (${selectedIds.size})`;
+  btn.disabled = selectedIds.size === 0;
+  const allCb = document.getElementById('select-all-checkbox');
+  const filtered = getFiltered();
+  allCb.checked = filtered.length > 0 && filtered.every(l => selectedIds.has(l.key));
+  const hiddenCount = allLeads(tab).filter(l => l.hidden).length;
+  const thb = document.getElementById('toggle-hidden-btn');
+  if (hiddenCount > 0) {
+    thb.style.display = 'inline';
+    thb.textContent = showHidden ? `🙈 Hide hidden (${hiddenCount})` : `👁 Show hidden (${hiddenCount})`;
+  } else {
+    thb.style.display = 'none';
+    showHidden = false;
+  }
+}
+
+function codeBadges(lead) {
+  return CODE_ORDER.filter(c => lead.codes[c]).map(c => {
+    const m = CODE_META[c];
+    return `<span class="code-badge" title="${escapeHtml(m.label)}" style="background:${m.color}1e;color:${m.color};border-color:${m.color}66">${c}<span class="code-date">${escapeHtml(lead.codes[c])}</span></span>`;
+  }).join('');
+}
+
+function renderCard(lead) {
+  const status = STATUS_MAP[lead.status] || STATUSES[0];
+  const isOpen = expandedKey === lead.key;
+  const isFire = !!lead.fireLead;
+  const notes = lead.notes || [];
+  const phone = lead.phone || '';
+  const isSelected = selectedIds.has(lead.key);
+  const isDormant = DORMANT_INDICATOR_STAGES.includes(lead.status) && !hasOpenTask(lead);
+
+  let detail = '';
+  if (isOpen) detail = renderDetail(lead);
+
+  return `
+    <div class="lead-card ${isFire ? 'is-fire' : ''}">
+      <div class="lead-row" data-row-toggle="${escapeHtml(lead.key)}">
+        <input type="checkbox" class="lead-checkbox" data-select="${escapeHtml(lead.key)}" ${isSelected ? 'checked' : ''} title="Select for bulk delete" />
+        <button class="fire-btn ${isFire ? 'active' : ''}" data-fire="${escapeHtml(lead.key)}" data-fire-current="${isFire}" title="Favorite this lead">🔥</button>
+        <div class="lead-main">
+          <div class="lead-name-line">
+            <span class="lead-name">${escapeHtml(lead.address)}</span>
+            <span class="status-badge" style="background:${status.color}22;color:${status.color};border-color:${status.color}55">${status.label}</span>
+            ${lead.subStage ? `<span class="substage-badge">${escapeHtml(lead.subStage)}</span>` : ''}
+            ${isFire ? `<span class="fire-badge">🔥 FIRE LEAD</span>` : ''}
+            ${lead.acquisitionDirector ? `<span class="director-badge">👤 ${escapeHtml(lead.acquisitionDirector)}</span>` : ''}
+            ${isDormant ? `<span class="dormant-badge" title="No open task scheduled for this lead">❗ No Task</span>` : ''}
+            ${lead.hidden ? `<span class="hidden-badge">HIDDEN</span>` : ''}
+          </div>
+          <div class="lead-address">📍 ${escapeHtml(lead.city)}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
+          <div class="code-badges">${codeBadges(lead)}</div>
+          ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
+        </div>
+        ${phone ? `<a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a>` : ''}
+        <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
+          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="quick-link-btn" href="https://www.google.com/maps/place/${encodeURIComponent(fullAddressStr(lead))}" target="_blank" rel="noopener" title="Google Maps / Street View">
+          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.6 6.6 11.7 7.1 12.16a.6.6 0 0 0 .8 0c.5-.46 7.1-6.56 7.1-12.16C19.5 5.36 16.14 2 12 2z" fill="#ffffff"/><circle cx="12" cy="9.5" r="3" fill="#e0483a"/></svg>
+        </a>
+        <div class="call-meta">
+          <div class="attempts mono">${lead.callAttempts || 0} call${(lead.callAttempts || 0) === 1 ? '' : 's'}</div>
+          <div>${lead.lastCalledAt ? `last: ${timeAgo(lead.lastCalledAt)}` : (lead.dateFlagged ? `flagged ${escapeHtml(lead.dateFlagged)}` : (lead.manual ? 'added manually' : 'from sheet'))}</div>
+        </div>
+        ${lead.hidden && showHidden ? `<button class="unhide-btn" data-unhide="${escapeHtml(lead.key)}">↩ Unhide</button>` : ''}
+        <button class="toggle-btn">${isOpen ? '▴' : '▾'}</button>
+      </div>
+      ${detail}
+    </div>`;
+}
+
+function render() {
+  document.getElementById('tab-zombie').classList.toggle('active', tab === 'zombie');
+  document.getElementById('tab-stacked').classList.toggle('active', tab === 'stacked');
+  document.getElementById('setup-banner').style.display =
+    (!CONFIG.SHEETS_API_KEY || CONFIG.SHEETS_API_KEY === 'PASTE_YOUR_API_KEY_HERE') ? 'block' : 'none';
+  updateTabCounts();
+
+  const note = document.getElementById('sheet-note');
+  if (sheetError) {
+    note.innerHTML = sheetError.status === 403
+      ? '⚠️ Sheets API says access denied (403). The sheet is probably not shared as “Anyone with the link → Viewer” yet. Firestore data is unaffected.'
+      : '⚠️ Sheet sync failed — showing Firestore overlay only. Your statuses/notes are safe.';
+  } else {
+    const total = sheetRows[tab].length;
+    const manual = manualLeads(tab).length;
+    note.innerHTML = (total || manual)
+      ? `${TABS[tab].emoji} <b>${total}</b> ${TABS[tab].label.toLowerCase()} loaded live from the Google Sheet${manual ? ` + <b>${manual}</b> added manually` : ''}${lastSyncAt ? ` · synced ${timeAgo(lastSyncAt)}` : ''}. Sheet is the master — this app never writes to it.`
+      : 'Loading…';
+  }
+
+  renderStats();
+  renderAgendaToggle();
+  const el = document.getElementById('lead-list');
+  if (viewMode === 'leads') {
+    document.getElementById('leads-controls').style.display = 'block';
+    document.getElementById('agenda-controls').style.display = 'none';
+    renderFilters();
+    renderBulkBar();
+    const list = getFiltered();
+    if (!sheetRows[tab].length && !manualLeads(tab).length && !sheetError) {
+      el.innerHTML = `<div class="empty-state"><div class="big"><span class="spin">⟳</span></div>Loading ${TABS[tab].label.toLowerCase()} from the sheet…</div>`;
+    } else if (!list.length) {
+      el.innerHTML = `<div class="empty-state"><div class="big">${TABS[tab].emoji}</div>No leads match the current filters.</div>`;
+    } else {
+      el.innerHTML = list.map(renderCard).join('');
+    }
+  } else {
+    document.getElementById('leads-controls').style.display = 'none';
+    document.getElementById('agenda-controls').style.display = 'flex';
+    renderAgenda();
+  }
+  attachCardListeners();
+}
+
+/* ---------------- Expanded detail ---------------- */
+function renderDetail(lead) {
+  const draft = drafts[lead.key] || { outcome: 'no_answer', text: '' };
+  const taskDraft = taskDrafts[lead.key] || {};
+  const notes = lead.notes || [];
+  const tasks = (lead.tasks || []).slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  const isZombie = tab === 'zombie';
+
+  return `
+    <div class="lead-detail">
+      <div class="status-track">
+        ${STATUSES.map(s => `<div class="status-step" data-status-step="${escapeHtml(lead.key)}" data-status-value="${s.id}"
+            style="${s.id === lead.status ? `background:${s.color};border-color:${s.color};color:#0d1b2e;` : `color:${s.color};`}">${s.label}</div>`).join('')}
+      </div>
+      ${SUBSTAGES[lead.status] ? `
+      <div class="substage-track">
+        ${SUBSTAGES[lead.status].map(ss => `<div class="substage-step ${lead.subStage === ss ? 'active' : ''}" data-substage-step="${escapeHtml(lead.key)}" data-substage-value="${escapeHtml(ss)}">${escapeHtml(ss)}</div>`).join('')}
+      </div>` : ''}
+
+      <div class="fin-grid" style="margin-bottom:14px;">
+        <div class="fin-field">
+          <label>Phone (saved in CRM — sheets have no phone column)</label>
+          <input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" />
+        </div>
+        <div class="fin-field">
+          <label>Motivation signals</label>
+          <div class="code-badges" style="margin-top:8px;">${codeBadges(lead) || '<span style="font-size:12px;color:#8a97a8;">none</span>'}</div>
+        </div>
+        ${lead.dateFlagged ? `<div class="fin-field"><label>Date Flagged</label><div style="padding:8px 0;font-size:14px;" class="mono">${escapeHtml(lead.dateFlagged)}</div></div>` : ''}
+      </div>
+
+      <div class="fin-field" style="margin-bottom:14px;">
+        <label>Acquisition Director</label>
+        <select data-director-select="${escapeHtml(lead.key)}">
+          <option value="" ${!lead.acquisitionDirector ? 'selected' : ''}>Unassigned</option>
+          ${DIRECTORS.map(d => `<option value="${escapeHtml(d)}" ${lead.acquisitionDirector === d ? 'selected' : ''}>${escapeHtml(d)}</option>`).join('')}
+        </select>
+      </div>
+
+      <div class="section-label">Deal Numbers</div>
+      <div class="fin-grid" style="margin-bottom:14px;">
+        <div class="fin-field">
+          <label>Lead Value</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.leadValue || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="leadValue" /></div>
+        </div>
+        <div class="fin-field">
+          <label>Asking Price</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.askingPrice || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="askingPrice" /></div>
+        </div>
+        <div class="fin-field">
+          <label>LAO</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.lao || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="lao" /></div>
+        </div>
+        <div class="fin-field">
+          <label>MAO</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.mao || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mao" /></div>
+        </div>
+      </div>
+
+      ${isZombie && lead.whyHot ? `
+      <div class="detail-section">
+        <div class="section-label">Why Hot</div>
+        <div class="whyhot-box">${escapeHtml(lead.whyHot)}</div>
+      </div>` : ''}
+
+      ${isZombie ? `
+      <div class="detail-section">
+        <div class="section-label">🌳 Family Tree</div>
+        ${lead.familyTree && !treeDrafts[lead.key] ? `<div class="tree-box">${escapeHtml(lead.familyTree)}</div>
+        <div class="tree-hint">Last updated ${lead.familyTreeUpdatedAt ? timeAgo(lead.familyTreeUpdatedAt) : '—'}</div>` : ''}
+        <textarea class="note-input" rows="3" style="margin-top:8px;" placeholder="Paste the family tree from RESEARCHER here (spouse, children, heirs…)" data-tree-input="${escapeHtml(lead.key)}">${escapeHtml(treeDrafts[lead.key] !== undefined ? treeDrafts[lead.key] : (lead.familyTree || ''))}</textarea>
+        <div class="detail-actions">
+          <button class="save-tree-btn" data-save-tree="${escapeHtml(lead.key)}">💾 Save Family Tree</button>
+        </div>
+        <div class="tree-hint">Delivered by the RESEARCHER chat — obituaries, heirs, probate-status confirmation.</div>
+      </div>` : ''}
+
+      <div class="outcome-row">
+        <select data-outcome-select="${escapeHtml(lead.key)}">
+          ${OUTCOMES.map(o => `<option value="${o.id}" ${o.id === draft.outcome ? 'selected' : ''}>${o.label}</option>`).join('')}
+        </select>
+      </div>
+      <textarea class="note-input" rows="2" placeholder="What happened on the call? (optional)" data-note-input="${escapeHtml(lead.key)}">${escapeHtml(draft.text)}</textarea>
+      <div class="detail-actions">
+        <button class="log-call-btn" data-log-call="${escapeHtml(lead.key)}">+ Log Call</button>
+        <button class="reset-btn" data-reset-lead="${escapeHtml(lead.key)}">Reset CRM data</button>
+      </div>
+      ${notes.length ? `<div class="notes-list">${notes.slice().reverse().map(n => `
+        <div class="note-entry">
+          <div class="note-meta">🕒 ${new Date(n.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            <span class="note-outcome">${escapeHtml((OUTCOME_MAP[n.outcome] || {}).label || n.outcome || '')}</span>
+          </div>
+          ${n.text ? `<div class="note-text">${escapeHtml(n.text)}</div>` : ''}
+        </div>`).join('')}</div>` : ''}
+
+      <div class="task-form">
+        <div style="font-size:12px; color:#8a97a8; margin-bottom:8px; font-weight:700;">TASKS</div>
+        ${tasks.length ? `<div class="task-list">${tasks.map(t => `
+          <div class="task-item ${t.done ? 'is-done' : ''}">
+            <input type="checkbox" class="task-checkbox" ${t.done ? 'checked' : ''} data-task-done="${escapeHtml(lead.key)}" data-task-id="${t.id}" />
+            <div class="task-item-body">
+              <div class="task-name">${escapeHtml(t.name)}</div>
+              <div class="task-when">${formatTaskDate(t.date)}${t.time ? ` · ${formatTaskTime(t.time)}` : ''}</div>
+              ${t.notes ? `<div class="task-notes-text">${escapeHtml(t.notes)}</div>` : ''}
+            </div>
+            <button class="task-edit-btn" data-task-edit="${escapeHtml(lead.key)}" data-task-id-edit="${t.id}" title="Edit task">✎</button>
+            <button class="task-delete-btn" data-task-delete="${escapeHtml(lead.key)}" data-task-id-del="${t.id}">✕</button>
+          </div>`).join('')}</div>` : ''}
+        <div class="task-form-row" style="margin-top:10px;">
+          <input type="text" placeholder="Task name" value="${escapeHtml(taskDraft.name || '')}" data-task-name-input="${escapeHtml(lead.key)}" />
+          <input type="date" value="${taskDraft.date || ''}" data-task-date-input="${escapeHtml(lead.key)}" />
+          <input type="time" value="${taskDraft.time || ''}" data-task-time-input="${escapeHtml(lead.key)}" />
+        </div>
+        <textarea placeholder="Task notes (optional)" data-task-notes-input="${escapeHtml(lead.key)}">${escapeHtml(taskDraft.notes || '')}</textarea>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="add-task-btn" data-add-task="${escapeHtml(lead.key)}">${editingTask[lead.key] ? '✓ Update Task' : '+ Add Task'}</button>
+          ${editingTask[lead.key] ? `<button class="task-cancel-edit-btn" data-task-cancel-edit="${escapeHtml(lead.key)}">Cancel</button>` : ''}
+        </div>
+      </div>
+
+      ${PHOTO_STAGES.includes(lead.status) ? `
+      <div class="photo-section">
+        <div class="section-label">Photos</div>
+        ${(!lead.driveFolderUrl || editingDriveLink[lead.key]) ? `
+        <div class="drive-link-row">
+          <input type="text" placeholder="Paste the Google Drive folder link for this property" value="${escapeHtml(lead.driveFolderUrl || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="driveFolderUrl" data-drive-link-input="${escapeHtml(lead.key)}" />
+        </div>` : `
+        <div class="drive-link-row">
+          <a class="drive-open-btn" href="${escapeHtml(lead.driveFolderUrl)}" target="_blank" rel="noopener" id="drive-link-name-${escapeHtml(lead.key)}">📁 Loading folder name…</a>
+          <button class="drive-edit-btn" data-drive-edit="${escapeHtml(lead.key)}" title="Change link">✎</button>
+        </div>`}
+        ${lead.driveFolderUrl ? `<div class="drive-carousel" id="drive-carousel-${escapeHtml(lead.key)}" data-drive-carousel="${escapeHtml(lead.key)}" data-drive-url="${escapeHtml(lead.driveFolderUrl)}"></div>` : ''}
+      </div>` : ''}
+    </div>`;
+}
+
+/* ---------------- Actions ---------------- */
+function getLead(tabId, key) {
+  const row = sheetRows[tabId].find(r => r.key === key);
+  if (row) return mergedLead(tabId, row);
+  return manualLeads(tabId).find(l => l.key === key) || null;
+}
+function updateTabCounts() {
+  document.getElementById('count-zombie').textContent = allLeads('zombie').length;
+  document.getElementById('count-stacked').textContent = allLeads('stacked').length;
+}
+
+async function updateStatus(key, statusId) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const patch = { status: statusId };
+  if (!SUBSTAGES[statusId]) patch.subStage = '';
+  await saveOverlay(tab, key, patch);
+  logActivity(tab, lead, 'status', `→ ${(STATUS_MAP[statusId] || {}).label}`);
+  showToast(`Status → ${(STATUS_MAP[statusId] || {}).label}`);
+}
+
+async function updateSubStage(key, value) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  await saveOverlay(tab, key, { subStage: lead.subStage === value ? '' : value });
+}
+
+async function toggleFire(key, current) {
+  await saveOverlay(tab, key, { fireLead: !current });
+}
+
+async function savePhone(key, value) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const v = (value || '').trim();
+  if ((lead.phone || '') === v) return;
+  await saveOverlay(tab, key, { phone: v });
+  if (v) { logActivity(tab, lead, 'phone', `Phone saved: ${formatPhone(v)}`); showToast('Phone saved'); }
+}
+
+async function saveFamilyTree(key) {
+  const ta = document.querySelector(`[data-tree-input="${CSS.escape(key)}"]`);
+  const text = (ta ? ta.value : '').trim();
+  if (!text) { showToast('Family tree is empty', 'error'); return; }
+  const lead = getLead(tab, key);
+  await saveOverlay(tab, key, { familyTree: text, familyTreeUpdatedAt: new Date().toISOString() });
+  delete treeDrafts[key];
+  if (lead) logActivity(tab, lead, 'family-tree', 'Family tree saved');
+  showToast('Family tree saved');
+}
+
+async function logCall(key) {
+  const outcomeSel = document.querySelector(`[data-outcome-select="${CSS.escape(key)}"]`);
+  const noteTa = document.querySelector(`[data-note-input="${CSS.escape(key)}"]`);
+  const outcomeId = outcomeSel ? outcomeSel.value : 'no_answer';
+  const text = noteTa ? noteTa.value.trim() : '';
+  const outcome = OUTCOME_MAP[outcomeId] || {};
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const notes = (lead.notes || []).slice();
+  notes.push({ at: new Date().toISOString(), outcome: outcomeId, text });
+  await saveOverlay(tab, key, {
+    notes,
+    status: outcome.status || lead.status,
+    callAttempts: (lead.callAttempts || 0) + 1,
+    lastCalledAt: new Date().toISOString(),
+  });
+  delete drafts[key];
+  logActivity(tab, lead, 'call', `${outcome.label}${text ? ' — ' + text : ''}`);
+  showToast(`Call logged: ${outcome.label}`);
+}
+
+async function resetOverlay(key) {
+  if (!requireAuth()) return;
+  if (!confirm('Reset this lead\u2019s CRM data (status, notes, calls, tasks, family tree)? The sheet row is untouched.')) return;
+  const lead = getLead(tab, key);
+  await db.collection(TABS[tab].collection).doc(key).delete().catch(() => {});
+  delete drafts[key]; delete taskDrafts[key]; delete editingTask[key]; delete treeDrafts[key];
+  if (expandedKey === key) expandedKey = null;
+  if (lead) logActivity(tab, lead, 'reset', 'CRM overlay cleared');
+  showToast('Lead reset to sheet data');
+  render();
+}
+
+/* ---------------- Tasks ---------------- */
+function getTasks(lead) { return (lead.tasks || []).slice(); }
+
+async function addTask(key) {
+  const nameEl = document.querySelector(`[data-task-name-input="${CSS.escape(key)}"]`);
+  const dateEl = document.querySelector(`[data-task-date-input="${CSS.escape(key)}"]`);
+  const timeEl = document.querySelector(`[data-task-time-input="${CSS.escape(key)}"]`);
+  const notesEl = document.querySelector(`[data-task-notes-input="${CSS.escape(key)}"]`);
+  const name = (nameEl ? nameEl.value : '').trim();
+  if (!name) { showToast('Task needs a name', 'error'); return; }
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const tasks = getTasks(lead);
+  const editId = editingTask[key];
+  const task = {
+    id: editId || makeId(),
+    name,
+    date: dateEl && dateEl.value ? dateEl.value : localDateStr(new Date()),
+    time: timeEl ? timeEl.value : '',
+    notes: notesEl ? notesEl.value.trim() : '',
+    done: editId ? (tasks.find(t => t.id === editId) || {}).done || false : false,
+  };
+  const next = editId ? tasks.map(t => t.id === editId ? task : t) : [...tasks, task];
+  await saveOverlay(tab, key, { tasks: next });
+  delete taskDrafts[key]; delete editingTask[key];
+  logActivity(tab, lead, editId ? 'task-updated' : 'task-added', name);
+  showToast(editId ? 'Task updated' : 'Task added');
+}
+
+async function toggleTaskDone(key, taskId, done) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const next = getTasks(lead).map(t => t.id === taskId ? { ...t, done } : t);
+  await saveOverlay(tab, key, { tasks: next });
+}
+
+async function deleteTask(key, taskId) {
+  if (!confirm('Delete this task?')) return;
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  await saveOverlay(tab, key, { tasks: getTasks(lead).filter(t => t.id !== taskId) });
+  showToast('Task deleted');
+}
+
+/* ---------------- Google Drive photos (ported from probates CRM) ----------------
+   Uses the same API key as the Sheets read. Luca: enable the Google Drive API
+   on that key in Google Cloud, and share each property's Drive folder as
+   "Anyone with the link". */
+function extractDriveFolderId(url) {
+  if (!url) return null;
+  const m = url.match(/folders\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+async function fetchDrivePhotos(key, folderUrl) {
+  const container = document.getElementById('drive-carousel-' + key);
+  if (!container) return;
+  const folderId = extractDriveFolderId(folderUrl);
+  if (!folderId) {
+    container.innerHTML = `<div class="drive-carousel-msg">Couldn't read a folder link from that URL.</div>`;
+    return;
+  }
+  if (driveCache[folderId] && driveCache[folderId].status === 'done') {
+    renderDriveCarousel(key, driveCache[folderId].files);
+    return;
+  }
+  if (driveCache[folderId] && driveCache[folderId].status === 'error') {
+    container.innerHTML = `<div class="drive-carousel-msg">Couldn't load photos — make sure the folder is shared as "Anyone with the link".</div>`;
+    return;
+  }
+  container.innerHTML = `<div class="drive-carousel-msg">Loading photos…</div>`;
+  try {
+    const q = encodeURIComponent(`'${folderId}' in parents and mimeType contains 'image/' and trashed = false`);
+    const apiUrl = `https://www.googleapis.com/drive/v3/files?q=${q}&key=${encodeURIComponent(CONFIG.SHEETS_API_KEY)}&fields=files(id,name,thumbnailLink)&pageSize=50`;
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const files = data.files || [];
+    driveCache[folderId] = { status: 'done', files };
+    renderDriveCarousel(key, files);
+  } catch (e) {
+    driveCache[folderId] = { status: 'error' };
+    container.innerHTML = `<div class="drive-carousel-msg">Couldn't load photos — make sure the folder is shared as "Anyone with the link".</div>`;
+  }
+}
+function renderDriveCarousel(key, files) {
+  const container = document.getElementById('drive-carousel-' + key);
+  if (!container) return;
+  if (!files.length) {
+    container.innerHTML = `<div class="drive-carousel-msg">No images found in that folder yet.</div>`;
+    return;
+  }
+  container.innerHTML = files.map(f => `
+    <a href="https://drive.google.com/file/d/${f.id}/view" target="_blank" rel="noopener" class="drive-thumb-link" title="${escapeHtml(f.name)}">
+      <img src="${f.thumbnailLink}" class="drive-thumb" loading="lazy" />
+    </a>`).join('');
+}
+async function fetchDriveFolderName(key, folderUrl) {
+  const linkEl = document.getElementById('drive-link-name-' + key);
+  if (!linkEl) return;
+  const folderId = extractDriveFolderId(folderUrl);
+  if (!folderId) { linkEl.textContent = '📁 Open Photos'; return; }
+  if (driveCache[folderId] && driveCache[folderId].name) {
+    linkEl.textContent = '📁 ' + driveCache[folderId].name;
+    return;
+  }
+  try {
+    const apiUrl = `https://www.googleapis.com/drive/v3/files/${folderId}?key=${encodeURIComponent(CONFIG.SHEETS_API_KEY)}&fields=name`;
+    const res = await fetch(apiUrl);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    driveCache[folderId] = { ...(driveCache[folderId] || {}), name: data.name };
+    const stillThere = document.getElementById('drive-link-name-' + key);
+    if (stillThere) stillThere.textContent = '📁 ' + data.name;
+  } catch (e) {
+    const stillThere = document.getElementById('drive-link-name-' + key);
+    if (stillThere) stillThere.textContent = '📁 Open Photos';
+  }
+}
+
+/* ---------------- Add Lead (manual, overlay-only — sheets stay read-only) ---------------- */
+function openAddLeadModal() {
+  ['phone', 'address', 'city', 'zip', 'whyhot'].forEach(f => { document.getElementById('new-lead-' + f).value = ''; });
+  document.getElementById('new-lead-state').value = 'GA';
+  document.getElementById('add-lead-error').textContent = '';
+  document.getElementById('add-lead-overlay').classList.add('open');
+  document.getElementById('new-lead-phone').focus();
+}
+function closeAddLeadModal() {
+  document.getElementById('add-lead-overlay').classList.remove('open');
+}
+async function saveNewLead() {
+  if (!requireAuth()) return;
+  const get = f => document.getElementById('new-lead-' + f).value.trim();
+  const address = get('address'), city = get('city'), phone = get('phone');
+  const errEl = document.getElementById('add-lead-error');
+  if (!address || !phone) { errEl.textContent = 'Property address and phone are required.'; return; }
+  const state = (get('state') || 'GA').toUpperCase(), zip = get('zip');
+  const key = normalizeAddressKey(address, city, state, zip);
+  if (allLeads(tab).some(l => l.key === key)) { errEl.textContent = 'A lead with this address already exists.'; return; }
+  errEl.textContent = '';
+  try {
+    await db.collection(TABS[tab].collection).doc(key).set({
+      manual: true,
+      address, city, state, zip, phone,
+      whyHot: get('whyhot'),
+      status: 'new', subStage: '', notes: [], tasks: [],
+      fireLead: false, acquisitionDirector: '', driveFolderUrl: '',
+      leadValue: '', askingPrice: '', lao: '', mao: '',
+      addedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    closeAddLeadModal();
+    logActivity(tab, { key, address, city, state, zip, acquisitionDirector: '' }, 'manual-added', 'Lead added manually');
+    showToast('Lead added', 'success');
+  } catch (e) {
+    console.error(e);
+    errEl.textContent = 'Could not save this lead — try again.';
+  }
+}
+
+/* ---------------- Bulk select / delete ---------------- */
+async function deleteSelected() {
+  const count = selectedIds.size;
+  if (!count) return;
+  if (!requireAuth()) return;
+  if (!confirm(`Delete ${count} lead${count === 1 ? '' : 's'} from this CRM? Manually added leads are removed entirely; sheet-backed leads are hidden (their sheet rows are untouched).`)) return;
+  const batch = db.batch();
+  selectedIds.forEach(key => {
+    const ref = db.collection(TABS[tab].collection).doc(key);
+    const lead = getLead(tab, key);
+    if (lead && lead.manual) batch.delete(ref);
+    else batch.set(ref, { hidden: true, updatedAt: new Date().toISOString() }, { merge: true });
+  });
+  try {
+    await batch.commit();
+    selectedIds.clear();
+    showToast(`Deleted ${count} lead${count === 1 ? '' : 's'}.`, 'success');
+    render();
+  } catch (e) {
+    console.error(e);
+    showToast('Could not delete those leads.', 'error');
+  }
+}
+async function unhideLead(key) {
+  if (!requireAuth()) return;
+  await saveOverlay(tab, key, { hidden: false });
+  showToast('Lead unhidden');
+}
+
+/* ---------------- Event wiring ---------------- */
+function attachCardListeners() {
+  document.querySelectorAll('[data-row-toggle]').forEach(row => {
+    row.addEventListener('click', (e) => {
+      if (e.target.closest('[data-fire],[data-call-link],.quick-link-btn,.toggle-btn,input,select,textarea,button')) {
+        // let specific controls handle their own clicks, except the toggle button
+        if (!e.target.closest('.toggle-btn')) return;
+      }
+      const key = row.getAttribute('data-row-toggle');
+      expandedKey = expandedKey === key ? null : key;
+      render();
+      if (expandedKey) {
+        const el = document.querySelector(`[data-row-toggle="${CSS.escape(expandedKey)}"]`);
+        if (el) el.scrollIntoView({ block: 'nearest' });
+      }
+    });
+  });
+  document.querySelectorAll('[data-call-link]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = a.getAttribute('data-call-link');
+      const lead = getLead(tab, key);
+      if (lead) logActivity(tab, lead, 'dial', 'Clicked to dial');
+    });
+  });
+  document.querySelectorAll('[data-select]').forEach(cb => {
+    cb.addEventListener('click', e => e.stopPropagation());
+    cb.addEventListener('change', () => {
+      const key = cb.getAttribute('data-select');
+      if (cb.checked) selectedIds.add(key); else selectedIds.delete(key);
+      render();
+    });
+  });
+  document.querySelectorAll('[data-unhide]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); unhideLead(btn.getAttribute('data-unhide')); });
+  });
+  document.querySelectorAll('[data-director-select]').forEach(sel => {
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', async () => {
+      const key = sel.getAttribute('data-director-select');
+      await saveOverlay(tab, key, { acquisitionDirector: sel.value });
+      const lead = getLead(tab, key);
+      if (lead) logActivity(tab, lead, 'director', sel.value ? `→ ${sel.value}` : '→ Unassigned');
+      showToast('Director updated');
+    });
+  });
+  document.querySelectorAll('[data-field-input]').forEach(inp => {
+    inp.addEventListener('click', e => e.stopPropagation());
+    inp.addEventListener('blur', async () => {
+      const key = inp.getAttribute('data-field-input');
+      const fieldName = inp.getAttribute('data-field-name');
+      await saveOverlay(tab, key, { [fieldName]: inp.value });
+      if (fieldName === 'driveFolderUrl') delete editingDriveLink[key];
+      showToast('Saved');
+    });
+  });
+  document.querySelectorAll('[data-drive-edit]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      editingDriveLink[btn.getAttribute('data-drive-edit')] = true;
+      render();
+    });
+  });
+  document.querySelectorAll('[data-drive-carousel]').forEach(el => {
+    fetchDrivePhotos(el.getAttribute('data-drive-carousel'), el.getAttribute('data-drive-url'));
+  });
+  document.querySelectorAll('[id^="drive-link-name-"]').forEach(a => {
+    const key = a.id.replace('drive-link-name-', '');
+    const lead = getLead(tab, key);
+    if (lead && lead.driveFolderUrl) fetchDriveFolderName(key, lead.driveFolderUrl);
+  });
+  document.querySelectorAll('.quick-link-btn').forEach(a => {
+    a.addEventListener('click', e => e.stopPropagation());
+  });
+  document.querySelectorAll('[data-fire]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleFire(btn.getAttribute('data-fire'), btn.getAttribute('data-fire-current') === 'true');
+    });
+  });
+  document.querySelectorAll('[data-status-step]').forEach(el => {
+    el.addEventListener('click', () => updateStatus(el.getAttribute('data-status-step'), el.getAttribute('data-status-value')));
+  });
+  document.querySelectorAll('[data-substage-step]').forEach(el => {
+    el.addEventListener('click', () => updateSubStage(el.getAttribute('data-substage-step'), el.getAttribute('data-substage-value')));
+  });
+  document.querySelectorAll('[data-phone-input]').forEach(inp => {
+    inp.addEventListener('click', e => e.stopPropagation());
+    inp.addEventListener('change', () => savePhone(inp.getAttribute('data-phone-input'), inp.value));
+  });
+  document.querySelectorAll('[data-outcome-select]').forEach(s => {
+    s.addEventListener('click', e => e.stopPropagation());
+    s.addEventListener('change', () => {
+      const key = s.getAttribute('data-outcome-select');
+      drafts[key] = { ...(drafts[key] || {}), outcome: s.value };
+    });
+  });
+  document.querySelectorAll('[data-note-input]').forEach(ta => {
+    ta.addEventListener('click', e => e.stopPropagation());
+    ta.addEventListener('input', () => {
+      const key = ta.getAttribute('data-note-input');
+      drafts[key] = { ...(drafts[key] || { outcome: 'no_answer' }), text: ta.value };
+    });
+  });
+  document.querySelectorAll('[data-tree-input]').forEach(ta => {
+    ta.addEventListener('click', e => e.stopPropagation());
+    ta.addEventListener('input', () => {
+      treeDrafts[ta.getAttribute('data-tree-input')] = ta.value;
+    });
+  });
+  document.querySelectorAll('[data-save-tree]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); saveFamilyTree(btn.getAttribute('data-save-tree')); });
+  });
+  document.querySelectorAll('[data-log-call]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); logCall(btn.getAttribute('data-log-call')); });
+  });
+  document.querySelectorAll('[data-reset-lead]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); resetOverlay(btn.getAttribute('data-reset-lead')); });
+  });
+  // task inputs: keep drafts + stop row-toggle
+  document.querySelectorAll('[data-task-name-input],[data-task-date-input],[data-task-time-input],[data-task-notes-input]').forEach(inp => {
+    inp.addEventListener('click', e => e.stopPropagation());
+    inp.addEventListener('input', () => {
+      const key = inp.getAttribute('data-task-name-input') || inp.getAttribute('data-task-date-input') ||
+                  inp.getAttribute('data-task-time-input') || inp.getAttribute('data-task-notes-input');
+      const d = taskDrafts[key] || {};
+      if (inp.hasAttribute('data-task-name-input')) d.name = inp.value;
+      if (inp.hasAttribute('data-task-date-input')) d.date = inp.value;
+      if (inp.hasAttribute('data-task-time-input')) d.time = inp.value;
+      if (inp.hasAttribute('data-task-notes-input')) d.notes = inp.value;
+      taskDrafts[key] = d;
+    });
+  });
+  document.querySelectorAll('[data-add-task]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); addTask(btn.getAttribute('data-add-task')); });
+  });
+  document.querySelectorAll('[data-task-done]').forEach(cb => {
+    cb.addEventListener('click', e => e.stopPropagation());
+    cb.addEventListener('change', () => toggleTaskDone(cb.getAttribute('data-task-done'), cb.getAttribute('data-task-id'), cb.checked));
+  });
+  document.querySelectorAll('[data-task-delete]').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); deleteTask(btn.getAttribute('data-task-delete'), btn.getAttribute('data-task-id-del')); });
+  });
+  document.querySelectorAll('[data-task-edit]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = btn.getAttribute('data-task-edit');
+      const taskId = btn.getAttribute('data-task-id-edit');
+      const lead = getLead(tab, key);
+      const t = lead && (lead.tasks || []).find(x => x.id === taskId);
+      if (!t) return;
+      editingTask[key] = taskId;
+      taskDrafts[key] = { name: t.name, date: t.date, time: t.time, notes: t.notes || '' };
+      render();
+    });
+  });
+  document.querySelectorAll('[data-task-cancel-edit]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const key = btn.getAttribute('data-task-cancel-edit');
+      delete editingTask[key]; delete taskDrafts[key];
+      render();
+    });
+  });
+}
+
+/* ---------------- Report mode (ported from probates CRM) ---------------- */
+let reportRangeDays = 7;
+const REPORT_ACTION_LABELS = { call: 'Logged a call', status: 'Changed stage', dial: 'Clicked to dial' };
+async function initReportMode() {
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'block';
+  document.querySelectorAll('[data-report-range]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reportRangeDays = parseInt(btn.getAttribute('data-report-range'), 10);
+      renderReport();
+    });
+  });
+  if (auth.currentUser) renderReport();
+  else renderReportLocked();
+}
+function renderReportLocked() {
+  document.getElementById('report-body').innerHTML =
+    '<div class="empty-state"><div class="big">🔒</div>' +
+    '<div style="font-weight:600;margin-bottom:10px;">Sign in to view the activity report</div>' +
+    '<button class="btn-gold" id="report-signin-btn">Sign in with Google</button></div>';
+  document.getElementById('report-signin-btn').addEventListener('click', () => {
+    document.getElementById('auth-btn').click();
+  });
+}
+async function renderReport() {
+  if (!currentUser) { renderReportLocked(); return; }
+  document.querySelectorAll('[data-report-range]').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.getAttribute('data-report-range'), 10) === reportRangeDays);
+  });
+  const body = document.getElementById('report-body');
+  body.innerHTML = '<div class="empty-state"><div class="big"><span class="spin">⟳</span></div>Loading activity…</div>';
+  try {
+    const snap = await db.collection('hotLeadsActivityLog').orderBy('ts', 'desc').limit(5000).get();
+    let entries = snap.docs.map(d => d.data());
+    if (reportRangeDays > 0) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - reportRangeDays);
+      entries = entries.filter(e => new Date(e.ts) >= cutoff);
+    }
+    const byDirector = {};
+    entries.forEach(e => {
+      const d = e.director || 'Unassigned';
+      if (!byDirector[d]) byDirector[d] = { call: 0, status: 0, dial: 0 };
+      if (byDirector[d][e.action] !== undefined) byDirector[d][e.action]++;
+    });
+    const directors = Object.keys(byDirector).sort();
+    let html = `<table class="report-table"><thead><tr>
+      <th>Director</th><th>Calls Logged</th><th>Stage Changes</th><th>Dial Clicks</th><th>Total</th>
+    </tr></thead><tbody>`;
+    if (!directors.length) {
+      html += `<tr><td colspan="5" style="color:#8a97a8;">No activity in this range.</td></tr>`;
+    }
+    directors.forEach(d => {
+      const c = byDirector[d];
+      const total = c.call + c.status + c.dial;
+      html += `<tr>
+        <td>${escapeHtml(d)}</td>
+        <td class="num">${c.call}</td>
+        <td class="num">${c.status}</td>
+        <td class="num">${c.dial}</td>
+        <td class="num">${total}</td>
+      </tr>`;
+    });
+    html += `</tbody></table>`;
+    const feed = entries.slice(0, 100);
+    html += feed.map(e => `
+      <div class="feed-row">
+        <span class="feed-time">${new Date(e.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+        <span class="feed-director">${escapeHtml(e.director || 'Unassigned')}</span>
+        <span><b>${e.tab === 'zombie' ? '🧟' : '📚'}</b> ${escapeHtml(e.address || '')} — ${escapeHtml(REPORT_ACTION_LABELS[e.action] || e.action)}${e.detail ? ` · ${escapeHtml(e.detail)}` : ''}</span>
+      </div>`).join('') || `<div style="color:#8a97a8; font-size:13px;">No activity in this range.</div>`;
+    body.innerHTML = html;
+  } catch (e) {
+    console.error(e);
+    body.innerHTML = '<div class="empty-state"><div class="big">⚠️</div>Could not load the activity log.</div>';
+  }
+}
+
+/* ---------------- Init ---------------- */
+const urlParams = new URLSearchParams(window.location.search);
+const isReportMode = urlParams.get('report') === '1';
+
+function resetTabState() {
+  expandedKey = null;
+  statusFilter = 'active'; codeFilter = 'all'; directorFilter = 'all';
+  addedDateFilter = ''; document.getElementById('added-date-filter').value = '';
+  viewMode = 'leads'; agendaDirectorFilter = 'all';
+  document.getElementById('agenda-director-filter').value = 'all';
+  selectedIds.clear(); showHidden = false;
+}
+document.getElementById('tab-zombie').addEventListener('click', () => {
+  tab = 'zombie'; resetTabState(); render();
+});
+document.getElementById('tab-stacked').addEventListener('click', () => {
+  tab = 'stacked'; resetTabState(); render();
+});
+document.getElementById('search-input').addEventListener('input', e => { search = e.target.value; render(); });
+document.getElementById('status-filter').addEventListener('change', e => { statusFilter = e.target.value; render(); });
+document.getElementById('code-filter').addEventListener('change', e => { codeFilter = e.target.value; render(); });
+document.getElementById('director-filter').addEventListener('change', e => { directorFilter = e.target.value; render(); });
+document.getElementById('added-date-filter').addEventListener('change', e => { addedDateFilter = e.target.value; render(); });
+document.getElementById('added-date-clear').addEventListener('click', () => {
+  addedDateFilter = '';
+  document.getElementById('added-date-filter').value = '';
+  render();
+});
+document.getElementById('sort-select').addEventListener('change', e => { sortBy = e.target.value; render(); });
+document.getElementById('select-all-checkbox').addEventListener('change', e => {
+  const filtered = getFiltered();
+  if (e.target.checked) filtered.forEach(l => selectedIds.add(l.key));
+  else filtered.forEach(l => selectedIds.delete(l.key));
+  render();
+});
+document.getElementById('delete-selected-btn').addEventListener('click', deleteSelected);
+document.getElementById('toggle-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; render(); });
+document.getElementById('today-tasks-btn').addEventListener('click', () => {
+  viewMode = viewMode === 'today' ? 'leads' : 'today'; render();
+});
+document.getElementById('tomorrow-tasks-btn').addEventListener('click', () => {
+  viewMode = viewMode === 'tomorrow' ? 'leads' : 'tomorrow'; render();
+});
+document.getElementById('dormant-tasks-btn').addEventListener('click', () => {
+  viewMode = viewMode === 'dormant' ? 'leads' : 'dormant'; render();
+});
+document.getElementById('agenda-back-btn').addEventListener('click', () => { viewMode = 'leads'; render(); });
+document.getElementById('agenda-director-filter').addEventListener('change', e => { agendaDirectorFilter = e.target.value; render(); });
+DIRECTORS.forEach(d => {
+  const opt = document.createElement('option');
+  opt.value = d; opt.textContent = d;
+  document.getElementById('agenda-director-filter').appendChild(opt);
+});
+document.getElementById('add-lead-btn').addEventListener('click', openAddLeadModal);
+document.getElementById('add-lead-close').addEventListener('click', closeAddLeadModal);
+document.getElementById('add-lead-cancel').addEventListener('click', closeAddLeadModal);
+document.getElementById('add-lead-save').addEventListener('click', saveNewLead);
+document.getElementById('add-lead-overlay').addEventListener('click', e => {
+  if (e.target.id === 'add-lead-overlay') closeAddLeadModal();
+});
+document.getElementById('refresh-btn').addEventListener('click', loadSheets);
+document.getElementById('auth-btn').addEventListener('click', () => {
+  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => {
+    console.error(e);
+    showToast('Google sign-in failed', 'error');
+  });
+});
+
+if (isReportMode) {
+  initReportMode();
+} else {
+  // Overlay subscriptions start from the auth state handler (only when signed
+  // in); sheet data is public and loads regardless.
+  loadSheets();
+  // keep the "synced x ago" label fresh
+  setInterval(() => {
+    const note = document.getElementById('sync-note');
+    if (lastSyncAt && !sheetError) note.textContent = `Synced from sheets · ${timeAgo(lastSyncAt)}`;
+  }, 60000);
+}
+</script>
+</body>
+</html>

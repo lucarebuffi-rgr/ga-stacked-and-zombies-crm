@@ -1,0 +1,51 @@
+rules_version = '2';
+
+/* GA HOT LEADS CRM — Firestore security rules
+ *
+ * HOW TO USE: merge the three match blocks below into your EXISTING
+ * firestore.rules in the Firebase console (rgr-crm-941ab → Firestore →
+ * Rules tab), then click Publish.
+ *
+ * IMPORTANT: these blocks only protect you if there is NO broad
+ * `allow read, write: if true` rule anywhere else in the file. Firestore
+ * grants access if ANY matching rule allows it, so a leftover catch-all
+ * overrides everything below. Remove or tighten any catch-all first.
+ *
+ * Model: LOCKED DOWN TO LUCA ONLY. Both READS and WRITES on the three
+ * Hot Leads collections require sign-in as luca.rebuffi@royalgroupsrealty.com.
+ * The app signs him in with Google and only subscribes to the overlay
+ * (statuses, notes, phones, tasks, family trees, manual leads) and the
+ * activity report while he is signed in. Anyone else — signed out or a
+ * different Google account — gets nothing from these collections.
+ * (The lead list itself comes from the link-shared Google Sheets, which are
+ * public by design; Firestore holds only his private working layer.)
+ */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isLuca() {
+      return request.auth != null
+        && request.auth.token.email == 'luca.rebuffi@royalgroupsrealty.com';
+    }
+
+    // Interactive layer for the Zombies tab (statuses, notes, calls, tasks, family trees)
+    match /zombieLeads/{docId} {
+      allow read, write: if isLuca();
+    }
+
+    // Interactive layer for the Stacked tab
+    match /stackedLeads/{docId} {
+      allow read, write: if isLuca();
+    }
+
+    // Global activity log for report mode (?report=1). Luca-only reads and
+    // creates; entries are never edited or deleted.
+    match /hotLeadsActivityLog/{docId} {
+      allow read, create: if isLuca();
+      allow update, delete: if false;
+    }
+
+    // ... keep your existing rules for the probates CRM collections
+    // ('leads', 'activityLog', etc.) below this line, unchanged.
+  }
+}
