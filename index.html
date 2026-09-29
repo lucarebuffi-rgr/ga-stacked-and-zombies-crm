@@ -975,7 +975,7 @@ function render() {
   document.getElementById('tab-zombie').classList.toggle('active', tab === 'zombie');
   document.getElementById('tab-stacked').classList.toggle('active', tab === 'stacked');
   document.getElementById('setup-banner').style.display =
-    (!CONFIG.SHEETS_API_KEY || CONFIG.SHEETS_API_KEY === 'AIzaSyB7oi16sfduaeHMTRRZiv8Q9xM_TQtOKy4') ? 'block' : 'none';
+    (!CONFIG.SHEETS_API_KEY || CONFIG.SHEETS_API_KEY.indexOf('PASTE_YOUR_API_KEY') === 0) ? 'block' : 'none';
   updateTabCounts();
 
   const note = document.getElementById('sheet-note');
