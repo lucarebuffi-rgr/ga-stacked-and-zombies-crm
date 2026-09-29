@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GA Hot Leads CRM — Zombies &amp; Stacked</title>
+<title>GA Stacked &amp; Zombies</title>
 
 <!-- Firebase (no build step — loaded straight from Google's CDN) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -15,7 +15,7 @@
      Navy + gold, restrained. Layered depth, hairline borders,
      refined type. Every selector from the original stylesheet
      is preserved so all app behavior is unchanged. */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@600;700;800&display=swap');
   * { box-sizing: border-box; }
   html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
   body {
@@ -52,7 +52,12 @@
   .header-inner, .content { max-width: 1120px; margin: 0 auto; }
   .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
   .eyebrow { font-size: 11px; letter-spacing: 0.18em; color: #d4a843; font-weight: 700; text-transform: uppercase; }
-  .header-inner h1 { margin: 3px 0 0; font-size: 23px; font-weight: 800; letter-spacing: -0.015em; }
+    .header-inner h1 {
+    margin: 2px 0 0; font-family: 'Cinzel', serif; font-size: 27px; font-weight: 700;
+    letter-spacing: 0.04em; color: #e9c874;
+    background: linear-gradient(180deg, #f3dda0 0%, #d4a843 70%, #b98a2f 100%);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
   .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
   .btn-gold {
     background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 18px;
@@ -333,9 +338,9 @@
 <div id="app-screen">
   <div class="header">
     <div class="header-inner">
-      <div>
-        <div class="eyebrow">Royal Groups Realty</div>
-        <h1>GA Hot Leads CRM</h1>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="https://raw.githubusercontent.com/lucarebuffi-rgr/signature-assets/main/rgr_logo.png" alt="Royal Groups Realty" style="height:48px; width:auto;" />
+        <h1 style="margin:0;">GA Stacked &amp; Zombies</h1>
       </div>
       <div class="header-actions">
         <span class="sync-note" id="user-chip" style="display:none;"></span>
@@ -412,9 +417,9 @@
 <div id="report-screen">
   <div class="header">
     <div class="header-inner">
-      <div>
-        <div class="eyebrow">Royal Groups Realty</div>
-        <h1>Activity Report — Hot Leads</h1>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <img src="https://raw.githubusercontent.com/lucarebuffi-rgr/signature-assets/main/rgr_logo.png" alt="Royal Groups Realty" style="height:48px; width:auto;" />
+        <h1 style="margin:0;">Activity Report</h1>
         <div style="font-size:13px; color:#8a97a8; margin-bottom:4px;">Calls logged, stage changes, and dial clicks, attributed by each lead's assigned director.</div>
       </div>
       <div class="header-actions">
