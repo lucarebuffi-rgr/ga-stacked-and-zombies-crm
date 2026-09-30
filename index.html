@@ -1046,7 +1046,7 @@ function renderCard(lead) {
           <div class="code-badges">${codeBadges(lead)}</div>
           ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
         </div>
-        ${phone ? `<a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a>` : ''}
+        ${phone ? `<a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a>` : ''} ${tab === 'stacked' && lead.mainPocName ? `<div style="font-size:11px;color:#9fb3cc;margin-top:2px;">👤 ${escapeHtml(lead.mainPocName)}</div>` : ''}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -1114,7 +1114,7 @@ function renderDetail(lead) {
   const taskDraft = taskDrafts[lead.key] || {};
   const notes = lead.notes || [];
   const tasks = (lead.tasks || []).slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
-  const isZombie = tab === 'zombie';
+  const isZombie = tab === 'zombie'; const isStacked = tab === 'stacked';
 
   return `
     <div class="lead-detail">
@@ -1128,10 +1128,7 @@ function renderDetail(lead) {
       </div>` : ''}
 
       <div class="fin-grid" style="margin-bottom:14px;">
-        <div class="fin-field">
-          <label>Phone (saved in CRM — sheets have no phone column)</label>
-          <input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" />
-        </div>
+        ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div>` : ''}<div class="fin-field"><label>${isStacked ? 'Main POC Phone (saved in CRM — sheets have no phone column)' : 'Phone (saved in CRM — sheets have no phone column)'}</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div>${isStacked ? `<div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
         <div class="fin-field">
           <label>Motivation signals</label>
           <div class="code-badges" style="margin-top:8px;">${codeBadges(lead) || '<span style="font-size:12px;color:#8a97a8;">none</span>'}</div>
