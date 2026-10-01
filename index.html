@@ -368,6 +368,10 @@
 <div id="toast-container"></div>
 
 <div id="app-screen">
+  <div id="acct-banner" style="display:none; background:#3a1d1d; border-bottom:2px solid #d4a843; color:#f5d67b; padding:10px 18px; font-size:14px;">
+    <span class="acct-banner-msg" style="font-weight:600;"></span>
+    <button id="acct-switch-btn" class="btn-gold" style="margin-left:14px; padding:6px 14px; font-size:13px;">Switch Google account</button>
+  </div>
   <div class="header">
     <div class="header-inner">
       <div style="display:flex; align-items:center; gap:12px;">
@@ -525,14 +529,34 @@ const auth = firebase.auth();
    itself still comes from the link-shared sheets, which are public anyway. */
 const LUCA_EMAIL = 'luca.rebuffi@royalgroupsrealty.com';
 let currentUser = null;
+// The Firestore rules allow reads AND writes ONLY as LUCA_EMAIL. A Google
+// sign-in as any other account (e.g. the Athena mailbox, which a silent
+// re-auth can pick as the browser's default session) gets every read and
+// write denied — so the app must treat "signed in as someone else" as
+// effectively signed out, and say so loudly.
+function isLucaSignedIn() {
+  return !!(currentUser && currentUser.email === LUCA_EMAIL);
+}
 auth.onAuthStateChanged(u => {
   currentUser = u;
   const btn = document.getElementById('auth-btn');
   const chip = document.getElementById('user-chip');
-  if (u) {
+  const banner = document.getElementById('acct-banner');
+  const wrongAccount = !!(u && u.email !== LUCA_EMAIL);
+  if (wrongAccount) {
     btn.style.display = 'none';
     chip.style.display = 'inline';
     chip.textContent = '👤 ' + (u.email || 'signed in');
+    banner.style.display = 'block';
+    banner.querySelector('.acct-banner-msg').textContent =
+      '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as ' + LUCA_EMAIL + '. Nothing you enter will save until you switch accounts.';
+    stopOverlayListening();
+    if (isReportMode) renderReportLocked();
+  } else if (u) {
+    btn.style.display = 'none';
+    chip.style.display = 'inline';
+    chip.textContent = '👤 ' + (u.email || 'signed in');
+    banner.style.display = 'none';
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
     if (isReportMode) renderReport();
@@ -540,15 +564,22 @@ auth.onAuthStateChanged(u => {
   } else {
     btn.style.display = 'inline-flex';
     chip.style.display = 'none';
+    banner.style.display = 'none';
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
   }
 });
 function requireAuth() {
-  if (currentUser) return true;
-  showToast('Sign in with Google to save changes', 'error');
-  const btn = document.getElementById('auth-btn');
-  if (btn) btn.click();
+  if (isLucaSignedIn()) return true;
+  if (currentUser) {
+    // Signed in, but as the wrong Google account — the Firestore rules would
+    // deny the write, so block here with guidance instead of failing silently.
+    showToast('Wrong Google account — use "Switch Google account" above to sign in as ' + LUCA_EMAIL, 'error');
+  } else {
+    showToast('Sign in with Google to save changes', 'error');
+    const btn = document.getElementById('auth-btn');
+    if (btn) btn.click();
+  }
   return false;
 }
 // keep the console clean when a write is blocked for sign-in
@@ -865,7 +896,7 @@ function saveOverlay(tabId, key, data) {
     { ...data, updatedAt: new Date().toISOString() }, { merge: true });
 }
 function logActivity(tabId, lead, action, detail) {
-  if (!currentUser) return; // activity log is Luca-only; never write signed out
+  if (!isLucaSignedIn()) return; // activity log is Luca-only; never write signed out or as another account
   db.collection('hotLeadsActivityLog').add({
     tab: tabId,
     leadKey: lead.key,
@@ -1952,11 +1983,24 @@ document.getElementById('add-lead-overlay').addEventListener('click', e => {
   if (e.target.id === 'add-lead-overlay') closeAddLeadModal();
 });
 document.getElementById('refresh-btn').addEventListener('click', loadSheets);
-document.getElementById('auth-btn').addEventListener('click', () => {
-  auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e => {
+function signInWithGoogle(selectAccount) {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  // Steer Google toward Luca's account: without login_hint, a sign-in (or a
+  // silent re-auth after the session lapses) can land on the browser's default
+  // Google session — e.g. the Athena mailbox — and the Firestore rules then
+  // deny every read and write. The switch flow forces the account chooser.
+  const params = { login_hint: LUCA_EMAIL };
+  if (selectAccount) params.prompt = 'select_account';
+  provider.setCustomParameters(params);
+  return auth.signInWithPopup(provider).catch(e => {
     console.error(e);
     showToast('Google sign-in failed', 'error');
   });
+}
+document.getElementById('auth-btn').addEventListener('click', () => signInWithGoogle(false));
+document.getElementById('acct-switch-btn').addEventListener('click', async () => {
+  try { await auth.signOut(); } catch (e) { console.error(e); }
+  signInWithGoogle(true);
 });
 
 if (isReportMode) {
