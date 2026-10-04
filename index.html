@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +18,8 @@
      is preserved so all app behavior is unchanged. */
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Cinzel:wght@600;700;800&display=swap');
   * { box-sizing: border-box; }
-  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }  .feed-director { color: #e9edf3; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }  .feed-director { color: #e9edf3; font-size: 12px; font-weight: 700; white-space: nowrap; } .v-phone a { color: #d4a843; text-decoration: none; }
+  
 
   /* ===== Mobile optimization (2026-10-03) ===== */
   @media (max-width:640px){
@@ -1416,7 +1418,7 @@ function familyTreeHTML(lead) {
     return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
-      (h.phone ? '<div class="v-phone">' + escapeHtml(h.phone) + '</div>' : '') + '</div>';
+      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '">' + escapeHtml(h.phone) + '</a></div>' : '') + '</div>';
   };
   var html = '<div class="vtree-wrap"><div class="vtree">';
   if (groups.parents.length) {
