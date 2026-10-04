@@ -559,29 +559,29 @@ const auth = firebase.auth();
    manual leads) and the activity report load ONLY while he is signed in;
    signing out unsubscribes and clears them from the screen. The lead list
    itself still comes from the link-shared sheets, which are public anyway. */
-const LUCA_EMAIL = 'luca.rebuffi@royalgroupsrealty.com';
+const LUCA_EMAILS = ['luca.rebuffi@royalgroupsrealty.com', 'rebuffilu@gmail.com'];
 let currentUser = null;
-// The Firestore rules allow reads AND writes ONLY as LUCA_EMAIL. A Google
+// The Firestore rules allow reads AND writes ONLY as one of LUCA_EMAILS. A Google
 // sign-in as any other account (e.g. the Athena mailbox, which a silent
 // re-auth can pick as the browser's default session) gets every read and
 // write denied — so the app must treat "signed in as someone else" as
 // effectively signed out, and say so loudly.
 function isLucaSignedIn() {
-  return !!(currentUser && currentUser.email === LUCA_EMAIL);
+  return !!(currentUser && LUCA_EMAILS.includes(currentUser.email));
 }
 auth.onAuthStateChanged(u => {
   currentUser = u;
   const btn = document.getElementById('auth-btn');
   const chip = document.getElementById('user-chip');
   const banner = document.getElementById('acct-banner');
-  const wrongAccount = !!(u && u.email !== LUCA_EMAIL);
+  const wrongAccount = !!(u && !LUCA_EMAILS.includes(u.email));
   if (wrongAccount) {
     btn.style.display = 'none';
     chip.style.display = 'inline';
     chip.textContent = '👤 ' + (u.email || 'signed in');
     banner.style.display = 'block';
     banner.querySelector('.acct-banner-msg').textContent =
-      '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as ' + LUCA_EMAIL + '. Nothing you enter will save until you switch accounts.';
+      '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com. Nothing you enter will save until you switch accounts.';
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
   } else if (u) {
@@ -606,7 +606,7 @@ function requireAuth() {
   if (currentUser) {
     // Signed in, but as the wrong Google account — the Firestore rules would
     // deny the write, so block here with guidance instead of failing silently.
-    showToast('Wrong Google account — use "Switch Google account" above to sign in as ' + LUCA_EMAIL, 'error');
+    showToast('Wrong Google account — use "Switch Google account" above to sign in as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com', 'error');
   } else {
     showToast('Sign in with Google to save changes', 'error');
     const btn = document.getElementById('auth-btn');
@@ -2021,7 +2021,7 @@ function signInWithGoogle(selectAccount) {
   // silent re-auth after the session lapses) can land on the browser's default
   // Google session — e.g. the Athena mailbox — and the Firestore rules then
   // deny every read and write. The switch flow forces the account chooser.
-  const params = { login_hint: LUCA_EMAIL };
+  const params = {};
   if (selectAccount) params.prompt = 'select_account';
   provider.setCustomParameters(params);
   return auth.signInWithPopup(provider).catch(e => {
