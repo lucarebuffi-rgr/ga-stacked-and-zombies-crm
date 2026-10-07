@@ -1057,6 +1057,7 @@ function parseSheet(values, tabId) {
       whyHot: tabId === 'zombie' ? get(row, 'whyhot') : '',
       dateFlagged: tabId === 'zombie' ? get(row, 'dateflagged') : '',
       tdAmount: get(row, 'tdamount'),
+      tdYears: get(row, 'tdyearsdelinquent') || get(row, 'tdyears'),
       pfAuctionDate: get(row, 'pfauctiondate'),
       tab: tabId,
     });
@@ -1452,8 +1453,10 @@ function keyBannersHTML(lead) {
     const num = parseFloat(raw.replace(/[^0-9.\-]/g, ''));
     const disp = isNaN(num) ? escapeHtml(raw)
       : '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const years = (lead.tdYears || '').trim();
+    const yearsTxt = years ? ` · ${escapeHtml(years)} yr${years === '1' ? '' : 's'} delinquent` : '';
     out += `<div class="key-banner key-banner-td">
-      <div><div class="kb-label">💰 Taxes Due</div><div class="kb-sub">from county records · read-only</div></div>
+      <div><div class="kb-label">💰 Taxes Due${yearsTxt}</div><div class="kb-sub">from county records · read-only</div></div>
       <div class="kb-value">${disp}</div>
     </div>`;
   }
@@ -2589,7 +2592,7 @@ function renderDialerMain() {
     <div class="dialer-outcomes">
       <div class="section-label" style="margin-bottom:8px;">Call Disposition</div>
       <div class="dialer-outcome-grid">
-        ${SESSION_OUTCOMES.map(o => `<button class="dialer-outcome" data-dialer-outcome="${o.id}" title="${escapeHtml(o.tip || '')}">${o.label}<span class="dialer-tip-icon" title="${escapeHtml(o.tip || '')}"> ⓘ</span></button>`).join('')}
+        ${SESSION_OUTCOMES.map(o => `<button class="dialer-outcome" data-dialer-outcome="${o.id}" title="${escapeHtml(o.tip || '')}">${o.label}<span class="dialer-tip-icon" data-tip="${escapeHtml(o.tip || '')}"> ⓘ</span></button>`).join('')}
       </div>
       <div class="dialer-sub" id="dialer-substage" style="display:none;">
         <div class="section-label" style="margin-bottom:8px;">Qualification substage</div>
@@ -2608,7 +2611,16 @@ function renderDialerMain() {
     </div>`;
 
   body.querySelectorAll('[data-dialer-outcome]').forEach(b => {
-    b.addEventListener('click', () => dialerOutcome(b.getAttribute('data-dialer-outcome')));
+    b.addEventListener('click', (e) => {
+      // If they tapped the ⓘ icon, show the tip instead of applying the outcome
+      const tipIcon = e.target.closest('[data-tip]');
+      if (tipIcon && tipIcon.getAttribute('data-tip')) {
+        e.stopPropagation();
+        showToast(tipIcon.getAttribute('data-tip'));
+        return;
+      }
+      dialerOutcome(b.getAttribute('data-dialer-outcome'));
+    });
   });
   // Pipeline stage switcher — 7 stages (excludes New, the starting point)
   const stageEl = body.querySelector('#dialer-stages');
