@@ -176,6 +176,8 @@
     width: 36px; height: 36px; border-radius: 10px; border: 1px solid #22385a; background: rgba(255,255,255,.03);
     display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
   }
+  .quick-link-btn[title="View on Zillow"] { background: #0f6fff; border-color: #0f6fff; }
+  .quick-link-btn[title="Google Maps / Street View"] { background: #e0483a; border-color: #e0483a; }
   .quick-link-btn:hover { border-color: rgba(212,168,67,.5); background: rgba(212,168,67,.07); }
   .call-meta { font-size: 11px; color: #8a97a8; text-align: right; line-height: 1.6; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .toggle-btn { background: none; border: none; color: #8a97a8; font-size: 18px; padding: 4px; border-radius: 8px; }
@@ -1422,7 +1424,7 @@ function renderCard(lead) {
             ${isDormant ? `<span class="dormant-badge" title="No open task scheduled for this lead">❗ No Task</span>` : ''}
             ${lead.hidden ? `<span class="hidden-badge">HIDDEN</span>` : ''}
           </div>
-          <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.address))}<br><span style="padding-left:22px;">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</span></div>
+          <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.address))}, ${escapeHtml(titleCaseAddress(lead.city))} ${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
           <div class="code-badges">${codeBadges(lead)}</div>
           ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
           ${['new','trying','followup'].includes(lead.status) ? cadenceCardHTML(lead) : ''}
@@ -1439,6 +1441,7 @@ function renderCard(lead) {
         </a>
         <div class="call-meta">
           <div class="attempts mono" style="font-size:18px;font-weight:700;">${lead.callAttempts || 0} call${(lead.callAttempts || 0) === 1 ? '' : 's'}</div>
+          ${lead.lastCalledAt ? `<div style="font-size:11px;color:#8a97a8;">last: ${timeAgo(lead.lastCalledAt)}</div>` : ''}
         </div>
         ${lead.hidden && showHidden ? `<button class="unhide-btn" data-unhide="${escapeHtml(lead.key)}">↩ Unhide</button>` : ''}
       </div>
