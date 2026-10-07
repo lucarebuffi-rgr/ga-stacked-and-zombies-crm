@@ -739,6 +739,18 @@
   .dialer-side-prev { left: -8px; }
   .dialer-side-next { right: -8px; }
   @media (min-width: 500px) { .dialer-side-prev { left: -64px; } .dialer-side-next { right: -64px; } }
+  /* Mobile: side arrows move to a clean nav row under the card */
+  .dialer-nav-row { display: none; }
+  @media (max-width: 499px) {
+    .dialer-side-btn { display: none; }
+    .dialer-nav-row { display: flex; gap: 10px; margin: 0 0 14px; }
+    .dialer-nav-btn {
+      flex: 1; min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 700;
+      background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba;
+      cursor: pointer; font-family: inherit;
+    }
+    .dialer-nav-btn:active { border-color: #d4a843; color: #e8c476; }
+  }
 .dialer-nav button { flex: 1; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .dialer-prev { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #9aa7ba; }
 .dialer-next { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); }
@@ -2932,6 +2944,10 @@ function renderDialerMain() {
       ` : '<div class="dialer-nophone">No phone on file</div>'}
     </div>
     <button class="dialer-side-btn dialer-side-next" onclick="dialerNext()" title="Next">›</button>
+    </div>
+    <div class="dialer-nav-row">
+      <button class="dialer-nav-btn" onclick="dialerPrev()">‹ Prev</button>
+      <button class="dialer-nav-btn" onclick="dialerNext()">Next ›</button>
     </div>
     <div class="dialer-notes">
       <div class="section-label" style="margin-bottom:8px;">Notes</div>
