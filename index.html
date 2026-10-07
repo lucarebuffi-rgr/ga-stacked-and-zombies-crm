@@ -82,7 +82,7 @@
   .btn-ghost:hover { border-color: rgba(212,168,67,.5); color: #e9edf3; background: rgba(212,168,67,.06); }
 
   /* ---------- Tabs ---------- */
-  .tabs { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+  .tabs { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; justify-content: center; width: 100%; }
   .tab-btn { text-transform: uppercase; letter-spacing: 0.5px; }
   .tab-btn {
     background: transparent; border: 1px solid transparent; border-bottom: none; color: #8a97a8; border-radius: 10px 10px 0 0;
@@ -2603,7 +2603,6 @@ function renderDialerMain() {
   });
   // Pipeline stage switcher — 7 stages (excludes New, the starting point)
   const stageEl = body.querySelector('#dialer-stages');
-  const cur = dialerCurrent();
   if (stageEl && cur && cur.lead) {
     const stages = STATUSES.filter(s => s.id !== 'new');
     stageEl.innerHTML = stages.map(s =>
