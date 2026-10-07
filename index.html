@@ -48,6 +48,11 @@
   .header {
     border-bottom: 1px solid #16283f; padding: 22px 28px 0; position: sticky; top: 0;
     background: rgba(10,20,35,.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 20;
+    transition: transform .25s ease, opacity .25s ease;
+  }
+  /* Mobile: header fades/slides away on scroll down, returns on scroll up */
+  @media (max-width:640px){
+    .header.header-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
   }
   .header::after {
     content: ''; display: block; height: 1px; margin: 16px -28px 0;
@@ -3920,6 +3925,25 @@ function toggleTreeBuilder(key) {
   const el = document.getElementById(`tree-builder-${key}`);
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
+// Mobile: fade header away on scroll down, bring back on scroll up
+(function initMobileHeaderFade() {
+  let lastY = 0;
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      ticking = false;
+      if (window.innerWidth > 640) return;
+      const header = document.querySelector('.header');
+      if (!header) return;
+      const y = window.scrollY;
+      if (y > 120 && y > lastY + 4) header.classList.add('header-hidden');
+      else if (y < lastY - 4 || y <= 120) header.classList.remove('header-hidden');
+      lastY = y;
+    });
+  }, { passive: true });
+})();
 
 /* ---------------- Resurrection alerts ---------------- */
 function resurrectionInfo(lead) {
