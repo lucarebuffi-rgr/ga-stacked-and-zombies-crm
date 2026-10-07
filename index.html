@@ -668,7 +668,33 @@
 .dialer-tree-icon { cursor: pointer; font-size: 22px; margin-left: 8px; opacity: 0.8; }
 .dialer-tree-icon:hover { opacity: 1; }
 .dialer-tree-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.7); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-.dialer-tree-content { background: #0d1b2e; border: 1px solid #2f4d78; border-radius: 16px; padding: 24px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; }
+.dialer-tree-content { background: #0d1b2e; border: 1px solid #2f4d78; border-radius: 16px; padding: 0; max-width: 720px; width: 100%; max-height: 86vh; overflow: hidden; display: flex; flex-direction: column; }
+/* Tree viewer header: title + zoom + close */
+.tree-view-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1e3554; flex-shrink: 0; }
+.tree-view-title { flex: 1; min-width: 0; }
+.tree-view-title .t { font-size: 16px; font-weight: 800; color: #f3dda0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree-view-title .s { font-size: 12px; color: #8a97a8; margin-top: 2px; }
+.tree-zoom-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid #2f4d78; color: #e8c476; font-size: 18px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.tree-zoom-btn:active { background: rgba(212,168,67,.15); }
+.tree-close-btn { width: 38px; height: 38px; border-radius: 10px; background: rgba(255,255,255,.04); border: 1px solid #2f4d78; color: #e9edf3; font-size: 16px; cursor: pointer; flex-shrink: 0; }
+.tree-view-body { overflow: auto; padding: 16px; flex: 1; -webkit-overflow-scrolling: touch; }
+.tree-zoom-stage { transform-origin: top center; transition: transform .15s ease; }
+.tree-scroll-hint { text-align: center; font-size: 12px; color: #8a97a8; padding: 8px 0 0; display: none; }
+.tree-scroll-hint.show { display: block; }
+/* Highlight the heir currently being called */
+.v-card.current-heir { border-color: #e8c476 !important; border-width: 2px; box-shadow: 0 0 0 3px rgba(232,196,118,.25), 0 0 18px rgba(232,196,118,.35); animation: heirPulse 1.6s ease-in-out infinite; }
+@keyframes heirPulse { 0%,100% { box-shadow: 0 0 0 3px rgba(232,196,118,.25), 0 0 18px rgba(232,196,118,.25); } 50% { box-shadow: 0 0 0 5px rgba(232,196,118,.4), 0 0 26px rgba(232,196,118,.5); } }
+/* Bigger tap targets for phone links inside tree cards */
+.v-card .v-phone a { color: #e8c476; font-weight: 700; text-decoration: none; display: inline-block; padding: 6px 4px; }
+@media (max-width:640px){
+  .dialer-tree-modal { padding: 0; align-items: flex-end; }
+  .dialer-tree-content { max-width: 100%; max-height: 94vh; border-radius: 18px 18px 0 0; border-left: none; border-right: none; border-bottom: none; padding-bottom: env(safe-area-inset-bottom); }
+  .v-card { min-width: 128px; padding: 10px 14px; }
+  .v-card .v-name { font-size: 15px; }
+  .v-card .v-rel, .v-card .v-sub { font-size: 12px; }
+  .v-card .v-phone { font-size: 13px; }
+  .v-card .v-phone a { padding: 10px 6px; font-size: 14px; }
+}
 .dialer-rel { color: #8a97a8; font-size: 14px; margin: 4px 0 12px; }
 .dialer-addr { font-size: 17px; font-weight: 700; color: #e9edf3; margin-bottom: 2px; }
 .dialer-city { color: #8a97a8; font-size: 14px; margin-bottom: 12px; padding-left: 24px; }
@@ -1928,7 +1954,9 @@ function getDeceasedName(lead) {
   }
   return '';
 }
-function familyTreeHTML(lead) {
+function familyTreeHTML(lead, opts) {
+  opts = opts || {};
+  var highlight = (opts.highlight || '').toLowerCase();
   var rawText = lead ? lead.familyTree : '';
   var data = (lead && lead.familyTreeData && Array.isArray(lead.familyTreeData.heirs) && lead.familyTreeData.heirs.length)
     ? lead.familyTreeData : parseFamilyTreeText(rawText);
@@ -1966,12 +1994,13 @@ function familyTreeHTML(lead) {
     }
     // Also check direct status on the tree heir object
     if (h.status === 'dead' || h.deceased) isDeadHeir = true;
-    return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + (isDeadHeir ? '☠️ ' : '') + escapeHtml(fullName(h) || '—') + '</div>' +
+    var isCurrent = highlight && fullName(h).toLowerCase() === highlight;
+    return '<div class="v-card ' + (cls || '') + (isCurrent ? ' current-heir' : '') + '"><div class="v-name">' + (isDeadHeir ? '☠️ ' : '') + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
       (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
   };
-  var html = '<div class="vtree-wrap"><div class="vtree">';
+  var html = '<div class="vtree-wrap"><div class="tree-zoom-stage"><div class="vtree">';
   if (groups.parents.length) {
     html += '<div class="v-parents"><div class="v-couple">' + groups.parents.map(function (h, i) {
       return (i ? '<div class="v-mate"></div>' : '') + vcard(h);
@@ -1994,7 +2023,7 @@ function familyTreeHTML(lead) {
   }
   if (childLis.length) html += '<ul>' + childLis.join('') + '</ul>';
   html += '</li></ul>';
-  html += '</div></div>';
+  html += '</div></div></div>';
   var extRow = function (label, list, subFn) {
     if (!list.length) return '';
     return '<div class="v-ext-row"><div class="v-ext-label">' + escapeHtml(label) + '</div><div class="v-ext-cards">' +
@@ -3168,18 +3197,77 @@ function showDialerFamilyTree(e) {
   e.stopPropagation();
   const cur = dialerCurrent();
   if (!cur || !cur.lead) return;
-  let treeHtml = familyTreeHTML(cur.lead);
-  // If no tree data, show a helpful message
-  if (!treeHtml || treeHtml.includes('tree-box') && !cur.lead.familyTree) {
+  const lead = cur.lead;
+  // Current heir name for highlight (zombie dialer targets a specific heir)
+  let highlightName = '';
+  try {
+    if (cur.heir) {
+      const hn = cur.heir.name || (((cur.heir.firstName || '') + ' ' + (cur.heir.lastName || '')).trim());
+      if (hn) highlightName = hn;
+    }
+  } catch (err) {}
+  let treeHtml = familyTreeHTML(lead, { highlight: highlightName });
+  // Parse for header info
+  let deceasedName = '', heirCount = 0;
+  try {
+    const rawText = lead.familyTree || '';
+    const data = (lead.familyTreeData && Array.isArray(lead.familyTreeData.heirs) && lead.familyTreeData.heirs.length)
+      ? lead.familyTreeData : parseFamilyTreeText(rawText);
+    if (data) { deceasedName = data.deceased || ''; heirCount = (data.heirs || []).length; }
+  } catch (err) {}
+  const hasTree = !treeHtml.includes('tree-box') || lead.familyTree;
+  if (!hasTree) {
     treeHtml = '<div style="color:#8a97a8;text-align:center;padding:20px;">No family tree data available for this lead.<br>Check the main CRM view to add or view the family tree.</div>';
   }
   const modal = document.createElement('div');
   modal.className = 'dialer-tree-modal';
-  modal.innerHTML = `<div class="dialer-tree-content">${treeHtml}</div>`;
-  modal.addEventListener('click', (ev) => {
-    if (ev.target === modal) modal.remove();
+  modal.innerHTML = `
+    <div class="dialer-tree-content">
+      <div class="tree-view-head">
+        <div class="tree-view-title">
+          <div class="t">🌳 ${escapeHtml(deceasedName || 'Family Tree')}</div>
+          <div class="s">${heirCount ? heirCount + ' heir' + (heirCount === 1 ? '' : 's') : ''}${highlightName ? ' · calling: ' + escapeHtml(highlightName) : ''}</div>
+        </div>
+        <button class="tree-zoom-btn" data-zoom="out" title="Zoom out">−</button>
+        <button class="tree-zoom-btn" data-zoom="in" title="Zoom in">+</button>
+        <button class="tree-zoom-btn" data-zoom="reset" title="Reset zoom" style="font-size:13px;">1:1</button>
+        <button class="tree-close-btn" data-close-tree title="Close">✕</button>
+      </div>
+      <div class="tree-view-body">
+        ${treeHtml}
+        <div class="tree-scroll-hint" data-scroll-hint>← swipe to explore the tree →</div>
+      </div>
+    </div>`;
+  let scale = 1;
+  const stage = modal.querySelector('.tree-zoom-stage');
+  const applyZoom = () => { if (stage) stage.style.transform = `scale(${scale})`; };
+  modal.querySelectorAll('[data-zoom]').forEach(btn => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const z = btn.getAttribute('data-zoom');
+      if (z === 'in') scale = Math.min(2, +(scale + 0.25).toFixed(2));
+      else if (z === 'out') scale = Math.max(0.5, +(scale - 0.25).toFixed(2));
+      else scale = 1;
+      applyZoom();
+    });
+  });
+  modal.querySelector('[data-close-tree]').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (ev) => { if (ev.target === modal) modal.remove(); });
+  document.addEventListener('keydown', function escClose(ev) {
+    if (ev.key === 'Escape') { modal.remove(); document.removeEventListener('keydown', escClose); }
   });
   document.body.appendChild(modal);
+  // Show scroll hint if the tree overflows horizontally
+  requestAnimationFrame(() => {
+    try {
+      const wrap = modal.querySelector('.vtree-wrap');
+      const hint = modal.querySelector('[data-scroll-hint]');
+      if (wrap && hint && wrap.scrollWidth > wrap.clientWidth + 8) hint.classList.add('show');
+      // Scroll the highlighted heir into view
+      const cur2 = modal.querySelector('.v-card.current-heir');
+      if (cur2 && wrap) wrap.scrollTo({ left: Math.max(0, cur2.offsetLeft - wrap.clientWidth / 2 + 60), behavior: 'smooth' });
+    } catch (err) {}
+  });
 }
 async function undoCadenceStep() {
   const cur = dialerCurrent();
