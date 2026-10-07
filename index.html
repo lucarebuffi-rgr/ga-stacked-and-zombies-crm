@@ -588,6 +588,8 @@
 .dial-text:active { transform: scale(.98); }
 .dialer-nophone { text-align: center; color: #d9534f; font-weight: 700; padding: 16px; }
 .dialer-outcomes { margin-top: 18px; }
+.dialer-outcome { position: relative; }
+.dialer-tip-icon { font-size: 11px; opacity: 0.6; margin-left: 4px; cursor: help; }
   .dialer-stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; justify-content: center; }
   .dialer-stage { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #9aa7ba; cursor: pointer; font-family: inherit; text-align: center; min-width: 90px; }
   .dialer-stage:hover { border-color: #d4a843; }
@@ -2587,7 +2589,7 @@ function renderDialerMain() {
     <div class="dialer-outcomes">
       <div class="section-label" style="margin-bottom:8px;">Call Disposition</div>
       <div class="dialer-outcome-grid">
-        ${SESSION_OUTCOMES.map(o => `<button class="dialer-outcome" data-dialer-outcome="${o.id}">${o.label}</button>`).join('')}
+        ${SESSION_OUTCOMES.map(o => `<button class="dialer-outcome" data-dialer-outcome="${o.id}" title="${escapeHtml(o.tip || '')}">${o.label}<span class="dialer-tip-icon" title="${escapeHtml(o.tip || '')}"> ⓘ</span></button>`).join('')}
       </div>
       <div class="dialer-sub" id="dialer-substage" style="display:none;">
         <div class="section-label" style="margin-bottom:8px;">Qualification substage</div>
@@ -3344,13 +3346,13 @@ function resurrectionInfo(lead) {
 
 /* ---------------- Post-call automation ---------------- */
 const SESSION_OUTCOMES = [
-  { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true },
-  { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true },
-  { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro' },
-  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true },
-  { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true },
-  { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false },
-  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true },
+  { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
+  { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
+  { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
+  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
+  { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
+  { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
+  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
