@@ -3369,7 +3369,7 @@ function callableHeirs(lead) {
     const saved = hc[t.hid] || {};
     out.push({
       hid: t.hid, src: 'tree',
-      name: t.name, relationship: t.relationship, phone: t.phone, status: 'not_contacted',
+      name: t.name, relationship: t.relationship, phone: t.phone, status: saved.status || 'not_contacted',
       cadenceStep: saved.cadenceStep != null ? saved.cadenceStep : 0,
       cycleStartDate: saved.cycleStartDate || null,
       attempts: saved.attempts || 0,
@@ -3762,14 +3762,37 @@ async function applyHeirOutcome(tabId, key, hid, outcomeId, opts = {}) {
   const notes = (lead.notes || []).slice();
   notes.push({ at: now, outcome: oc.id, text: opts.note || '', heirId: hid, heirName: heir.name });
 
-  const patch = { notes, status: oc.status };
-  if (!SUBSTAGES[oc.status]) patch.subStage = lead.subStage && SUBSTAGES[oc.status] ? lead.subStage : '';
-  const sh = (lead.statusHistory || []).slice();
-  if (lead.status !== oc.status) sh.push({ at: now, from: lead.status, to: oc.status });
-  patch.statusHistory = sh;
-  if ((oc.status === 'dead' || oc.status === 'not_interested') && lead.status !== oc.status) {
-    patch.deadAt = now;
-    patch.deadCodes = { ...(lead.codes || {}) };
+  const patch = { notes };
+  // For zombie heirs: terminal outcomes (not interested, bad number) only affect THIS HEIR,
+  // not the whole lead — other heirs can still be called.
+  // The lead status only changes when ALL heirs are done.
+  const heirTerminal = ['not_interested', 'dead'].includes(oc.status);
+
+  if (heirTerminal) {
+    // Mark this heir as done
+    await saveHeirCadence(tabId, key, hid, heir.src || 'tree', {
+      status: oc.status === 'dead' ? 'dead' : 'not_interested',
+    });
+
+    // Check if all heirs are now terminal — if so, update the lead status
+    const remainingHeirs = callableHeirsWithPhones(getLead(tabId, key));
+    if (remainingHeirs.length === 0) {
+      patch.status = oc.status;
+      const sh = (lead.statusHistory || []).slice();
+      if (lead.status !== oc.status) sh.push({ at: now, from: lead.status, to: oc.status });
+      patch.statusHistory = sh;
+      if ((oc.status === 'dead' || oc.status === 'not_interested') && lead.status !== oc.status) {
+        patch.deadAt = now;
+        patch.deadCodes = { ...(lead.codes || {}) };
+      }
+    }
+    // else: lead stays in current status so other heirs remain callable
+  } else {
+    patch.status = oc.status;
+    if (!SUBSTAGES[oc.status]) patch.subStage = lead.subStage && SUBSTAGES[oc.status] ? lead.subStage : '';
+    const sh = (lead.statusHistory || []).slice();
+    if (lead.status !== oc.status) sh.push({ at: now, from: lead.status, to: oc.status });
+    patch.statusHistory = sh;
   }
   if (oc.flagRetrace) patch.needsRetrace = true;
   if (opts.subStage) patch.subStage = opts.subStage;
