@@ -593,6 +593,18 @@
 .dialer-outcomes { margin-top: 18px; }
 .dialer-outcome { position: relative; }
 .dialer-tip-icon { font-size: 11px; opacity: 0.6; margin-left: 4px; cursor: help; }
+.sop-wrap { max-width: 800px; margin: 0 auto; padding: 24px 16px 60px; }
+.sop-wrap h1 { color: #e9edf3; font-size: 28px; margin-bottom: 8px; }
+.sop-wrap .sop-sub { color: #8a97a8; font-size: 15px; margin-bottom: 32px; }
+.sop-section { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 14px; padding: 24px; margin-bottom: 20px; }
+.sop-section h2 { color: #d4a843; font-size: 20px; margin: 0 0 16px; }
+.sop-section h3 { color: #e9edf3; font-size: 16px; margin: 20px 0 10px; }
+.sop-section p, .sop-section li { color: #b8c4d4; font-size: 15px; line-height: 1.7; }
+.sop-section ul, .sop-section ol { padding-left: 22px; margin: 10px 0; }
+.sop-section li { margin-bottom: 8px; }
+.sop-section strong { color: #e9edf3; }
+.sop-tip { background: rgba(212,168,67,.08); border-left: 3px solid #d4a843; padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; }
+.sop-tip p { margin: 0; font-size: 14px; }
 .dialer-panels { display: flex; gap: 12px; margin-top: 120px; }
 .dialer-panel { flex: 1; background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 12px; padding: 40px 16px; text-align: center; text-decoration: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 160px; }
 .dialer-panel:hover { border-color: #d4a843; }
@@ -653,6 +665,7 @@
           <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
           <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
           <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
+          <a class="btn-ghost icon-btn" href="?sop=1" target="_blank" rel="noopener" title="SOP — How to use this CRM">📋</a>
         </div>
         <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 28px;font-size:16px;">📞 Dialer</a>
       </div>
@@ -760,6 +773,10 @@
   <div class="dialer-wrap" id="dialer-body"></div>
 </div>
 
+<div id="sop-screen" style="display:none;">
+  <div class="sop-wrap" id="sop-body"></div>
+</div>
+
 <div id="add-lead-overlay" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -844,6 +861,8 @@ auth.onAuthStateChanged(u => {
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
     else if (isDialerMode) renderDialerLocked();
+    else if (isSopMode) renderSop();
+    else if (isSopMode) renderSop();
   } else if (u) {
     btn.style.display = 'none';
     chip.style.display = 'inline-flex';
@@ -854,6 +873,7 @@ auth.onAuthStateChanged(u => {
     // so isReportMode below is always initialized by the time this runs).
     if (isReportMode) renderReport();
     else if (isDialerMode) { startOverlayListening(); renderDialer(); }
+    else if (isSopMode) renderSop();
     else { startOverlayListening(); cleanupAutoTasks(); }
   } else {
     btn.style.display = 'inline-flex';
@@ -1425,6 +1445,7 @@ function renderCard(lead) {
 
 function render() {
   if (isDialerMode) { renderDialer(); return; }
+  if (isSopMode) { renderSop(); return; }
   document.getElementById('tab-zombie').classList.toggle('active', tab === 'zombie');
   document.getElementById('tab-stacked').classList.toggle('active', tab === 'stacked');
   document.getElementById('setup-banner').style.display =
@@ -2524,6 +2545,126 @@ function renderDialerLocked() {
   });
 }
 
+/* ---------------- SOP mode (?sop=1) ---------------- */
+function renderSop() {
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'none';
+  document.getElementById('dialer-screen').style.display = 'none';
+  document.getElementById('sop-screen').style.display = 'block';
+  document.getElementById('sop-body').innerHTML = `
+    <h1>📋 Standard Operating Procedure</h1>
+    <div class="sop-sub">How to work leads in the GA Stacked & Zombies CRM — step by step.</div>
+
+    <div class="sop-section">
+      <h2>1. Starting Your Calling Session</h2>
+      <ol>
+        <li>Click the <strong>📞 Dialer</strong> button in the top-right of the main CRM. It opens in a new tab.</li>
+        <li>Choose <strong>🧟 Zombies</strong> or <strong>📚 Stacked</strong>.</li>
+        <li>The dialer shows you <strong>one lead at a time</strong> — only leads in <strong>New</strong> or <strong>Trying to Reach</strong>.</li>
+        <li>For zombie leads, each heir with a phone number gets their own turn in the queue.</li>
+      </ol>
+      <div class="sop-tip"><p>💡 <strong>Tip:</strong> The dialer automatically skips leads you've already worked through. Just keep hitting Next.</p></div>
+    </div>
+
+    <div class="sop-section">
+      <h2>2. Understanding the Lead Card</h2>
+      <p>Each lead card shows you everything you need before you call:</p>
+      <ul>
+        <li><strong>Name & address</strong> — who you're calling and about which property.</li>
+        <li><strong>Status badges</strong> — New, Trying to Reach, plus codes like PF (pre-foreclosure), TD (tax delinquent), CV (code violation).</li>
+        <li><strong>🔨 Auction Date</strong> — for PF leads, shows when the foreclosure auction is. Red/urgent if within 30 days.</li>
+        <li><strong>💰 Taxes Due</strong> — for TD leads, shows amount owed and years delinquent.</li>
+        <li><strong>Cadence tracker</strong> — shows which touch you're on (e.g. "Touch 3 of 9"), what to do right now, and what's next.</li>
+        <li><strong>Zillow card</strong> — property details and Zestimate. Tap to open the Zillow listing.</li>
+        <li><strong>Map</strong> — embedded Google Map of the property location.</li>
+      </ul>
+    </div>
+
+    <div class="sop-section">
+      <h2>3. The 10-Touch Calling Cadence</h2>
+      <p>Every lead follows this exact sequence. The dialer tells you which step you're on:</p>
+      <ol>
+        <li><strong>Day 1 AM — Ghost Call:</strong> Just one call; no voicemail, no SMS.</li>
+        <li><strong>Day 1 — Double Dial + VM + SMS:</strong> Call twice back-to-back, leave voicemail, send intro text.</li>
+        <li><strong>Day 1 PM — Call + VM:</strong> Afternoon call, leave voicemail.</li>
+        <li><strong>Day 2 — SMS:</strong> Send a follow-up text.</li>
+        <li><strong>Day 3 — Ghost Call:</strong> Call, no voicemail if no answer.</li>
+        <li><strong>Day 4 — Call AM/PM + VM:</strong> Morning and afternoon calls, leave voicemail.</li>
+        <li><strong>Day 6 — SMS:</strong> Send a follow-up text.</li>
+        <li><strong>Day 7 AM — Call + VM:</strong> Morning call, leave voicemail.</li>
+        <li><strong>Day 7 PM — Call:</strong> Afternoon call.</li>
+      </ol>
+      <div class="sop-tip"><p>💡 <strong>Ghost Call</strong> = call once, hang up if no answer. No voicemail, no text. <strong>VM</strong> = voicemail.</p></div>
+    </div>
+
+    <div class="sop-section">
+      <h2>4. Making the Call</h2>
+      <ol>
+        <li>Tap the big gold <strong>📞 phone number</strong> button to call. This also saves the contact to the calling system.</li>
+        <li>Tap <strong>💬 Text</strong> to send an SMS through the system.</li>
+        <li>After the call, <strong>write your notes</strong> in the Notes field. This is required before you can log a disposition.</li>
+        <li>Tap the ⓘ icon next to any disposition to see what it does.</li>
+      </ol>
+    </div>
+
+    <div class="sop-section">
+      <h2>5. Call Dispositions — What Each One Does</h2>
+      <p>After every call, pick the disposition that matches what happened:</p>
+      <ul>
+        <li><strong>👻 Ghost / No Answer</strong> — No answer. Moves to the next cadence touch.</li>
+        <li><strong>📩 Voicemail Left</strong> — You left a voicemail. Moves to the next touch.</li>
+        <li><strong>📞📞 Double Dial + VM + SMS</strong> — Called twice with voicemail. Then asks if you want to send the intro text.</li>
+        <li><strong>💬 Qualified</strong> — You spoke with them. Asks if they're Must Underwrite or Submit Offer, then moves to Qualified Leads.</li>
+        <li><strong>📅 Follow Up Scheduled</strong> — They asked for a callback. Pick the date, moves to Follow Ups.</li>
+        <li><strong>🚫 Not Interested</strong> — They're not interested. Removed from the calling queue.</li>
+        <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. Moved to Dead / Bad Number and flagged for a new phone lookup.</li>
+      </ul>
+      <div class="sop-tip"><p>💡 <strong>You must write a note before tapping a disposition.</strong> The note saves automatically with the outcome.</p></div>
+    </div>
+
+    <div class="sop-section">
+      <h2>6. Recycling Leads</h2>
+      <p>After all 9 touches with no answer:</p>
+      <ol>
+        <li>A <strong>♻️ Recycle</strong> button appears under the cadence tracker.</li>
+        <li>Tap it to shelve the lead for <strong>11 days</strong>.</li>
+        <li>After 11 days, they come back into <strong>Trying to Reach</strong> with a fresh cadence.</li>
+        <li>You get <strong>3 rounds</strong> total. After the 3rd round with no answer, the system asks if you want to mark them dead.</li>
+      </ol>
+      <div class="sop-tip"><p>💡 <strong>For zombies:</strong> each heir recycles independently. If you've worked one heir through all 9 touches but not another, only the finished one goes to recycling.</p></div>
+    </div>
+
+    <div class="sop-section">
+      <h2>7. Pipeline Stages</h2>
+      <p>Leads move through these stages:</p>
+      <ol>
+        <li><strong>New</strong> — Fresh lead, hasn't been called yet.</li>
+        <li><strong>Trying to Reach</strong> — In the calling cadence.</li>
+        <li><strong>Qualified Leads</strong> — You've spoken with them and they're worth pursuing.</li>
+        <li><strong>Follow Ups</strong> — Scheduled callbacks live here.</li>
+        <li><strong>Under Contract</strong> — Deal is under contract.</li>
+        <li><strong>Closed</strong> — Deal closed.</li>
+        <li><strong>Not Interested</strong> — They said no.</li>
+        <li><strong>Dead / Bad Number</strong> — Bad number or completed 3 recycle rounds with no answer.</li>
+      </ol>
+    </div>
+
+    <div class="sop-section">
+      <h2>8. Navigation</h2>
+      <ul>
+        <li><strong>‹ ›</strong> arrows on the sides of the lead card move to the previous/next lead.</li>
+        <li><strong>✕ Exit</strong> takes you back to choose Zombies or Stacked.</li>
+        <li>Your progress (called/talked counts) shows at the top.</li>
+      </ul>
+    </div>
+
+    <div class="sop-section">
+      <h2>9. KPIs & Reporting</h2>
+      <p>Click the <strong>📊</strong> icon in the main CRM header to open the KPI dashboard. It shows calls made, pipeline changes, offers submitted, and charts breaking down activity by stage and over time.</p>
+    </div>
+  `;
+}
+
 function renderDialerChoice() {
   const zq = buildDialerQueue('zombie');
   const sq = buildDialerQueue('stacked');
@@ -2814,6 +2955,7 @@ function dialerPrev() {
 const urlParams = new URLSearchParams(window.location.search);
 const isReportMode = urlParams.get('report') === '1';
 const isDialerMode = urlParams.get('dialer') === '1';
+const isSopMode = urlParams.get('sop') === '1';
 
 function resetTabState() {
   expandedKey = null;
