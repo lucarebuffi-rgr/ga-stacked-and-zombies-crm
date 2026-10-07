@@ -1809,6 +1809,11 @@ function getDeceasedName(lead) {
       if (data && data.deceased) return data.deceased;
     } catch (e) {}
   }
+  // Try extracting from WHY HOT text: "Owner Greg M Smart deceased..." or "Greg M Smart deceased..."
+  if (lead.whyHot) {
+    const whyHotMatch = /(?:owner\s+)?([A-Z][a-z]+(?:\s+[A-Z]\.?)?(?:\s+[A-Z][a-z]+)+)\s+deceased/i.exec(lead.whyHot);
+    if (whyHotMatch) return whyHotMatch[1].trim();
+  }
   return '';
 }
 function familyTreeHTML(lead) {
