@@ -2565,6 +2565,7 @@ function renderDialerMain() {
       <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
       <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
       <div class="dialer-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span>${codeBadges(lead)}</div>
+      ${keyBannersHTML(lead)}
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
       ${cadenceTracker(target)}
       ${phone ? `
