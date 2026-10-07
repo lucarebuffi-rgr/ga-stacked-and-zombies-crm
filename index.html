@@ -3402,7 +3402,7 @@ function resurrectionInfo(lead) {
 const SESSION_OUTCOMES = [
   { id: 'ghost',             label: '👻 Ghost / No Answer',      status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
   { id: 'voicemail',         label: '📩 Voicemail Left',         status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
-  { id: 'double_dial',       label: '📞📞 Double Dial + LVM + SMS', status: 'trying',      touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
+  { id: 'double_dial',       label: '📞📞 Double Dial + VM + SMS', status: 'trying',      touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
   { id: 'talked',            label: '💬 Qualified',             status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
   { id: 'callback_scheduled',label: '📅 Follow Up Scheduled',    status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
   { id: 'not_interested',    label: '🚫 Not Interested',         status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
