@@ -2747,7 +2747,7 @@ function renderDialerMain() {
     <div class="dialer-card-wrap">
     <button class="dialer-side-btn dialer-side-prev" onclick="dialerPrev()" title="Previous">‹</button>
     <div class="dialer-card">
-      <div class="dialer-name">${isHeir ? '👤 ' : ''}${escapeHtml(name)}${isHeir ? ' <span class="dialer-tree-icon" onclick="showDialerFamilyTree(event)" title="View family tree">🌳</span>' : ''}</div>
+      <div class="dialer-name">${isHeir ? '👤 ' : ''}${isHeir && cur.heir && (cur.heir.status === 'dead' || cur.heir.deceased) ? '☠️ ' : ''}${escapeHtml(name)}${isHeir ? ' <span class="dialer-tree-icon" onclick="showDialerFamilyTree(event)" title="View family tree">🌳</span>' : ''}</div>
       ${isHeir && heir.relationship ? `<div class="dialer-rel">${escapeHtml(heir.relationship)}</div>` : ''}
       <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
       <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
