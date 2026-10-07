@@ -131,13 +131,16 @@
 
   /* ---------- Cards ---------- */
   .lead-card {
-    background: linear-gradient(180deg, #122540, #0e1d35); border: 1px solid #1e3554; border-radius: 14px;
+    background: linear-gradient(180deg, #122540, #0e1d35); border: 1px solid #1e3554; border-radius: 6px;
     overflow: hidden; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.35);
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
   .lead-card:hover { transform: translateY(-2px); border-color: rgba(212,168,67,.35); box-shadow: 0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(212,168,67,.08); }
   .lead-card.is-fire { border-color: rgba(224,149,74,.55); }
   .lead-row { padding: 15px 18px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; cursor: pointer; }
+  .lead-topbar { display: flex; align-items: center; gap: 9px; width: 100%; }
+  .lead-topbar .lead-name { flex: 1; }
+  .lead-topbar .lead-checkbox { margin-left: auto; }
   .fire-btn { background: none; border: none; font-size: 18px; opacity: 0.3; padding: 2px; filter: grayscale(1); }
   .fire-btn:hover { opacity: .7; }
   .fire-btn.active { opacity: 1; filter: none; }
@@ -1257,12 +1260,14 @@ function renderCard(lead) {
   return `
     <div class="lead-card ${isFire ? 'is-fire' : ''}">
       <div class="lead-row" data-row-toggle="${escapeHtml(lead.key)}">
-        <input type="checkbox" class="lead-checkbox" data-select="${escapeHtml(lead.key)}" ${isSelected ? 'checked' : ''} title="Select for bulk delete" />
-        <button class="fire-btn ${isFire ? 'active' : ''}" data-fire="${escapeHtml(lead.key)}" data-fire-current="${isFire}" title="Favorite this lead">🔥</button>
+        <div class="lead-topbar">
+          <span class="lead-name">${escapeHtml(lead.address)}</span>
+          <span class="status-badge" style="background:${status.color}22;color:${status.color};border-color:${status.color}55">${status.label}</span>
+          <input type="checkbox" class="lead-checkbox" data-select="${escapeHtml(lead.key)}" ${isSelected ? 'checked' : ''} title="Select for bulk delete" />
+          <button class="fire-btn ${isFire ? 'active' : ''}" data-fire="${escapeHtml(lead.key)}" data-fire-current="${isFire}" title="Favorite this lead">🔥</button>
+        </div>
         <div class="lead-main">
           <div class="lead-name-line">
-            <span class="lead-name">${escapeHtml(lead.address)}</span>
-            <span class="status-badge" style="background:${status.color}22;color:${status.color};border-color:${status.color}55">${status.label}</span>
             ${lead.subStage ? `<span class="substage-badge">${escapeHtml(lead.subStage)}</span>` : ''}
             ${isFire ? `<span class="fire-badge">🔥 FIRE LEAD</span>` : ''}
             ${lead.acquisitionDirector ? `<span class="director-badge">👤 ${escapeHtml(lead.acquisitionDirector)}</span>` : ''}
