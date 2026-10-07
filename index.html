@@ -588,6 +588,11 @@
 .dial-text:active { transform: scale(.98); }
 .dialer-nophone { text-align: center; color: #d9534f; font-weight: 700; padding: 16px; }
 .dialer-outcomes { margin-top: 18px; }
+  .dialer-stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; justify-content: center; }
+  .dialer-stage { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #9aa7ba; cursor: pointer; font-family: inherit; text-align: center; min-width: 90px; }
+  .dialer-stage:hover { border-color: #d4a843; }
+  .dialer-stage.active { border-color: #d4a843; color: #e8c476; box-shadow: 0 0 0 1px #d4a843; }
+  .dialer-stage b { display: block; font-size: 16px; margin-bottom: 2px; }
 .dialer-outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dialer-outcome { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #e9edf3; border-radius: 12px; padding: 15px 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; min-height: 56px; }
 .dialer-outcome:active { background: rgba(212,168,67,.15); border-color: #d4a843; }
@@ -2565,6 +2570,7 @@ function renderDialerMain() {
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
       ` : '<div class="dialer-nophone">No phone on file</div>'}
     </div>
+    <div class="dialer-stages" id="dialer-stages"></div>
     <div class="dialer-outcomes">
       <div class="section-label" style="margin-bottom:8px;">Log outcome</div>
       <div class="dialer-outcome-grid">
@@ -2593,6 +2599,20 @@ function renderDialerMain() {
   body.querySelectorAll('[data-dialer-outcome]').forEach(b => {
     b.addEventListener('click', () => dialerOutcome(b.getAttribute('data-dialer-outcome')));
   });
+  // Pipeline stage switcher — 7 stages (excludes New, the starting point)
+  const stageEl = body.querySelector('#dialer-stages');
+  const cur = dialerCurrent();
+  if (stageEl && cur && cur.lead) {
+    const stages = STATUSES.filter(s => s.id !== 'new');
+    stageEl.innerHTML = stages.map(s =>
+      `<button class="dialer-stage ${cur.lead.status === s.id ? 'active' : ''}" data-dialer-stage="${s.id}">
+        <b style="color:${s.color}">●</b>${escapeHtml(s.label)}
+      </button>`
+    ).join('');
+    stageEl.querySelectorAll('[data-dialer-stage]').forEach(b => {
+      b.addEventListener('click', () => dialerSetStage(b.getAttribute('data-dialer-stage')));
+    });
+  }
   body.querySelectorAll('[data-dialer-substage]').forEach(b => {
     b.addEventListener('click', () => dialerSubstageDone(b.getAttribute('data-dialer-substage')));
   });
@@ -2601,6 +2621,18 @@ function renderDialerMain() {
 }
 
 let dialerPendingOutcome = null;
+async function dialerSetStage(stageId) {
+  const cur = dialerCurrent();
+  if (!cur || !cur.lead) return;
+  const lead = cur.lead;
+  const oldStatus = lead.status;
+  if (oldStatus === stageId) return;
+  lead.status = stageId;
+  await saveLead(dialer.tabId, lead);
+  logActivity(dialer.tabId, lead, 'status', `${STATUS_MAP[oldStatus]?.label || oldStatus} → ${STATUS_MAP[stageId]?.label || stageId}`);
+  showToast(`Moved to ${STATUS_MAP[stageId]?.label || stageId}`, 'success');
+  renderDialerMain();
+}
 async function dialerOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc || !dialer) return;
