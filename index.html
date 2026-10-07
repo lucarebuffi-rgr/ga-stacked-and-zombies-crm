@@ -1426,7 +1426,6 @@ function renderCard(lead) {
           </div>
           <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.address))}, ${escapeHtml(titleCaseAddress(lead.city))} ${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
           <div class="code-badges">${codeBadges(lead)}</div>
-          ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
           ${['new','trying','followup'].includes(lead.status) ? cadenceCardHTML(lead) : ''}
           ${probateCardHTML(lead)}
           ${lead.needsRetrace ? '<span class="retrace-flag">🔄 Needs re-trace</span>' : ''}
