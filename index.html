@@ -1414,7 +1414,7 @@ function renderCard(lead) {
         <button class="fire-btn ${isFire ? 'active' : ''}" data-fire="${escapeHtml(lead.key)}" data-fire-current="${isFire}" title="Favorite this lead">🔥</button>
         <div class="lead-main">
           <div class="lead-name-line">
-            <span class="lead-name">${escapeHtml(titleCaseAddress(lead.address))}</span>
+            <span class="lead-name">${escapeHtml(tab === 'stacked' ? (lead.mainPocName || titleCaseAddress(lead.address)) : ((lead.familyTreeData && lead.familyTreeData.deceased) || titleCaseAddress(lead.address)))}</span>
             <span class="status-badge" style="background:${status.color}22;color:${status.color};border-color:${status.color}55">${status.label}</span>
             ${lead.subStage ? `<span class="substage-badge">${escapeHtml(lead.subStage)}</span>` : ''}
             ${isFire ? `<span class="fire-badge">🔥 FIRE LEAD</span>` : ''}
@@ -1422,7 +1422,7 @@ function renderCard(lead) {
             ${isDormant ? `<span class="dormant-badge" title="No open task scheduled for this lead">❗ No Task</span>` : ''}
             ${lead.hidden ? `<span class="hidden-badge">HIDDEN</span>` : ''}
           </div>
-          <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
+          <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.address))}<br><span style="padding-left:22px;">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</span></div>
           <div class="code-badges">${codeBadges(lead)}</div>
           ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
           ${['new','trying','followup'].includes(lead.status) ? cadenceCardHTML(lead) : ''}
@@ -1430,7 +1430,7 @@ function renderCard(lead) {
           ${lead.needsRetrace ? '<span class="retrace-flag">🔄 Needs re-trace</span>' : ''}
           ${resurrectCardHTML(lead)}
         </div>
-        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''} ${tab === 'stacked' && lead.mainPocName ? `<div style="font-size:11px;color:#9fb3cc;margin-top:2px;">👤 ${escapeHtml(lead.mainPocName)}</div>` : ''}
+        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
