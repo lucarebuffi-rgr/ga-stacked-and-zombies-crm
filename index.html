@@ -66,7 +66,9 @@
   .sync-btn { font-size: 12px; padding: 8px 12px; color: #8a97a8; white-space: nowrap; }
   .sync-btn.error { color: #e07a77; border-color: #e07a77; }
   .icon-btn { padding: 8px 11px !important; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
-  .user-chip { font-size: 11px; color: #5c6b82; background: rgba(18,37,64,.6); border: 1px solid #1d3350; border-radius: 14px; padding: 4px 9px; white-space: nowrap; max-width: 180px; overflow: hidden; text-overflow: ellipsis; cursor: default; }
+  .user-chip { font-size: 16px; color: #8a97a8; background: rgba(18,37,64,.6); border: 1px solid #1d3350; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+  .user-chip:hover { border-color: #d4a843; color: #d4a843; }
+  .sync-btn { padding: 6px 8px; font-size: 14px; }
   .btn-gold {
     background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 18px;
     font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 8px;
@@ -563,12 +565,12 @@
         <h1 style="margin:0;">GA Stacked &amp; Zombies</h1>
       </div>
       <div class="header-actions">
-        <span class="user-chip" id="user-chip" style="display:none;"></span>
+        <button class="user-chip" id="user-chip" style="display:none;" title="Sign out">👤</button>
         <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
         <button class="btn-gold" id="add-lead-btn">+ Add Lead</button>
         <button id="start-calling-btn" onclick="startCallSession()">📞 Start Calling</button>
         <button id="call-next-btn" onclick="callNextLead()">▶ Call Next</button>
-        <button class="btn-ghost sync-btn" id="refresh-btn">⟳ Loading…</button>
+        <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
         <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
       </div>
     </div>
@@ -743,9 +745,9 @@ auth.onAuthStateChanged(u => {
   const wrongAccount = !!(u && !LUCA_EMAILS.includes(u.email));
   if (wrongAccount) {
     btn.style.display = 'none';
-    chip.style.display = 'inline';
-    chip.textContent = '👤 ' + (u.email || 'signed in').split('@')[0];
-    chip.title = u.email || 'signed in';
+    chip.style.display = 'inline-flex';
+    chip.textContent = '👤';
+    chip.title = (u.email || 'signed in') + ' — tap to sign out';
     banner.style.display = 'block';
     banner.querySelector('.acct-banner-msg').textContent =
       '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com. Nothing you enter will save until you switch accounts.';
@@ -753,9 +755,9 @@ auth.onAuthStateChanged(u => {
     if (isReportMode) renderReportLocked();
   } else if (u) {
     btn.style.display = 'none';
-    chip.style.display = 'inline';
-    chip.textContent = '👤 ' + (u.email || 'signed in').split('@')[0];
-    chip.title = u.email || 'signed in';
+    chip.style.display = 'inline-flex';
+    chip.textContent = '👤';
+    chip.title = (u.email || 'signed in') + ' — tap to sign out';
     banner.style.display = 'none';
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
@@ -1002,7 +1004,7 @@ function newestCodeDate(lead) {
 
 async function loadSheets() {
   const btn = document.getElementById('refresh-btn');
-  btn.textContent = '⟳ Loading sheets…';
+  btn.title = 'Loading sheets…';
   btn.classList.remove('error');
   sheetError = null;
   try {
@@ -1013,7 +1015,7 @@ async function loadSheets() {
     sheetRows.zombie = parseSheet(zVals, 'zombie');
     sheetRows.stacked = parseSheet(sVals, 'stacked');
     lastSyncAt = new Date().toISOString();
-    btn.textContent = `⟳ Synced · ${timeAgo(lastSyncAt)}`;
+    btn.title = `Synced · ${timeAgo(lastSyncAt)} — tap to refresh`;
     updateTabCounts();
     render();
   } catch (e) {
@@ -1025,7 +1027,7 @@ async function loadSheets() {
     } else if (e.status === 400 && /API key/i.test(e.body || '')) {
       btn.textContent = '⟳ Bad API key';
     } else {
-      btn.textContent = '⟳ Sync error — tap to retry';
+      btn.title = 'Sync error — tap to retry';
     }
     note.classList.add('error');
     render();
@@ -2464,12 +2466,18 @@ if (isReportMode) {
   // Overlay subscriptions start from the auth state handler (only when signed
   // in); sheet data is public and loads regardless.
   loadSheets();
-  // keep the "synced x ago" label fresh on the refresh button
+  // keep the "synced x ago" in the refresh button's tooltip
   setInterval(() => {
     const btn = document.getElementById('refresh-btn');
-    if (lastSyncAt && !sheetError) btn.textContent = `⟳ Synced · ${timeAgo(lastSyncAt)}`;
+    if (lastSyncAt && !sheetError) btn.title = `Synced · ${timeAgo(lastSyncAt)} — tap to refresh`;
   }, 60000);
 }
+// User chip click → confirm and sign out
+document.getElementById('user-chip').addEventListener('click', async () => {
+  if (confirm('Sign out of the CRM?')) {
+    try { await auth.signOut(); } catch (e) { console.error(e); }
+  }
+});
 </script>
 <!-- ===== CRM REVAMP (2026-10-06): call session + SMS sheet overlays ===== -->
 <div id="call-session"></div>
