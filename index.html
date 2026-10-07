@@ -890,6 +890,13 @@ function normalizeAddressKey(address, city, state, zip) {
 function fullAddressStr(lead) {
   return [lead.address, lead.city, lead.state, lead.zip].filter(Boolean).join(', ');
 }
+function titleCaseAddress(s) {
+  if (!s) return s;
+  return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+}
+function fullAddressTitle(lead) {
+  return titleCaseAddress(fullAddressStr(lead));
+}
 function parseSheetDate(s) {
   // MM/DD/YYYY as written by the pipeline
   const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec((s || '').trim());
@@ -1283,7 +1290,7 @@ function renderCard(lead) {
           <iframe loading="lazy" src="https://maps.google.com/maps?q=${encodeURIComponent(fullAddressStr(lead))}&t=k&z=18&output=embed" title="Map"></iframe>
         </div>
         <div class="lead-main">
-          <div class="lead-address-line">📍 ${escapeHtml(fullAddressStr(lead))}</div>
+          <div class="lead-address-line">📍 ${escapeHtml(fullAddressTitle(lead))}</div>
             ${lead.subStage ? `<span class="substage-badge">${escapeHtml(lead.subStage)}</span>` : ''}
             ${isFire ? `<span class="fire-badge">🔥 FIRE LEAD</span>` : ''}
             ${lead.acquisitionDirector ? `<span class="director-badge">👤 ${escapeHtml(lead.acquisitionDirector)}</span>` : ''}
@@ -3012,7 +3019,7 @@ function renderLeadModal() {
   el.innerHTML = `<div class="lm-wrap">
     <div class="lm-top">
       <button class="lm-close" onclick="closeLeadModal()">✕ Close</button>
-      <div class="lm-title">${escapeHtml(lead.address)}</div>
+      <div class="lm-title">${escapeHtml(titleCaseAddress(lead.address))}</div>
       <div style="width:70px;"></div>
     </div>
     ${renderDetail(lead)}
@@ -3100,9 +3107,9 @@ function renderCallSession() {
     <div class="cs-card">
       <div class="cs-step">Next: <b>${escapeHtml(ci.stepDef.label)}</b> <span class="cs-hint">${escapeHtml(ci.stepDef.hint)}</span></div>
       ${isHeirTarget
-        ? `<h2 class="cs-name">👤 ${escapeHtml(heir.name)}</h2><div class="cs-heir-rel">${escapeHtml(heir.relationship || 'Heir')} · 📍 ${escapeHtml(lead.address)}</div>`
+        ? `<h2 class="cs-name">👤 ${escapeHtml(heir.name)}</h2><div class="cs-heir-rel">${escapeHtml(heir.relationship || 'Heir')} · 📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>`
         : `<h2 class="cs-name">${escapeHtml(lead.mainPocName || 'Unknown')}</h2>
-      <div class="cs-addr">📍 ${escapeHtml(fullAddressStr(lead))}</div>`}
+      <div class="cs-addr">📍 ${escapeHtml(fullAddressTitle(lead))}</div>`}
       <div class="cs-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span> ${codeBadges(lead)}</div>
       ${lead.whyHot && !isHeirTarget ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
       <div class="cs-cadence">${cadenceLine(isHeirTarget ? heir : lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
