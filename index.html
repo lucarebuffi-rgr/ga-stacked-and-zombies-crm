@@ -82,7 +82,8 @@
   .btn-ghost:hover { border-color: rgba(212,168,67,.5); color: #e9edf3; background: rgba(212,168,67,.06); }
 
   /* ---------- Tabs ---------- */
-  .tabs { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; }
+  .tabs { display: flex; gap: 6px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+  .tab-btn { text-transform: uppercase; letter-spacing: 0.5px; }
   .tab-btn {
     background: transparent; border: 1px solid transparent; border-bottom: none; color: #8a97a8; border-radius: 10px 10px 0 0;
     padding: 11px 18px; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 9px; position: relative;
@@ -533,9 +534,7 @@
 .text-btn { display:inline-flex; align-items:center; gap:4px; background:#22385a; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:7px 11px; font-size:12.5px; font-weight:600; text-decoration:none; }
 .card-action-row { display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap; }
 
-/* Start Calling button */
-#start-calling-btn { background:linear-gradient(180deg,#e3b95c,#c9992f); color:#0d1b2e; border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:10px 18px; font-weight:800; font-size:14px; }
-#call-next-btn { background:#22385a; color:#d4a843; border:1px solid #d4a84366; border-radius:10px; padding:10px 14px; font-weight:700; font-size:14px; }
+/* Dialer header button (replaces old Start Calling / Call Next) */
 
 /* Bulk outcome bar */
 .bulk-outcome-row { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
@@ -547,6 +546,45 @@
   .cs-dial { font-size:20px; padding:16px; }
   .heir-add-row input { flex:1 1 100%; }
 }
+
+/* ---------- Dialer mode (?dialer=1) ---------- */
+#dialer-screen { min-height: 100vh; background: #0d1b2e; }
+.dialer-wrap { max-width: 600px; margin: 0 auto; padding: 24px 16px 48px; }
+.dialer-choice-title { text-align: center; font-size: 26px; font-weight: 800; color: #e9edf3; margin: 32px 0 8px; }
+.dialer-choice-sub { text-align: center; color: #8a97a8; font-size: 14px; margin-bottom: 28px; }
+.dialer-choice-btns { display: grid; gap: 16px; }
+.dialer-choice { display: flex; align-items: center; gap: 16px; background: linear-gradient(180deg, #142a47, #0f2140); border: 1px solid #1e3554; border-radius: 16px; padding: 26px 20px; cursor: pointer; color: #e9edf3; font-family: inherit; text-align: left; width: 100%; }
+.dialer-choice:hover { border-color: #d4a843; }
+.dialer-choice:active { transform: scale(.99); }
+.dialer-choice .dc-emoji { font-size: 46px; }
+.dialer-choice .dc-label { font-size: 21px; font-weight: 800; }
+.dialer-choice .dc-count { font-size: 13px; color: #8a97a8; margin-top: 4px; }
+.dialer-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.dialer-progress { flex: 1; text-align: center; color: #8a97a8; font-size: 14px; font-weight: 700; }
+.dialer-stats { text-align: center; color: #5c6b82; font-size: 12px; margin-bottom: 12px; }
+.dialer-card { background: linear-gradient(180deg, #142a47, #0f2140); border: 1px solid #1e3554; border-radius: 18px; padding: 24px 20px; margin-bottom: 16px; }
+.dialer-name { font-size: 26px; font-weight: 800; color: #e9edf3; }
+.dialer-rel { color: #8a97a8; font-size: 14px; margin: 4px 0 12px; }
+.dialer-addr { font-size: 17px; font-weight: 700; color: #e9edf3; margin-bottom: 2px; }
+.dialer-city { color: #8a97a8; font-size: 14px; margin-bottom: 12px; }
+.dialer-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
+.dialer-why { font-style: italic; color: #9fb3cc; font-size: 14px; margin-bottom: 12px; line-height: 1.4; }
+.dialer-cadence { font-size: 13px; color: #8a97a8; margin-bottom: 18px; }
+.dial-call { display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; font-size: 23px; font-weight: 800; border-radius: 16px; padding: 20px; text-decoration: none; margin-bottom: 10px; box-shadow: 0 4px 18px rgba(212,168,67,.28); }
+.dial-call:active { transform: scale(.98); }
+.dial-text { display: flex; align-items: center; justify-content: center; gap: 8px; background: #22385a; color: #d4a843; border: 1px solid #d4a84366; font-size: 17px; font-weight: 700; border-radius: 14px; padding: 15px; width: 100%; cursor: pointer; font-family: inherit; }
+.dial-text:active { transform: scale(.98); }
+.dialer-nophone { text-align: center; color: #d9534f; font-weight: 700; padding: 16px; }
+.dialer-outcomes { margin-top: 18px; }
+.dialer-outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dialer-outcome { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #e9edf3; border-radius: 12px; padding: 15px 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; min-height: 56px; }
+.dialer-outcome:active { background: rgba(212,168,67,.15); border-color: #d4a843; }
+.dialer-nav { display: flex; gap: 10px; margin-top: 18px; }
+.dialer-nav button { flex: 1; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.dialer-prev { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #9aa7ba; }
+.dialer-next { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); }
+.dialer-done { text-align: center; padding: 60px 20px; }
+.dialer-sub { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; border-radius: 12px; padding: 14px; margin-top: 10px; }
 
 </style>
 </head>
@@ -567,16 +605,15 @@
       <div class="header-actions">
         <button class="user-chip" id="user-chip" style="display:none;" title="Sign out">👤</button>
         <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
-        <button id="start-calling-btn" onclick="startCallSession()">📞 Start Calling</button>
-        <button id="call-next-btn" onclick="callNextLead()">▶ Call Next</button>
+        <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;">📞 Dialer</a>
         <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
         <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
       </div>
     </div>
     <div class="header-inner">
       <div class="tabs">
-        <button class="tab-btn" id="tab-zombie">🧟 Zombies <span class="tab-count" id="count-zombie">–</span></button>
-        <button class="tab-btn" id="tab-stacked">📚 Stacked <span class="tab-count" id="count-stacked">–</span></button>
+        <button class="tab-btn" id="tab-stacked">📚 STACKED <span class="tab-count" id="count-stacked">–</span></button>
+        <button class="tab-btn" id="tab-zombie">🧟 ZOMBIES <span class="tab-count" id="count-zombie">–</span></button>
       </div>
     </div>
   </div>
@@ -623,7 +660,9 @@
         <option value="oldest">Oldest first</option>
         <option value="az">Address A–Z</option>
       </select>
-      <button class="btn-gold" id="add-lead-btn" style="margin-left:auto;">+ Add Lead</button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin:10px 0;">
+      <button class="btn-gold" id="add-lead-btn" style="padding:12px 24px;font-size:15px;">+ Add Lead</button>
     </div>
     <div class="bulk-toggle-row"><button class="btn-ghost btn-sm" id="bulk-toggle-btn">☑ Select</button></div>
     <div class="bulk-bar" id="bulk-bar" style="display:none;">
@@ -668,6 +707,10 @@
     </div>
   </div>
   <div class="content"><div id="report-body"></div></div>
+</div>
+
+<div id="dialer-screen" style="display:none;">
+  <div class="dialer-wrap" id="dialer-body"></div>
 </div>
 
 <div id="add-lead-overlay" class="modal-overlay">
@@ -753,6 +796,7 @@ auth.onAuthStateChanged(u => {
       '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com. Nothing you enter will save until you switch accounts.';
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
+    else if (isDialerMode) renderDialerLocked();
   } else if (u) {
     btn.style.display = 'none';
     chip.style.display = 'inline-flex';
@@ -762,6 +806,7 @@ auth.onAuthStateChanged(u => {
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
     if (isReportMode) renderReport();
+    else if (isDialerMode) { startOverlayListening(); renderDialer(); }
     else { startOverlayListening(); cleanupAutoTasks(); }
   } else {
     btn.style.display = 'inline-flex';
@@ -769,6 +814,7 @@ auth.onAuthStateChanged(u => {
     banner.style.display = 'none';
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
+    else if (isDialerMode) renderDialerLocked();
   }
 });
 function requireAuth() {
@@ -1326,6 +1372,7 @@ function renderCard(lead) {
 }
 
 function render() {
+  if (isDialerMode) { renderDialer(); return; }
   document.getElementById('tab-zombie').classList.toggle('active', tab === 'zombie');
   document.getElementById('tab-stacked').classList.toggle('active', tab === 'stacked');
   document.getElementById('setup-banner').style.display =
@@ -2366,9 +2413,235 @@ async function renderReport() {
   }
 }
 
+/* ---------------- Dialer mode (?dialer=1) ---------------- */
+// Focused single-lead dialer. Queue = only 'new' + 'trying' targets.
+// Zombies: one dialable target per heir. Stacked: one target per lead.
+let dialer = null; // { tabId, queue:[{key, heirId, overdue, attempts}], idx, stats:{called,talked}, done:Set }
+
+function buildDialerQueue(tabId) {
+  const items = [];
+  for (const l of allLeads(tabId)) {
+    if (l.hidden) continue;
+    if (!['new', 'trying'].includes(l.status)) continue; // new + trying only — follow-ups/qualified live on tasks
+    if (tabId === 'zombie') {
+      for (const h of callableHeirsWithPhones(l)) {
+        const ci = getCadenceInfo(h);
+        items.push({ key: l.key, heirId: h.hid, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
+      }
+    } else {
+      if (!(l.phone || '').trim()) continue;
+      const ci = getCadenceInfo(l);
+      items.push({ key: l.key, heirId: null, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
+    }
+  }
+  return items.sort((a, b) => (b.overdue - a.overdue) || (a.attempts - b.attempts));
+}
+
+function initDialerMode() {
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'none';
+  document.getElementById('dialer-screen').style.display = 'block';
+  loadSheets(); // public sheet data; overlays arrive via the auth listener
+  renderDialer();
+}
+
+function renderDialer() {
+  if (!isLucaSignedIn()) { renderDialerLocked(); return; }
+  if (!dialer || !dialer.tabId) renderDialerChoice();
+  else renderDialerMain();
+}
+
+function renderDialerLocked() {
+  const wrongAcct = currentUser && !isLucaSignedIn();
+  document.getElementById('dialer-body').innerHTML =
+    '<div class="dialer-done"><div style="font-size:48px;">🔒</div>' +
+    '<div style="font-weight:700;font-size:18px;color:#e9edf3;margin:12px 0;">' +
+    (wrongAcct ? 'Signed in as ' + escapeHtml(currentUser.email || '') + ' — switch to a Luca account' : 'Sign in to use the dialer') +
+    '</div><button class="btn-gold" id="dialer-signin-btn" style="margin:0 auto;">' +
+    (wrongAcct ? 'Switch Google account' : 'Sign in with Google') + '</button></div>';
+  document.getElementById('dialer-signin-btn').addEventListener('click', async () => {
+    if (currentUser) { try { await auth.signOut(); } catch (e) {} }
+    signInWithGoogle(true);
+  });
+}
+
+function renderDialerChoice() {
+  const zq = buildDialerQueue('zombie');
+  const sq = buildDialerQueue('stacked');
+  document.getElementById('dialer-body').innerHTML = `
+    <div class="dialer-choice-title">📞 Dialer</div>
+    <div class="dialer-choice-sub">New + Trying to Reach only · pick a list to dial</div>
+    <div class="dialer-choice-btns">
+      <button class="dialer-choice" onclick="dialerPick('zombie')">
+        <span class="dc-emoji">🧟</span>
+        <span><span class="dc-label">Zombies</span><div class="dc-count">${zq.length} heir${zq.length === 1 ? '' : 's'} to call</div></span>
+      </button>
+      <button class="dialer-choice" onclick="dialerPick('stacked')">
+        <span class="dc-emoji">📚</span>
+        <span><span class="dc-label">Stacked</span><div class="dc-count">${sq.length} lead${sq.length === 1 ? '' : 's'} to call</div></span>
+      </button>
+    </div>`;
+}
+
+function dialerPick(tabId) {
+  const queue = buildDialerQueue(tabId);
+  if (!queue.length) { showToast('No leads need calling right now 🎉', 'success'); return; }
+  dialer = { tabId, queue, idx: 0, stats: { called: 0, talked: 0 }, done: new Set() };
+  renderDialerMain();
+}
+
+function dialerExit() { dialer = null; renderDialerChoice(); }
+
+function dialerTargetKey(item) { return item.key + '|' + (item.heirId || ''); }
+
+// Current target, skipping anything already completed in this session.
+function dialerCurrent() {
+  if (!dialer) return null;
+  while (dialer.idx < dialer.queue.length && dialer.done.has(dialerTargetKey(dialer.queue[dialer.idx]))) dialer.idx++;
+  if (dialer.idx >= dialer.queue.length) return null;
+  const item = dialer.queue[dialer.idx];
+  const lead = getLead(dialer.tabId, item.key);
+  if (!lead) { dialer.done.add(dialerTargetKey(item)); return dialerCurrent(); }
+  const heir = item.heirId ? (callableHeirs(lead).find(h => h.hid === item.heirId) || null) : null;
+  return { lead, heir, item };
+}
+
+function renderDialerMain() {
+  const body = document.getElementById('dialer-body');
+  if (!dialer || !dialer.tabId) { renderDialerChoice(); return; }
+  const cur = dialerCurrent();
+  const total = dialer.queue.length;
+  if (!cur) {
+    body.innerHTML = `<div class="dialer-done">
+      <div style="font-size:48px;">🎉</div>
+      <h2 style="color:#e9edf3;">Queue complete!</h2>
+      <p style="color:#8a97a8;">Called ${dialer.stats.called} · Conversations ${dialer.stats.talked}</p>
+      <button class="btn-gold" onclick="dialerExit()" style="margin:16px auto 0;">Choose a list</button>
+    </div>`;
+    return;
+  }
+  const { lead, heir } = cur;
+  const isHeir = !!heir;
+  const target = isHeir ? heir : lead;
+  const ci = getCadenceInfo(target);
+  const st = STATUS_MAP[lead.status] || STATUSES[0];
+  const phone = isHeir ? (heir.phone || '') : (lead.phone || '');
+  const name = isHeir ? heir.name : (lead.mainPocName || 'Unknown');
+  const digits = digitsOnly(phone);
+  const pos = dialer.idx + 1;
+  const smsArgs = isHeir
+    ? `openSmsSheet('${dialer.tabId}', '${escapeHtml(lead.key)}', null, '${escapeHtml(heir.hid)}')`
+    : `openSmsSheet('${dialer.tabId}', '${escapeHtml(lead.key)}', null)`;
+
+  body.innerHTML = `
+    <div class="dialer-top">
+      <button class="btn-ghost" onclick="dialerExit()">✕ Exit</button>
+      <div class="dialer-progress">${dialer.tabId === 'zombie' ? '🧟 Zombies' : '📚 Stacked'} · ${pos} of ${total}</div>
+      <div style="width:70px;"></div>
+    </div>
+    <div class="dialer-stats">📞 ${dialer.stats.called} called · 💬 ${dialer.stats.talked} talked</div>
+    <div class="dialer-card">
+      <div class="dialer-name">${isHeir ? '👤 ' : ''}${escapeHtml(name)}</div>
+      ${isHeir && heir.relationship ? `<div class="dialer-rel">${escapeHtml(heir.relationship)}</div>` : ''}
+      <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
+      <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
+      <div class="dialer-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span>${codeBadges(lead)}</div>
+      ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
+      <div class="dialer-cadence">${cadenceLine(target)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
+      ${phone ? `
+        <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}')">📞 ${escapeHtml(formatPhone(phone))}</a>
+        <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
+      ` : '<div class="dialer-nophone">No phone on file</div>'}
+    </div>
+    <div class="dialer-outcomes">
+      <div class="section-label" style="margin-bottom:8px;">Log outcome</div>
+      <div class="dialer-outcome-grid">
+        ${SESSION_OUTCOMES.map(o => `<button class="dialer-outcome" data-dialer-outcome="${o.id}">${o.label}</button>`).join('')}
+      </div>
+      <div class="dialer-sub" id="dialer-substage" style="display:none;">
+        <div class="section-label" style="margin-bottom:8px;">Qualification substage</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${(SUBSTAGES.callback || []).map(ss => `<button class="dialer-outcome" data-dialer-substage="${escapeHtml(ss)}">${escapeHtml(ss)}</button>`).join('')}
+          <button class="dialer-outcome" data-dialer-substage="">Skip</button>
+        </div>
+      </div>
+      <div class="dialer-sub" id="dialer-cbdate" style="display:none;">
+        <div class="section-label" style="margin-bottom:8px;">Callback date</div>
+        <div style="display:flex;gap:8px;">
+          <input type="date" id="dialer-cb-date" style="flex:1;background:#0d1b2e;color:#e9edf3;border:1px solid #2f4d78;border-radius:8px;padding:10px;" />
+          <button class="btn-gold" data-dialer-cb-confirm>Set</button>
+        </div>
+      </div>
+    </div>
+    <div class="dialer-nav">
+      <button class="dialer-prev" onclick="dialerPrev()">⏮ Prev</button>
+      <button class="dialer-next" onclick="dialerNext()">Next ⏭</button>
+    </div>`;
+
+  body.querySelectorAll('[data-dialer-outcome]').forEach(b => {
+    b.addEventListener('click', () => dialerOutcome(b.getAttribute('data-dialer-outcome')));
+  });
+  body.querySelectorAll('[data-dialer-substage]').forEach(b => {
+    b.addEventListener('click', () => dialerSubstageDone(b.getAttribute('data-dialer-substage')));
+  });
+  const cbBtn = body.querySelector('[data-dialer-cb-confirm]');
+  if (cbBtn) cbBtn.addEventListener('click', dialerCallbackDateDone);
+}
+
+let dialerPendingOutcome = null;
+async function dialerOutcome(outcomeId) {
+  const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
+  if (!oc || !dialer) return;
+  if (oc.promptSubstage) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-substage').style.display = 'block'; return; }
+  if (oc.promptDate) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-cbdate').style.display = 'block'; return; }
+  await dialerApplyOutcome(outcomeId, {});
+}
+async function dialerSubstageDone(subStage) {
+  const oid = dialerPendingOutcome; dialerPendingOutcome = null;
+  document.getElementById('dialer-substage').style.display = 'none';
+  await dialerApplyOutcome(oid, { subStage });
+}
+async function dialerCallbackDateDone() {
+  const d = document.getElementById('dialer-cb-date').value;
+  if (!d) { showToast('Pick a date', 'error'); return; }
+  const oid = dialerPendingOutcome; dialerPendingOutcome = null;
+  document.getElementById('dialer-cbdate').style.display = 'none';
+  await dialerApplyOutcome(oid, { callbackDate: d });
+}
+async function dialerApplyOutcome(outcomeId, opts) {
+  const cur = dialerCurrent();
+  if (!cur || !dialer) return;
+  const { lead, heir, item } = cur;
+  const oc = heir
+    ? await applyHeirOutcome(dialer.tabId, lead.key, heir.hid, outcomeId, opts)
+    : await applyOutcome(dialer.tabId, lead.key, outcomeId, opts);
+  if (!oc) return; // requireAuth blocked — already toasted
+  dialer.stats.called++;
+  if (outcomeId === 'talked') dialer.stats.talked++;
+  dialer.done.add(dialerTargetKey(item));
+  if (oc.promptSms) {
+    openSmsSheet(dialer.tabId, lead.key, 'intro', heir ? heir.hid : null);
+    showToast('Send the intro SMS, then continue →');
+  }
+  renderDialerMain();
+}
+function dialerNext() {
+  if (!dialer) return;
+  dialer.idx++;
+  renderDialerMain();
+}
+function dialerPrev() {
+  if (!dialer) return;
+  let i = dialer.idx - 1;
+  while (i > 0 && dialer.done.has(dialerTargetKey(dialer.queue[i]))) i--;
+  dialer.idx = Math.max(0, i);
+  renderDialerMain();
+}
+
 /* ---------------- Init ---------------- */
 const urlParams = new URLSearchParams(window.location.search);
 const isReportMode = urlParams.get('report') === '1';
+const isDialerMode = urlParams.get('dialer') === '1';
 
 function resetTabState() {
   expandedKey = null;
@@ -2462,6 +2735,8 @@ document.getElementById('acct-switch-btn').addEventListener('click', async () =>
 
 if (isReportMode) {
   initReportMode();
+} else if (isDialerMode) {
+  initDialerMode();
 } else {
   // Overlay subscriptions start from the auth state handler (only when signed
   // in); sheet data is public and loads regardless.
