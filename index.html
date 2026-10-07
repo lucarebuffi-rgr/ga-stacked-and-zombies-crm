@@ -712,7 +712,7 @@
 
     <div id="leads-controls">
     <div class="controls">
-      <div class="search-wrap"><span>🔍</span><input type="text" id="search-input" placeholder="Search address, city, zip, why hot…" /></div>
+      <div class="search-wrap"><span>🔍</span><input type="text" id="search-input" placeholder="Search by first/last name, address, city, zip, phone..." /></div>
       <select id="director-filter"></select>
       <div class="date-filter-wrap">
         <label for="added-date-filter">Added:</label>
@@ -1248,10 +1248,17 @@ function getFiltered() {
   const q = search.trim().toLowerCase();
   if (q) {
     // Search spans the whole CRM — ignore the pipeline stage filter while searching
+    // Searchable fields: first/last name, address, city, zip, phone
     // Phone numbers match regardless of format: normalize both query and stored phone to digits
     const qDigits = q.replace(/\D/g, '');
     list = list.filter(l => {
-      const haystack = (l.address + ' ' + l.city + ' ' + l.state + ' ' + l.zip + ' ' + (l.whyHot || '') + ' ' + (l.mainPocName || '')).toLowerCase();
+      // Build name haystack: main POC + all heir names
+      let names = (l.mainPocName || '') + ' ';
+      try {
+        const heirs = callableHeirs(l);
+        names += heirs.map(h => (h.firstName || '') + ' ' + (h.lastName || '')).join(' ');
+      } catch (e) {}
+      const haystack = (names + ' ' + l.address + ' ' + l.city + ' ' + l.zip + ' ' + (l.phone || '')).toLowerCase();
       if (haystack.includes(q)) return true;
       // Phone: compare digits-only if the query has any digits
       if (qDigits && (l.phone || '').replace(/\D/g, '').includes(qDigits)) return true;
@@ -1458,7 +1465,7 @@ function render() {
     const total = sheetRows[tab].length;
     const manual = manualLeads(tab).length;
     note.innerHTML = (total || manual)
-      ? `${TABS[tab].emoji} <b>${total}</b> ${TABS[tab].label.toLowerCase()} loaded live from the Google Sheet${manual ? ` + <b>${manual}</b> added manually` : ''}${lastSyncAt ? ` · synced ${timeAgo(lastSyncAt)}` : ''}. Sheet is the master — this app never writes to it.`
+      ? `${TABS[tab].emoji} <b>${total}</b> ${TABS[tab].label.toLowerCase()}${manual ? ` + <b>${manual}</b> added manually` : ''}`
       : 'Loading…';
   }
 
