@@ -506,6 +506,13 @@
 .heir-del { background:none; border:none; color:#d9534f; font-size:15px; padding:6px; }
 .heir-nophone { font-size:12px; color:#8a97a8; }
 .heir-progress { font-size:12px; color:#d4a843; font-weight:700; margin-left:8px; }
+.heir-cadence { font-size:11.5px; color:#9fb3cc; margin-top:6px; padding-top:6px; border-top:1px dashed #22385a; }
+.v-card .heir-cadence { border-top:1px dashed #2f4d78; margin-top:6px; padding-top:6px; font-size:11px; }
+.cs-heirs { margin-top:12px; }
+.cs-heir-row { display:flex; flex-direction:column; gap:6px; }
+.cs-heir-pick { background:#12263f; border:1px solid #2f4d78; border-radius:8px; padding:10px; color:#e9edf3; font-size:13px; text-align:left; }
+.cs-heir-pick .heir-rel { color:#8a97a8; font-size:12px; }
+.cs-heir-rel { font-size:13px; color:#9fb3cc; margin-bottom:4px; }
 .heir-add-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
 .heir-add-row input { flex:1 1 120px; background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:10px; font-size:14px; }
 .heir-add-row .btn-gold { padding:10px 16px; font-size:14px; }
@@ -1607,10 +1614,18 @@ function familyTreeHTML(lead) {
     else unassignedGC.push(g);
   });
   var vcard = function (h, cls, relLabel, sub) {
+    // per-heir cadence line (skip for the deceased card)
+    var cadHtml = '';
+    if (cls !== 'deceased') {
+      var hid = treeHeirId(fullName(h));
+      var uh = null;
+      try { uh = callableHeirs(lead).find(function (x) { return x.hid === hid; }); } catch (e) { uh = null; }
+      if (uh) cadHtml = heirCadenceLineHTML(uh);
+    }
     return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
-      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + '</div>';
+      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
   };
   var html = '<div class="vtree-wrap"><div class="vtree">';
   if (groups.parents.length) {
@@ -1931,6 +1946,23 @@ function attachCardListeners() {
       const name = nameEl ? nameEl.value.trim() : '';
       if (!name) { showToast('Enter the heir name', 'error'); return; }
       addHeir(key, { name, relationship: relEl ? relEl.value.trim() : '', phone: phoneEl ? phoneEl.value.trim() : '' });
+    });
+  });
+  document.querySelectorAll('[data-heir-show-form]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-heir-show-form');
+      const form = document.querySelector(`[data-heir-form="${CSS.escape(key)}"]`);
+      if (form) form.style.display = 'flex';
+      btn.parentElement.style.display = 'none';
+    });
+  });
+  document.querySelectorAll('[data-heir-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-heir-cancel');
+      const form = document.querySelector(`[data-heir-form="${CSS.escape(key)}"]`);
+      if (form) form.style.display = 'none';
+      const showBtn = document.querySelector(`[data-heir-show-form="${CSS.escape(key)}"]`);
+      if (showBtn) showBtn.parentElement.style.display = 'block';
     });
   });
   document.querySelectorAll('[data-heir-del]').forEach(btn => {
@@ -2371,6 +2403,136 @@ function cadenceLine(lead) {
   return `📞 ${ci.attempts} attempt${ci.attempts === 1 ? '' : 's'} · last ${lastAgo} · next: ${ci.stepDef.label}`;
 }
 
+/* ---------------- Per-heir cadence (zombies) ---------------- */
+// Each zombie heir gets their own 10-touch cadence, tracked independently.
+// Structured heirs (lead.heirs[]) carry cadence fields on the heir object.
+// Family-tree heirs carry cadence in the overlay map lead.heirCadence[hid].
+
+function treeHeirId(name) {
+  return 't:' + (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+function normName(n) { return (n || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+
+// Flat list of family-tree heirs (excludes the deceased). Each: {hid, name, relationship, phone}
+function treeHeirsList(lead) {
+  const out = [];
+  let data = null;
+  if (lead && lead.familyTreeData && Array.isArray(lead.familyTreeData.heirs) && lead.familyTreeData.heirs.length) {
+    data = lead.familyTreeData;
+  } else if (lead && lead.familyTree) {
+    try { data = parseFamilyTreeText(lead.familyTree); } catch (e) { data = null; }
+  }
+  if (!data || !Array.isArray(data.heirs)) return out;
+  const seen = new Set();
+  for (const h of data.heirs) {
+    const name = ((h.firstName || '') + ' ' + (h.lastName || '')).trim() || h.name || '';
+    if (!name) continue;
+    const k = normName(name);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({ hid: treeHeirId(name), name, relationship: h.relationship || '', phone: h.phone || '' });
+  }
+  return out;
+}
+
+// Unified callable heir list for a zombie lead. Each entry:
+// { hid, src: 'structured'|'tree', name, relationship, phone, status, cadenceStep, cycleStartDate, attempts, lastTouchAt, lastTouchType }
+// Structured heirs win on name collision with tree heirs.
+function callableHeirs(lead) {
+  if (!lead) return [];
+  const out = [];
+  const seen = new Set();
+  const hc = lead.heirCadence || {};
+  for (const h of (lead.heirs || [])) {
+    const name = h.name || '';
+    const k = normName(name);
+    if (k) seen.add(k);
+    out.push({
+      hid: h.id, src: 'structured',
+      name, relationship: h.relationship || '', phone: h.phone || '', status: h.status || 'not_contacted',
+      cadenceStep: h.cadenceStep != null ? h.cadenceStep : 0,
+      cycleStartDate: h.cycleStartDate || null,
+      attempts: h.attempts || 0,
+      lastTouchAt: h.lastTouchAt || null,
+      lastTouchType: h.lastTouchType || null,
+    });
+  }
+  for (const t of treeHeirsList(lead)) {
+    if (seen.has(normName(t.name))) continue; // structured version wins
+    const saved = hc[t.hid] || {};
+    out.push({
+      hid: t.hid, src: 'tree',
+      name: t.name, relationship: t.relationship, phone: t.phone, status: 'not_contacted',
+      cadenceStep: saved.cadenceStep != null ? saved.cadenceStep : 0,
+      cycleStartDate: saved.cycleStartDate || null,
+      attempts: saved.attempts || 0,
+      lastTouchAt: saved.lastTouchAt || null,
+      lastTouchType: saved.lastTouchType || null,
+    });
+  }
+  return out;
+}
+
+// Only heirs we can actually call: has a phone, not dead/not-interested.
+function callableHeirsWithPhones(lead) {
+  return callableHeirs(lead).filter(h => (h.phone || '').trim() && !['dead', 'not_interested'].includes(h.status));
+}
+
+function heirCadenceLineHTML(heir) {
+  const ci = getCadenceInfo(heir);
+  const lastAgo = ci.lastTouchAt ? timeAgo(ci.lastTouchAt) : 'never';
+  return `<div class="heir-cadence">📞 ${ci.attempts} attempt${ci.attempts === 1 ? '' : 's'} · last ${lastAgo} · next: ${escapeHtml(ci.stepDef.short)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>`;
+}
+
+async function saveHeirCadence(tabId, key, hid, src, patch) {
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  if (src === 'structured') {
+    const heirs = (lead.heirs || []).map(h => h.id === hid ? { ...h, ...patch } : h);
+    await saveOverlay(tabId, key, { heirs });
+  } else {
+    const hc = { ...(lead.heirCadence || {}) };
+    hc[hid] = { ...(hc[hid] || {}), ...patch };
+    await saveOverlay(tabId, key, { heirCadence: hc });
+  }
+}
+
+// Advance one heir to the next cadence step (mirrors advanceCadence).
+async function advanceHeirCadence(tabId, key, hid, src, touchType) {
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  const heir = callableHeirs(lead).find(h => h.hid === hid);
+  if (!heir) return;
+  const now = new Date();
+  let step = heir.cadenceStep != null ? heir.cadenceStep : 0;
+  let cycleStart = heir.cycleStartDate ? new Date(heir.cycleStartDate) : null;
+  if (!(heir.attempts || 0) || !cycleStart || isNaN(cycleStart)) {
+    cycleStart = now; step = 0; // first touch starts the cycle today
+  }
+  step += 1;
+  if (step > 8) { step = 0; cycleStart = new Date(cycleStart); cycleStart.setDate(cycleStart.getDate() + CADENCE_CYCLE_DAYS); }
+  await saveHeirCadence(tabId, key, hid, src, {
+    cadenceStep: step,
+    cycleStartDate: cycleStart.toISOString(),
+    attempts: (heir.attempts || 0) + 1,
+    lastTouchAt: now.toISOString(),
+    lastTouchType: touchType || 'touch',
+  });
+}
+
+// Count a touch on an heir without advancing the step (talked, bad number, etc.)
+async function touchHeir(tabId, key, hid, src, touchType) {
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  const heir = callableHeirs(lead).find(h => h.hid === hid);
+  if (!heir) return;
+  await saveHeirCadence(tabId, key, hid, src, {
+    attempts: (heir.attempts || 0) + 1,
+    lastTouchAt: new Date().toISOString(),
+    lastTouchType: touchType || 'touch',
+  });
+}
+
 // Advance to the next cadence step after a touch. Loops to step 0 on Day 11.
 async function advanceCadence(tabId, key, touchType) {
   const lead = getLead(tabId, key);
@@ -2416,17 +2578,41 @@ function scoreLead(lead) {
   return score;
 }
 
-// Leads that need contact, best first. Used by Call Session and "Call Next".
+// Heir-level scoring for zombie call targets: lead base + heir cadence signals.
+function scoreHeirTarget(lead, heir) {
+  let s = scoreLead(lead);
+  const ci = getCadenceInfo(heir);
+  if (ci.overdue) s += 15;
+  if (!(heir.attempts || 0)) s += 10;
+  else {
+    const lt = heir.lastTouchAt ? new Date(heir.lastTouchAt).getTime() : 0;
+    if (lt && (Date.now() - lt) < 86400000) s -= 10;
+  }
+  return s;
+}
+
+// Call targets, best first. Used by Call Session and "Call Next".
+// Items are { key, heirId }: heirId is null for stacked (lead-level),
+// or the heir's hid for zombies (one entry per callable heir).
 function buildCallQueue(tabId) {
-  return allLeads(tabId)
-    .filter(l => !l.hidden && ['new', 'trying', 'followup'].includes(l.status) && (l.phone || '').trim())
-    .sort((a, b) => scoreLead(b) - scoreLead(a))
-    .map(l => l.key);
+  const items = [];
+  for (const l of allLeads(tabId)) {
+    if (l.hidden || !['new', 'trying', 'followup'].includes(l.status)) continue;
+    if (tabId === 'zombies') {
+      for (const h of callableHeirsWithPhones(l)) {
+        items.push({ key: l.key, heirId: h.hid, score: scoreHeirTarget(l, h) });
+      }
+    } else {
+      if (!(l.phone || '').trim()) continue;
+      items.push({ key: l.key, heirId: null, score: scoreLead(l) });
+    }
+  }
+  return items.sort((a, b) => b.score - a.score);
 }
 
 /* ---------------- SMS templates ---------------- */
-function smsTemplate(kind, lead) {
-  const name = (lead.mainPocName || '').split(' ')[0] || 'there';
+function smsTemplate(kind, lead, nameOverride) {
+  const name = nameOverride ? nameOverride.split(' ')[0] : ((lead.mainPocName || '').split(' ')[0] || 'there');
   const addr = lead.address || 'the property';
   if (kind === 'intro') return `Hi ${name}, this is Luca — I just tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
   if (kind === 'day2')  return `Hi ${name}, this is Luca — I tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
@@ -2441,10 +2627,11 @@ function buildTimeline(lead) {
   const items = [];
   (lead.notes || []).forEach(n => {
     const oc = OUTCOME_MAP[n.outcome] || {};
+    const heirTag = n.heirName ? ` (${n.heirName})` : '';
     items.push({
       ts: n.at, type: 'call',
       icon: n.outcome === 'talked' ? '💬' : (n.outcome === 'sms_sent' ? '💬' : '📞'),
-      title: n.outcome === 'sms_sent' ? 'SMS sent' : ('Call — ' + (oc.label || n.outcome || 'logged')),
+      title: n.outcome === 'sms_sent' ? 'SMS sent' + heirTag : ('Call — ' + (oc.label || n.outcome || 'logged') + heirTag),
       text: n.text || '',
     });
   });
@@ -2560,6 +2747,8 @@ function heirsHTML(lead) {
   if (heirs.length) {
     out += '<div class="heir-list">' + heirs.map(h => {
       const st = HEIR_STATUS_MAP[h.status] || HEIR_STATUS_MAP.not_contacted;
+      // resolve this structured heir's cadence for display
+      const uh = callableHeirs(lead).find(x => x.hid === h.id);
       return `<div class="heir-card">
         <div class="heir-top">
           <div><div class="heir-name">${escapeHtml(h.name || '—')}</div>
@@ -2573,17 +2762,20 @@ function heirsHTML(lead) {
           </select>
           <button class="heir-del" data-heir-del="${escapeHtml(lead.key)}" data-heir-id="${h.id}" title="Remove heir">✕</button>
         </div>
+        ${uh ? heirCadenceLineHTML(uh) : ''}
       </div>`;
     }).join('') + '</div>';
   } else if (!hasTree) {
     out += '<div class="timeline-empty">No heirs tracked yet — add them as RESEARCHER identifies them.</div>';
   }
-  out += `<div class="heir-add-row">
+  out += `<div class="heir-add-row" data-heir-form="${escapeHtml(lead.key)}" style="display:none;">
       <input type="text" placeholder="Heir name" data-heir-name="${escapeHtml(lead.key)}" />
       <input type="text" placeholder="Relationship" data-heir-rel="${escapeHtml(lead.key)}" />
       <input type="tel" placeholder="Phone" data-heir-phone="${escapeHtml(lead.key)}" />
-      <button class="btn-gold" data-heir-add="${escapeHtml(lead.key)}">+ Add heir</button>
-    </div>`;
+      <button class="btn-gold" data-heir-add="${escapeHtml(lead.key)}">Save heir</button>
+      <button class="btn-ghost" data-heir-cancel="${escapeHtml(lead.key)}">Cancel</button>
+    </div>
+    <div style="margin-top:8px;"><button class="btn-gold" data-heir-show-form="${escapeHtml(lead.key)}">+ Add heir</button></div>`;
   return out;
 }
 
@@ -2650,6 +2842,40 @@ async function applyOutcome(tabId, key, outcomeId, opts = {}) {
   return oc;
 }
 
+// Log an outcome for a specific heir: lead status + timeline (tagged with heir) + THAT HEIR's cadence.
+async function applyHeirOutcome(tabId, key, hid, outcomeId, opts = {}) {
+  const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
+  if (!oc) return;
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  if (!requireAuth()) return;
+  const heir = callableHeirs(lead).find(h => h.hid === hid);
+  if (!heir) return;
+  const now = new Date().toISOString();
+  const notes = (lead.notes || []).slice();
+  notes.push({ at: now, outcome: oc.id, text: opts.note || '', heirId: hid, heirName: heir.name });
+
+  const patch = { notes, status: oc.status };
+  if (!SUBSTAGES[oc.status]) patch.subStage = lead.subStage && SUBSTAGES[oc.status] ? lead.subStage : '';
+  const sh = (lead.statusHistory || []).slice();
+  if (lead.status !== oc.status) sh.push({ at: now, from: lead.status, to: oc.status });
+  patch.statusHistory = sh;
+  if ((oc.status === 'dead' || oc.status === 'not_interested') && lead.status !== oc.status) {
+    patch.deadAt = now;
+    patch.deadCodes = { ...(lead.codes || {}) };
+  }
+  if (oc.flagRetrace) patch.needsRetrace = true;
+  if (opts.subStage) patch.subStage = opts.subStage;
+  await saveOverlay(tabId, key, patch);
+
+  // advance (or just touch) THIS HEIR's cadence — lead-level cadence untouched
+  if (oc.advance) await advanceHeirCadence(tabId, key, hid, heir.src, oc.touch);
+  else await touchHeir(tabId, key, hid, heir.src, oc.touch);
+
+  logActivity(tabId, lead, 'outcome', `${oc.label} — ${heir.name}${opts.note ? ' — ' + opts.note : ''}`);
+  return oc;
+}
+
 async function addTaskDirect(tabId, key, name, dateObj) {
   const lead = getLead(tabId, key);
   if (!lead) return;
@@ -2686,21 +2912,28 @@ async function cleanupAutoTasks() {
 let smsSheetLeadKey = null;
 let smsSheetPrefill = null; // 'intro' | 'day2' | 'day6' | null
 
-function openSmsSheet(tabId, key, prefill) {
+let smsSheetHeirId = null;
+function openSmsSheet(tabId, key, prefill, heirId) {
   smsSheetLeadKey = key;
   smsSheetPrefill = prefill || null;
+  smsSheetHeirId = heirId || null;
   const lead = getLead(tabId, key);
-  const phone = lead ? lead.phone : '';
-  document.getElementById('sms-sheet-phone').textContent = phone ? formatPhone(phone) : 'no phone';
+  let phone = lead ? lead.phone : '';
+  let smsName = '';
+  if (heirId && lead) {
+    const heir = callableHeirs(lead).find(h => h.hid === heirId);
+    if (heir) { phone = heir.phone || ''; smsName = heir.name; }
+  }
+  document.getElementById('sms-sheet-phone').textContent = (smsName ? smsName + ' · ' : '') + (phone ? formatPhone(phone) : 'no phone');
   const ta = document.getElementById('sms-sheet-text');
-  ta.value = prefill ? smsTemplate(prefill, lead) : (prefill === null && smsSheetPrefill === null ? '' : smsTemplate('day2', lead));
-  if (prefill) ta.value = smsTemplate(prefill, lead);
+  ta.value = prefill ? smsTemplate(prefill, lead, smsName) : (prefill === null && smsSheetPrefill === null ? '' : smsTemplate('day2', lead, smsName));
+  if (prefill) ta.value = smsTemplate(prefill, lead, smsName);
   document.getElementById('sms-sheet').classList.add('open');
   updateSmsCount();
 }
 function closeSmsSheet() {
   document.getElementById('sms-sheet').classList.remove('open');
-  smsSheetLeadKey = null; smsSheetPrefill = null;
+  smsSheetLeadKey = null; smsSheetPrefill = null; smsSheetHeirId = null;
 }
 function updateSmsCount() {
   const ta = document.getElementById('sms-sheet-text');
@@ -2713,17 +2946,24 @@ async function sendSmsFromSheet() {
   const text = document.getElementById('sms-sheet-text').value.trim();
   if (!lead || !text) { showToast('Enter a message first', 'error'); return; }
   if (!requireAuth()) return;
+  // resolve heir target if this SMS is for a specific heir
+  let heir = null, phone = lead.phone;
+  if (smsSheetHeirId) {
+    heir = callableHeirs(lead).find(h => h.hid === smsSheetHeirId) || null;
+    if (heir && heir.phone) phone = heir.phone;
+  }
   const btn = document.getElementById('sms-send-btn');
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
-    await sendSmsViaQuo(lead.phone, text);
+    await sendSmsViaQuo(phone, text);
     const smsLog = (lead.smsLog || []).slice();
-    smsLog.push({ at: new Date().toISOString(), content: text, dir: 'out' });
+    smsLog.push({ at: new Date().toISOString(), content: text, dir: 'out', heirId: heir ? heir.hid : null, heirName: heir ? heir.name : null });
     const notes = (lead.notes || []).slice();
-    notes.push({ at: new Date().toISOString(), outcome: 'sms_sent', text: text.slice(0, 200) });
+    notes.push({ at: new Date().toISOString(), outcome: 'sms_sent', text: text.slice(0, 200), heirId: heir ? heir.hid : null, heirName: heir ? heir.name : null });
     await saveOverlay(tab, key, { smsLog, notes });
-    await advanceCadence(tab, key, 'sms');
-    logActivity(tab, lead, 'sms', 'SMS sent: ' + text.slice(0, 120));
+    if (heir) await advanceHeirCadence(tab, key, heir.hid, heir.src, 'sms');
+    else await advanceCadence(tab, key, 'sms');
+    logActivity(tab, lead, 'sms', 'SMS sent' + (heir ? ' to ' + heir.name : '') + ': ' + text.slice(0, 120));
     showToast('SMS sent ✓');
     closeSmsSheet();
     render();
@@ -2754,18 +2994,28 @@ function endCallSession() {
   if (s) showToast('Session: ' + s, 'success');
   render();
 }
+function sessionTargetKey(item) { return item.key + '|' + (item.heirId || ''); }
 function sessionLead() {
   if (!callSession) return null;
-  // skip done leads
-  while (callSession.idx < callSession.queue.length && callSession.done.has(callSession.queue[callSession.idx])) callSession.idx++;
+  // skip done targets
+  while (callSession.idx < callSession.queue.length && callSession.done.has(sessionTargetKey(callSession.queue[callSession.idx]))) callSession.idx++;
   if (callSession.idx >= callSession.queue.length) return null;
-  return getLead(callSession.tabId, callSession.queue[callSession.idx]);
+  return getLead(callSession.tabId, callSession.queue[callSession.idx].key);
+}
+// Returns { lead, heir } for the current queue item; heir is null for lead-level targets.
+function sessionTarget() {
+  const lead = sessionLead();
+  if (!lead || !callSession) return { lead: null, heir: null };
+  const item = callSession.queue[callSession.idx];
+  if (!item || !item.heirId) return { lead, heir: null };
+  const heir = callableHeirs(lead).find(h => h.hid === item.heirId) || null;
+  return { lead, heir };
 }
 
 function renderCallSession() {
   const el = document.getElementById('call-session');
   if (!callSession) { el.classList.remove('open'); return; }
-  const lead = sessionLead();
+  const { lead, heir } = sessionTarget();
   const total = callSession.queue.length;
   if (!lead) {
     el.innerHTML = `<div class="cs-wrap"><div class="cs-done">
@@ -2776,27 +3026,43 @@ function renderCallSession() {
     </div></div>`;
     return;
   }
-  const ci = getCadenceInfo(lead);
+  const isHeirTarget = !!heir;
+  const ci = isHeirTarget ? getCadenceInfo(heir) : getCadenceInfo(lead);
   const tl = buildTimeline(lead).slice(0, 3);
   const st = STATUS_MAP[lead.status] || STATUSES[0];
-  const phone = lead.phone || '';
-  const name = lead.mainPocName || lead.address;
+  const phone = isHeirTarget ? (heir.phone || '') : (lead.phone || '');
+  const name = isHeirTarget ? heir.name : (lead.mainPocName || lead.address);
+  // Heir switcher: jump to another callable heir on this lead without leaving the session
+  let heirSwitcher = '';
+  if (callSession.tabId === 'zombies') {
+    const others = callableHeirsWithPhones(lead).filter(h => !heir || h.hid !== heir.hid);
+    if (others.length) {
+      heirSwitcher = `<div class="cs-heirs"><div class="section-label">Other heirs on this property</div><div class="cs-heir-row">` +
+        others.map(h => {
+          const hci = getCadenceInfo(h);
+          return `<button class="cs-heir-pick" onclick="csSwitchHeir('${escapeHtml(h.hid)}')">👤 ${escapeHtml(h.name)}${h.relationship ? ` <span class="heir-rel">(${escapeHtml(h.relationship)})</span>` : ''} · ${hci.attempts}📞${hci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</button>`;
+        }).join('') + `</div></div>`;
+    }
+  }
 
   el.innerHTML = `<div class="cs-wrap">
     <div class="cs-top">
       <button class="cs-end" onclick="endCallSession()">✕ End</button>
-      <div class="cs-progress">Lead ${callSession.idx + 1} of ${total}</div>
+      <div class="cs-progress">${callSession.tabId === 'zombies' ? '🧟 ZOMBIES' : '📚 STACKED'} · ${isHeirTarget ? 'Heir' : 'Lead'} ${callSession.idx + 1} of ${total}</div>
       <div class="cs-stats">📞 ${callSession.stats.called} · 💬 ${callSession.stats.talked} · 📅 ${callSession.stats.callbacks}</div>
     </div>
     <div class="cs-card">
       <div class="cs-step">Next: <b>${escapeHtml(ci.stepDef.label)}</b> <span class="cs-hint">${escapeHtml(ci.stepDef.hint)}</span></div>
-      <h2 class="cs-name">${escapeHtml(lead.mainPocName || 'Unknown')}</h2>
-      <div class="cs-addr">📍 ${escapeHtml(fullAddressStr(lead))}</div>
+      ${isHeirTarget
+        ? `<h2 class="cs-name">👤 ${escapeHtml(heir.name)}</h2><div class="cs-heir-rel">${escapeHtml(heir.relationship || 'Heir')} · 📍 ${escapeHtml(lead.address)}</div>`
+        : `<h2 class="cs-name">${escapeHtml(lead.mainPocName || 'Unknown')}</h2>
+      <div class="cs-addr">📍 ${escapeHtml(fullAddressStr(lead))}</div>`}
       <div class="cs-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span> ${codeBadges(lead)}</div>
-      ${lead.whyHot ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
-      <div class="cs-cadence">${cadenceLine(lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
+      ${lead.whyHot && !isHeirTarget ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
+      <div class="cs-cadence">${cadenceLine(isHeirTarget ? heir : lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
       ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
-      <button class="cs-text" onclick="openSmsSheet(callSession.tabId, '${escapeHtml(lead.key)}', ${ci.stepDef.type === 'sms' ? "'day2'" : 'null'})">💬 Text</button>` : '<div class="cs-nophone">No phone on file</div>'}
+      <button class="cs-text" onclick="openSmsSheet(callSession.tabId, '${escapeHtml(lead.key)}', ${ci.stepDef.type === 'sms' ? "'day2'" : 'null'}${isHeirTarget ? `, '${escapeHtml(heir.hid)}'` : ''})">💬 Text</button>` : '<div class="cs-nophone">No phone on file</div>'}
+      ${heirSwitcher}
       ${tl.length ? `<div class="cs-timeline"><div class="section-label">Recent</div>${tl.map(it => `<div class="cs-tl-row"><span>${it.icon}</span><span>${escapeHtml(it.title)}</span><span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span></div>`).join('')}</div>` : ''}
     </div>
     <div class="cs-outcomes" id="cs-outcomes">
@@ -2858,23 +3124,36 @@ async function csCallbackDateDone() {
   await csApplyOutcome(oid, { callbackDate: d });
 }
 async function csApplyOutcome(outcomeId, opts) {
-  const lead = sessionLead();
+  const { lead, heir } = sessionTarget();
   if (!lead || !callSession) return;
-  const oc = await applyOutcome(callSession.tabId, lead.key, outcomeId, opts);
+  const item = callSession.queue[callSession.idx];
+  const oc = heir
+    ? await applyHeirOutcome(callSession.tabId, lead.key, heir.hid, outcomeId, opts)
+    : await applyOutcome(callSession.tabId, lead.key, outcomeId, opts);
   callSession.stats.called++;
   if (outcomeId === 'talked') callSession.stats.talked++;
   if (outcomeId === 'callback_scheduled') callSession.stats.callbacks++;
-  callSession.done.add(lead.key);
+  callSession.done.add(sessionTargetKey(item));
   // After Double Dial + LVM, prompt the intro SMS (cadence step 1 includes SMS)
   if (oc && oc.promptSms) {
-    openSmsSheet(callSession.tabId, lead.key, 'intro');
+    openSmsSheet(callSession.tabId, lead.key, 'intro', heir ? heir.hid : null);
     showToast('Send the intro SMS, then continue →');
   }
   csNext(true);
 }
+// Switch to a different heir on the same lead mid-session.
+function csSwitchHeir(hid) {
+  if (!callSession) return;
+  const item = callSession.queue[callSession.idx];
+  if (!item) return;
+  // mark current target done, insert the new heir target at the current position
+  callSession.done.add(sessionTargetKey(item));
+  callSession.queue.splice(callSession.idx, 0, { key: item.key, heirId: hid, score: item.score });
+  renderCallSession();
+}
 function csNext(fromOutcome) {
   if (!callSession) return;
-  if (!fromOutcome) callSession.done.add(callSession.queue[callSession.idx]);
+  if (!fromOutcome) callSession.done.add(sessionTargetKey(callSession.queue[callSession.idx]));
   callSession.idx++;
   renderCallSession();
 }
