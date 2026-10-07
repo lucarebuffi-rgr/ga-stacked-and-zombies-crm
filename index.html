@@ -600,7 +600,9 @@
   .dialer-stage:hover { border-color: #d4a843; }
   .dialer-stage.active { border-color: #d4a843; color: #e8c476; box-shadow: 0 0 0 1px #d4a843; }
   .dialer-stage b { display: block; font-size: 16px; margin-bottom: 2px; }
-.dialer-outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.dialer-outcome-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.dialer-outcome-grid .dialer-outcome { flex: 1 1 30%; min-width: 140px; max-width: 32%; }
+.dialer-outcome-grid .dialer-outcome:nth-child(n+4) { flex: 1 1 45%; max-width: 48%; }
 .dialer-outcome { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #e9edf3; border-radius: 12px; padding: 15px 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; min-height: 56px; }
 .dialer-outcome:active { background: rgba(212,168,67,.15); border-color: #d4a843; }
   .dialer-nav { display: none; }
@@ -3398,13 +3400,13 @@ function resurrectionInfo(lead) {
 
 /* ---------------- Post-call automation ---------------- */
 const SESSION_OUTCOMES = [
-  { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
-  { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
-  { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
-  { id: 'talked',            label: '💬 Qualified',          status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
-  { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
-  { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
-  { id: 'callback_scheduled',label: '📅 Follow Up Scheduled', status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
+  { id: 'ghost',             label: '👻 Ghost / No Answer',      status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
+  { id: 'voicemail',         label: '📩 Voicemail Left',         status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
+  { id: 'double_dial',       label: '📞📞 Double Dial + LVM + SMS', status: 'trying',      touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
+  { id: 'talked',            label: '💬 Qualified',             status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
+  { id: 'callback_scheduled',label: '📅 Follow Up Scheduled',    status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
+  { id: 'not_interested',    label: '🚫 Not Interested',         status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
+  { id: 'bad_number',        label: '❌ Bad Number',             status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
