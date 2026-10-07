@@ -827,6 +827,18 @@
    Interactive data (statuses, notes, calls, tasks, family trees) lives in
    Firestore, keyed by normalized address.
    ========================================================================= */
+/* =========================================================================
+   MARKET DUPLICATION GUIDE — To clone this CRM for a new market:
+   1. Copy index.html to a new repo (or new branch).
+   2. Update CONFIG below: SHEETS_API_KEY, ZOMBIE_SHEET_ID, STACKED_SHEET_ID.
+   3. Update firebaseConfig below: create a new Firebase project, paste its config.
+   4. Firestore collections (zombieLeads, stackedLeads, hotLeadsActivityLog) are
+      auto-created on first write — no manual setup needed.
+   5. Update the <title> tag and header branding if desired.
+   6. Deploy to GitHub Pages. Done.
+   All market-specific values live in CONFIG + firebaseConfig. Nothing else
+   needs to change.
+   ========================================================================= */
 const CONFIG = {
   SHEETS_API_KEY: "AIzaSyB7oi16sfduaeHMTRRZiv8Q9xM_TQtOKy4",
   ZOMBIE_SHEET_ID: "1BM9MKOJwVuxUly8Bm3PflhOvB-4VyX6qPXU4XqiVIh4",
@@ -3791,8 +3803,23 @@ function heirsHTML(lead) {
       <button class="btn-gold" data-heir-add="${escapeHtml(lead.key)}">Save heir</button>
       <button class="btn-ghost" data-heir-cancel="${escapeHtml(lead.key)}">Cancel</button>
     </div>
-    <div style="margin-top:8px;"><button class="btn-gold" data-heir-show-form="${escapeHtml(lead.key)}">+ Add heir</button></div>`;
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn-gold" data-heir-show-form="${escapeHtml(lead.key)}">+ Add heir</button>
+      <button class="btn-ghost" onclick="toggleTreeBuilder('${escapeHtml(lead.key)}')">🌳 ${hasTree ? 'Edit' : 'Build'} Family Tree</button>
+    </div>
+    <div id="tree-builder-${escapeHtml(lead.key)}" style="display:none;margin-top:10px;">
+      <div style="font-size:12px;color:#8a97a8;margin-bottom:6px;">Paste the family tree text format:<br><code style="font-size:11px;">Deceased Name (deceased) — address<br>| First | Last | Relationship | Phone |<br>| ... |</code></div>
+      <textarea data-tree-input="${escapeHtml(lead.key)}" placeholder="Deceased Name (deceased) — address&#10;| John | Smith | Son | (555) 123-4567 |&#10;| Jane | Smith | Daughter | |" style="width:100%;min-height:120px;padding:10px;border-radius:10px;background:#0b1626;border:1px solid #22385a;color:#e9edf3;font-size:13px;font-family:monospace;resize:vertical;">${escapeHtml(treeDrafts[lead.key] || lead.familyTree || '')}</textarea>
+      <div style="margin-top:8px;display:flex;gap:8px;">
+        <button class="btn-gold" data-save-tree="${escapeHtml(lead.key)}">💾 Save Tree</button>
+        <button class="btn-ghost" onclick="toggleTreeBuilder('${escapeHtml(lead.key)}')">Cancel</button>
+      </div>
+    </div>`;
   return out;
+}
+function toggleTreeBuilder(key) {
+  const el = document.getElementById(`tree-builder-${key}`);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 /* ---------------- Resurrection alerts ---------------- */
