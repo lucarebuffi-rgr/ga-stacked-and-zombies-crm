@@ -204,6 +204,20 @@
   .detail-section { margin-bottom: 18px; }
   .detail-section > .section-label { font-size: 11px; color: #8a97a8; font-weight: 700; margin-bottom: 9px; text-transform: uppercase; letter-spacing: .08em; }
   .whyhot-box { background: #0b1626; border: 1px solid #1e3554; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.65; }
+  /* Key list-specific banners (TD taxes due / PF auction date) — read-only from sheet */
+  .key-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; border: 1px solid; }
+  .key-banner .kb-label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+  .key-banner .kb-sub { font-size: 10px; opacity: .7; margin-top: 2px; }
+  .key-banner .kb-value { font-size: 22px; font-weight: 800; white-space: nowrap; }
+  .key-banner-td { background: linear-gradient(135deg, rgba(212,168,67,.18), rgba(212,168,67,.05)); border-color: rgba(212,168,67,.5); }
+  .key-banner-td .kb-label { color: #e8c476; }
+  .key-banner-td .kb-value { color: #f3dda0; }
+  .key-banner-pf { background: rgba(26,44,71,.7); border-color: #2b4a76; }
+  .key-banner-pf .kb-label { color: #8fb8e8; }
+  .key-banner-pf .kb-value { color: #dbe9fa; }
+  .key-banner-urgent { background: linear-gradient(135deg, rgba(217,83,79,.22), rgba(217,83,79,.06)); border-color: rgba(217,83,79,.65); }
+  .key-banner-urgent .kb-label { color: #f0a5a1; }
+  .key-banner-urgent .kb-value { color: #ffd7d5; }
   .tree-box { background: #0b1626; border: 1px solid rgba(212,168,67,.28); border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.75; white-space: pre-wrap; }
   .vtree-wrap { overflow-x: auto; padding-bottom: 6px; }
 .vtree { padding: 6px 4px 2px; }
@@ -941,6 +955,8 @@ function parseSheet(values, tabId) {
       codes,
       whyHot: tabId === 'zombie' ? get(row, 'whyhot') : '',
       dateFlagged: tabId === 'zombie' ? get(row, 'dateflagged') : '',
+      tdAmount: get(row, 'tdamount'),
+      pfAuctionDate: get(row, 'pfauctiondate'),
       tab: tabId,
     });
   }
@@ -1317,6 +1333,36 @@ function render() {
 }
 
 /* ---------------- Expanded detail ---------------- */
+/* TD taxes-due and PF auction-date banners — read-only from sheet columns */
+function keyBannersHTML(lead) {
+  let out = '';
+  if (lead.codes && lead.codes['TD'] && (lead.tdAmount || '').trim()) {
+    const raw = String(lead.tdAmount).trim();
+    const num = parseFloat(raw.replace(/[^0-9.\-]/g, ''));
+    const disp = isNaN(num) ? escapeHtml(raw)
+      : '$' + num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    out += `<div class="key-banner key-banner-td">
+      <div><div class="kb-label">💰 Taxes Due</div><div class="kb-sub">from county records · read-only</div></div>
+      <div class="kb-value">${disp}</div>
+    </div>`;
+  }
+  if (lead.codes && lead.codes['PF'] && (lead.pfAuctionDate || '').trim()) {
+    const raw = String(lead.pfAuctionDate).trim();
+    const t = parseSheetDate(raw);
+    let urgent = false, whenTxt = '';
+    if (t) {
+      const days = Math.ceil((t - Date.now()) / 86400000);
+      if (days >= 0 && days <= 30) { urgent = true; whenTxt = days === 0 ? 'TODAY' : `in ${days} day${days === 1 ? '' : 's'}`; }
+      else if (days < 0) { urgent = true; whenTxt = `${Math.abs(days)} day${days === -1 ? '' : 's'} ago`; }
+    }
+    out += `<div class="key-banner ${urgent ? 'key-banner-urgent' : 'key-banner-pf'}">
+      <div><div class="kb-label">🔨 Auction Date${urgent && whenTxt ? ' · ⚠️ ' + escapeHtml(whenTxt) : ''}</div><div class="kb-sub">from foreclosure records · read-only</div></div>
+      <div class="kb-value">${escapeHtml(raw)}</div>
+    </div>`;
+  }
+  return out;
+}
+
 function renderDetail(lead) {
   const taskDraft = taskDrafts[lead.key] || {};
   const notes = lead.notes || [];
@@ -1350,6 +1396,8 @@ function renderDetail(lead) {
         </div>
         ${lead.dateFlagged ? `<div class="fin-field"><label>Date Flagged</label><div style="padding:8px 0;font-size:14px;" class="mono">${escapeHtml(lead.dateFlagged)}</div></div>` : ''}
       </div>
+
+      ${keyBannersHTML(lead)}
 
       <div class="fin-field" style="margin-bottom:14px;">
         <label>Acquisition Director</label>
