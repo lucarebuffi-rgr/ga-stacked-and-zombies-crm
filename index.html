@@ -711,7 +711,7 @@ auth.onAuthStateChanged(u => {
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
     if (isReportMode) renderReport();
-    else startOverlayListening();
+    else { startOverlayListening(); cleanupAutoTasks(); }
   } else {
     btn.style.display = 'inline-flex';
     chip.style.display = 'none';
@@ -2533,6 +2533,10 @@ function heirsHTML(lead) {
   const heirs = lead.heirs || [];
   const prog = heirProgress(lead);
   let out = `<div class="detail-section"><div class="section-label">👥 Heirs ${prog ? `<span class="heir-progress">${prog.contacted} of ${prog.total} contacted</span>` : ''}</div>`;
+  // Visual family tree (read-only) — restored 2026-10-06 per Luca: show the tree, hide the editable draft
+  if (lead.familyTree || (lead.familyTreeData && lead.familyTreeData.heirs && lead.familyTreeData.heirs.length)) {
+    out += `<div class="section-label" style="margin-top:4px;margin-bottom:8px;">🌳 Family Tree</div>${familyTreeHTML(lead)}`;
+  }
   if (heirs.length) {
     out += '<div class="heir-list">' + heirs.map(h => {
       const st = HEIR_STATUS_MAP[h.status] || HEIR_STATUS_MAP.not_contacted;
@@ -2580,7 +2584,7 @@ const SESSION_OUTCOMES = [
   { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true },
   { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true },
   { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro' },
-  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, taskDays: 2, taskName: 'Follow up after conversation' },
+  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true },
   { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true },
   { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false },
   { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'callback',       touch: 'callback_sched',advance: false, promptDate: true },
@@ -2622,15 +2626,6 @@ async function applyOutcome(tabId, key, outcomeId, opts = {}) {
     });
   }
 
-  // follow-up task
-  if (oc.taskDays) {
-    const d = new Date(); d.setDate(d.getDate() + oc.taskDays);
-    await addTaskDirect(tabId, key, oc.taskName || 'Follow up', d);
-  }
-  if (opts.callbackDate) {
-    await addTaskDirect(tabId, key, 'Callback — ' + (lead.mainPocName || lead.address), new Date(opts.callbackDate));
-  }
-
   logActivity(tabId, lead, 'outcome', `${oc.label}${opts.note ? ' — ' + opts.note : ''}`);
   return oc;
 }
@@ -2642,6 +2637,29 @@ async function addTaskDirect(tabId, key, name, dateObj) {
   const iso = dateObj.toISOString().slice(0, 10);
   tasks.push({ id: 't' + Date.now().toString(36), name, date: iso, time: '', notes: '', done: false });
   await saveOverlay(tabId, key, { tasks });
+}
+
+/* One-time cleanup (2026-10-06): remove auto-created tasks. Luca controls tasks manually now. */
+async function cleanupAutoTasks() {
+  if (localStorage.getItem('autoTaskCleanupDone')) return;
+  const autoNames = ['Follow up after conversation'];
+  let cleaned = 0;
+  for (const tabId of ['stacked', 'zombies']) {
+    const leads = getLeads(tabId) || [];
+    for (const lead of leads) {
+      const tasks = lead.tasks || [];
+      const keep = tasks.filter(t => {
+        const n = (t.name || '');
+        return !(autoNames.includes(n) || n.startsWith('Callback — '));
+      });
+      if (keep.length !== tasks.length) {
+        await saveOverlay(tabId, lead.key, { tasks: keep });
+        cleaned += (tasks.length - keep.length);
+      }
+    }
+  }
+  localStorage.setItem('autoTaskCleanupDone', '1');
+  if (cleaned) showToast(`Removed ${cleaned} auto-created tasks`, 'success');
 }
 
 /* ---------------- SMS panel ---------------- */
