@@ -596,7 +596,13 @@
 .dialer-outcome-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dialer-outcome { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #e9edf3; border-radius: 12px; padding: 15px 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; min-height: 56px; }
 .dialer-outcome:active { background: rgba(212,168,67,.15); border-color: #d4a843; }
-.dialer-nav { display: flex; gap: 10px; margin-top: 32px; }
+  .dialer-nav { display: none; }
+  .dialer-card-wrap { position: relative; }
+  .dialer-side-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 52px; height: 80px; border-radius: 12px; background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; font-size: 22px; cursor: pointer; font-family: inherit; z-index: 5; display: flex; align-items: center; justify-content: center; }
+  .dialer-side-btn:hover { border-color: #d4a843; color: #e8c476; }
+  .dialer-side-prev { left: -8px; }
+  .dialer-side-next { right: -8px; }
+  @media (min-width: 500px) { .dialer-side-prev { left: -64px; } .dialer-side-next { right: -64px; } }
 .dialer-nav button { flex: 1; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .dialer-prev { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #9aa7ba; }
 .dialer-next { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); }
@@ -2559,6 +2565,8 @@ function renderDialerMain() {
       <div style="width:70px;"></div>
     </div>
     <div class="dialer-stats">📞 ${dialer.stats.called} called · 💬 ${dialer.stats.talked} talked</div>
+    <div class="dialer-card-wrap">
+    <button class="dialer-side-btn dialer-side-prev" onclick="dialerPrev()" title="Previous">‹</button>
     <div class="dialer-card">
       <div class="dialer-name">${isHeir ? '👤 ' : ''}${escapeHtml(name)}</div>
       ${isHeir && heir.relationship ? `<div class="dialer-rel">${escapeHtml(heir.relationship)}</div>` : ''}
@@ -2572,6 +2580,8 @@ function renderDialerMain() {
         <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}')">📞 ${escapeHtml(formatPhone(phone))}</a>
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
       ` : '<div class="dialer-nophone">No phone on file</div>'}
+    </div>
+    <button class="dialer-side-btn dialer-side-next" onclick="dialerNext()" title="Next">›</button>
     </div>
     <div class="dialer-stages" id="dialer-stages"></div>
     <div class="dialer-outcomes">
@@ -2593,10 +2603,6 @@ function renderDialerMain() {
           <button class="btn-gold" data-dialer-cb-confirm>Set</button>
         </div>
       </div>
-    </div>
-    <div class="dialer-nav">
-      <button class="dialer-prev" onclick="dialerPrev()">⏮ Prev</button>
-      <button class="dialer-next" onclick="dialerNext()">Next ⏭</button>
     </div>`;
 
   body.querySelectorAll('[data-dialer-outcome]').forEach(b => {
