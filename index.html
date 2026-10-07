@@ -898,7 +898,7 @@ const OUTCOMES = [
   { id: 'voicemail',          label: 'Left Voicemail',       status: 'trying' },
   { id: 'busy',               label: 'Busy / Call Back',     status: 'trying' },
   { id: 'talked',             label: 'Talked — Working It',  status: 'callback' },
-  { id: 'callback_scheduled', label: 'Scheduled Callback',   status: 'callback' },
+  { id: 'callback_scheduled', label: 'Scheduled Callback',   status: 'followup' },
   { id: 'not_interested',     label: 'Not Interested',       status: 'not_interested' },
   { id: 'wrong_number',       label: 'Wrong / Bad Number',   status: 'dead' },
   { id: 'deal',               label: 'Deal Closed',          status: 'deal' },
@@ -3343,7 +3343,7 @@ const SESSION_OUTCOMES = [
   { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true },
   { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true },
   { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false },
-  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'callback',       touch: 'callback_sched',advance: false, promptDate: true },
+  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
