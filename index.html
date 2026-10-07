@@ -102,37 +102,37 @@
   .setup-banner ol { margin: 0; padding-left: 20px; font-size: 13px; color: #e9edf3; line-height: 1.75; }
   .setup-banner code { font-family: 'JetBrains Mono', monospace; background: #0d1b2e; padding: 2px 7px; border-radius: 5px; font-size: 12px; border: 1px solid #22385a; }
 
-  /* ---------- Stats ---------- */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); gap: 10px; margin-bottom: 22px; }
-  .stat-card {
-    background: linear-gradient(180deg, #12233d, #0e1c33); border: 1px solid #1d3350; border-radius: 12px;
-    padding: 12px 14px; text-align: left; color: #e9edf3; width: 100%; position: relative;
-  }
-  .stat-card:hover { transform: translateY(-1px); border-color: #2b4a76; box-shadow: 0 6px 16px rgba(0,0,0,.35); }
-  .stat-card.active { border-color: rgba(212,168,67,.55); box-shadow: inset 0 2px 0 rgba(212,168,67,.5), 0 6px 16px rgba(0,0,0,.35); }
-  .stat-value { font-size: 21px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-  .stat-label { font-size: 11px; color: #8a97a8; margin-top: 3px; line-height: 1.35; font-weight: 500; }
+  /* ---------- Stats (slim bar) ---------- */
+  .stats-bar { display: flex; align-items: center; gap: 4px 14px; flex-wrap: wrap; margin-bottom: 10px; padding: 7px 12px; background: rgba(18,37,64,.55); border: 1px solid #1d3350; border-radius: 10px; }
+  .stats-totals { width: 100%; text-align: center; font-size: 15px; color: #e9edf3; padding: 4px 0 8px; border-bottom: 1px solid #1d3350; margin-bottom: 6px; }
+  .stats-totals b { color: #d4a843; font-size: 17px; }
+  .stat-chip { background: none; border: none; color: #8a97a8; font-size: 12px; cursor: pointer; padding: 4px 2px; white-space: nowrap; font-family: inherit; }
+  .stat-chip b { color: #e9edf3; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-weight: 700; margin-right: 4px; }
+  .stat-chip:hover b { color: #e8c476; }
+  .stat-chip.active { color: #e8c476; }
+  .stat-chip.active b { color: #e8c476; }
 
-  /* ---------- Controls ---------- */
-  .controls { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-  .search-wrap { position: relative; flex: 1 1 230px; }
+  /* ---------- Controls (compact) ---------- */
+  .controls { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+  .search-wrap { position: relative; flex: 1 1 200px; }
   .search-wrap input {
-    width: 100%; padding: 10px 12px 10px 34px; border-radius: 10px; border: 1px solid #22385a;
-    background: #0b1626; color: #e9edf3; font-size: 14px; transition: border-color .16s ease, box-shadow .16s ease;
+    width: 100%; padding: 7px 10px 7px 30px; border-radius: 8px; border: 1px solid #22385a;
+    background: #0b1626; color: #e9edf3; font-size: 13px; transition: border-color .16s ease, box-shadow .16s ease;
   }
   .search-wrap input::placeholder { color: #5c6b82; }
-  .search-wrap span { position: absolute; left: 11px; top: 10px; color: #8a97a8; }
+  .search-wrap span { position: absolute; left: 9px; top: 7px; color: #8a97a8; font-size: 13px; }
   .controls select {
-    padding: 10px 12px; border-radius: 10px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 14px; cursor: pointer;
+    padding: 7px 10px; border-radius: 8px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; cursor: pointer;
   }
-  .sheet-note { font-size: 12px; color: #8a97a8; margin-bottom: 16px; }
+  .date-filter-wrap input[type="date"] { padding: 6px 8px; border-radius: 8px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; }
+  .sheet-note { font-size: 12px; color: #8a97a8; margin-bottom: 12px; }
   .sheet-note a { color: #d4a843; border-bottom: 1px dotted rgba(212,168,67,.5); }
   .sheet-note a:hover { color: #e8c476; }
 
   /* ---------- Cards ---------- */
   .lead-card {
     background: linear-gradient(180deg, #122540, #0e1d35); border: 1px solid #1e3554; border-radius: 14px;
-    overflow: hidden; margin-bottom: 12px; box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    overflow: hidden; margin-bottom: 10px; box-shadow: 0 4px 14px rgba(0,0,0,.35);
     transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
   }
   /* Lead detail modal */
@@ -143,7 +143,7 @@
   .lm-title { font-size:15px; font-weight:800; color:#f3dda0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lead-card:hover { transform: translateY(-2px); border-color: rgba(212,168,67,.35); box-shadow: 0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(212,168,67,.08); }
   .lead-card.is-fire { border-color: rgba(224,149,74,.55); }
-  .lead-row { padding: 15px 18px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; cursor: pointer; }
+  .lead-row { padding: 12px 14px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; cursor: pointer; }
 
 
   .fire-btn { background: none; border: none; font-size: 18px; opacity: 0.3; padding: 2px; filter: grayscale(1); }
@@ -156,7 +156,7 @@
   .substage-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(212,168,67,.12); color: #e8c476; border: 1px solid rgba(212,168,67,.4); white-space: nowrap; }
   .fire-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(224,149,74,.12); color: #e8a05c; border: 1px solid rgba(224,149,74,.4); white-space: nowrap; }
   .lead-address { font-size: 13px; color: #aeb9c7; margin-top: 5px; }
-  .lead-whyhot { font-size: 12.5px; color: #8a97a8; margin-top: 5px; font-style: italic; line-height: 1.5; }
+  .lead-whyhot { font-size: 12px; color: #8a97a8; margin-top: 4px; font-style: italic; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* motivation code badges */
   .code-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
@@ -350,7 +350,9 @@
   .director-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(127,179,217,.1); color: #8fc0e4; border: 1px solid rgba(127,179,217,.35); white-space: nowrap; }
   .hidden-badge { font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 20px; background: rgba(138,151,168,.1); color: #8a97a8; border: 1px solid rgba(138,151,168,.35); white-space: nowrap; }
   .lead-checkbox { width: 17px; height: 17px; accent-color: #d4a843; cursor: pointer; flex: 0 0 auto; }
-  .bulk-bar { display: flex; align-items: center; gap: 14px; margin: 12px 0 18px; font-size: 13px; color: #8a97a8; flex-wrap: wrap; }
+  .bulk-toggle-row { margin-bottom: 8px; }
+  .btn-sm { padding: 7px 12px !important; font-size: 12px !important; }
+  .bulk-bar { display: flex; align-items: center; gap: 12px; margin: 0 0 12px; font-size: 13px; color: #8a97a8; flex-wrap: wrap; padding: 10px 12px; background: rgba(18,37,64,.55); border: 1px solid #1d3350; border-radius: 10px; }
   .bulk-bar label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
   .btn-danger { background: rgba(217,83,79,.08); border: 1px solid rgba(217,83,79,.55); color: #ff9d9a; border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 700; cursor: pointer; }
   .btn-danger:hover:not(:disabled) { background: rgba(217,83,79,.16); }
@@ -412,14 +414,13 @@
     .content{padding:14px 14px 60px;}
     .tabs{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:6px; margin-left:-14px; margin-right:-14px; padding-left:14px; padding-right:14px;}
     .tab-btn{flex:0 0 auto; padding:12px 18px; font-size:15px;}
-    .stats-grid{grid-template-columns:repeat(2,1fr); gap:8px;}
-    .stat-value{font-size:18px;}
+    .stats-bar{gap:2px 10px; padding:6px 10px;}
     .controls{flex-direction:column; align-items:stretch;}
     .search-wrap{flex:1 1 100%;}
     .search-wrap input{font-size:16px; padding:12px 12px 12px 36px;}
     .search-wrap span{top:13px;}
     .controls select{font-size:16px; padding:12px; width:100%;}
-    .lead-row{padding:16px 14px; gap:10px;}
+    .lead-row{padding:12px; gap:10px;}
     .lead-name{font-size:17px;}
     .lead-detail{padding:0 14px 16px;}
     .btn-gold{padding:13px 20px; font-size:15px;}
@@ -622,7 +623,8 @@
         <option value="az">Address A–Z</option>
       </select>
     </div>
-    <div class="bulk-bar">
+    <div class="bulk-toggle-row"><button class="btn-ghost btn-sm" id="bulk-toggle-btn">☑ Select</button></div>
+    <div class="bulk-bar" id="bulk-bar" style="display:none;">
       <label><input type="checkbox" id="select-all-checkbox" class="lead-checkbox" /> Select all</label>
       <button class="btn-danger" id="delete-selected-btn" disabled>Delete Selected (0)</button>
       <button class="btn-text" id="toggle-hidden-btn" style="display:none;"></button>
@@ -809,9 +811,9 @@ const STATUSES = [
   { id: 'callback',       label: 'Qualified Leads',  color: '#7fb3d9' },
   { id: 'followup',       label: 'Follow Ups',       color: '#c084fc' },
   { id: 'under_contract', label: 'Under Contract',   color: '#d4a843' },
+  { id: 'deal',           label: 'Closed',           color: '#4caf82' },
   { id: 'not_interested', label: 'Not Interested',   color: '#8a97a8' },
   { id: 'dead',           label: 'Dead / Bad Number',color: '#d9534f' },
-  { id: 'deal',           label: 'Closed',           color: '#4caf82' },
 ];
 const STATUS_MAP = Object.fromEntries(STATUSES.map(s => [s.id, s]));
 const SUBSTAGES = { callback: ['Must Underwrite', 'Submit Offer'] };
@@ -1135,20 +1137,26 @@ function getFiltered() {
   return list;
 }
 
+const STAT_SHORT = { new: 'New', trying: 'Trying', callback: 'Qualified', followup: 'Follow-up', under_contract: 'Contract', not_interested: 'Not Int.', dead: 'Dead', deal: 'Closed' };
+
 function renderStats() {
   const list = allLeads(tab);
   const counts = {};
   STATUSES.forEach(s => counts[s.id] = 0);
   list.forEach(l => { counts[l.status] = (counts[l.status] || 0) + 1; });
   const grid = document.getElementById('stats-grid');
-  const cards = [
-    { id: 'all', label: 'Total ' + TABS[tab].label, value: list.length },
-    ...STATUSES.map(s => ({ id: s.id, label: s.label, value: counts[s.id] || 0, color: s.color })),
+  const chips = [
+    { id: 'all', label: 'Total', value: list.length },
+    ...STATUSES.map(s => ({ id: s.id, label: STAT_SHORT[s.id] || s.label, value: counts[s.id] || 0 })),
   ];
-  grid.innerHTML = cards.map(c => {
-    return `<button class="stat-card ${statusFilter === c.id || (c.id === 'all' && statusFilter === 'all') ? 'active' : ''}"
-      data-stat-filter="${c.id}" ${c.color ? `style="border-left:3px solid ${c.color}"` : ''}>
-      <div class="stat-value">${c.value}</div><div class="stat-label">${escapeHtml(c.label)}</div></button>`;
+  // Totals header: Total Zombies and Total Stacked centered above
+  const zombieCount = (sheetRows.zombie || []).length + manualLeads('zombie').length;
+  const stackedCount = (sheetRows.stacked || []).length + manualLeads('stacked').length;
+  grid.className = 'stats-bar';
+  grid.innerHTML = `<div class="stats-totals">🧟 <b>${zombieCount}</b> Total Zombies &nbsp;·&nbsp; 📚 <b>${stackedCount}</b> Total Stacked</div>` +
+    chips.map(c => {
+    return `<button class="stat-chip ${statusFilter === c.id || (c.id === 'all' && statusFilter === 'all') ? 'active' : ''}"
+      data-stat-filter="${c.id}"><b>${c.value}</b>${escapeHtml(c.label)}</button>`;
   }).join('');
   grid.querySelectorAll('[data-stat-filter]').forEach(el => {
     el.addEventListener('click', () => {
@@ -2246,6 +2254,14 @@ document.getElementById('delete-selected-btn').addEventListener('click', deleteS
     sel.value = '';
   });
 document.getElementById('toggle-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; render(); });
+let bulkBarOpen = false;
+document.getElementById('bulk-toggle-btn').addEventListener('click', () => {
+  bulkBarOpen = !bulkBarOpen;
+  const bar = document.getElementById('bulk-bar');
+  bar.style.display = bulkBarOpen ? 'flex' : 'none';
+  document.getElementById('bulk-toggle-btn').textContent = bulkBarOpen ? '✕ Close' : '☑ Select';
+  if (!bulkBarOpen && selectedIds.size) { selectedIds.clear(); render(); }
+});
 document.getElementById('today-tasks-btn').addEventListener('click', () => {
   viewMode = viewMode === 'today' ? 'leads' : 'today'; render();
 });
