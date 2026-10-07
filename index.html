@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
   /* ============ TASTEFUL LUXURY THEME ============
@@ -391,20 +392,20 @@
   .drive-carousel-msg { font-size: 12px; color: #8a97a8; margin-top: 8px; }
   .photo-section { margin-top: 18px; }
 
-  /* ---------- Report mode ---------- */
+  /* ---------- KPI dashboard ---------- */
   #report-screen { display: none; min-height: 100vh; }
-  .report-day { margin-bottom: 24px; }
-  .report-day h3 { font-size: 13px; color: #e8c476; margin: 0 0 10px; text-transform: uppercase; letter-spacing: .1em; font-weight: 700; }
-  .report-entry { background: #101f36; border: 1px solid #1e3554; border-left: 2px solid rgba(212,168,67,.5); border-radius: 10px; padding: 9px 13px; margin-bottom: 7px; font-size: 13px; }
-  .report-entry .r-time { color: #8a97a8; font-size: 11px; margin-right: 9px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
-  .report-table { width: 100%; border-collapse: collapse; margin-bottom: 26px; }
-  .report-table th, .report-table td { text-align: left; padding: 11px 13px; border-bottom: 1px solid #1e3554; font-size: 13px; }
-  .report-table th { color: #8a97a8; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
-  .report-table td.num { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
-  .report-table tr:hover td { background: rgba(255,255,255,.018); }
-  .feed-row { display: flex; gap: 10px; align-items: baseline; background: #101f36; border: 1px solid #1e3554; border-radius: 10px; padding: 9px 13px; margin-bottom: 7px; font-size: 13px; flex-wrap: wrap; }
-  .feed-time { color: #8a97a8; font-size: 11px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .feed-director { color: #e8c476; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .kpi-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+  .kpi-card { background: linear-gradient(180deg, #142a47, #0f2140); border: 1px solid #1e3554; border-radius: 12px; padding: 16px 14px; text-align: center; }
+  .kpi-card .kpi-num { display: block; font-size: 30px; font-weight: 800; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: #e9edf3; margin-bottom: 4px; }
+  .kpi-card .kpi-label { font-size: 11px; color: #8a97a8; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; }
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .kpi-panel { background: rgba(18,37,64,.55); border: 1px solid #1d3350; border-radius: 14px; padding: 18px; }
+  .kpi-panel h3 { margin: 0 0 4px; font-size: 14px; color: #e8c476; font-weight: 700; }
+  .kpi-panel .kpi-sub { font-size: 11px; color: #8a97a8; margin-bottom: 12px; }
+  .kpi-panel .chart-wrap { position: relative; height: 280px; }
+  .kpi-panel.full { grid-column: 1 / -1; }
+  .kpi-panel.full .chart-wrap { height: 240px; }
+  @media (max-width: 760px) { .kpi-grid { grid-template-columns: 1fr; } }
   /* ===== Mobile optimization (2026-10-03) ===== */
   @media (max-width:640px){
     body{overflow-x:hidden;}
@@ -568,7 +569,7 @@
         <button id="start-calling-btn" onclick="startCallSession()">📞 Start Calling</button>
         <button id="call-next-btn" onclick="callNextLead()">▶ Call Next</button>
         <button class="btn-ghost sync-btn" id="refresh-btn">⟳ Loading…</button>
-        <a class="btn-ghost icon-btn" href="?report=1" title="KPIs">📊</a>
+        <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
       </div>
     </div>
     <div class="header-inner">
@@ -653,7 +654,7 @@
       <div style="display:flex; align-items:center; gap:12px;">
         <img src="https://raw.githubusercontent.com/lucarebuffi-rgr/signature-assets/main/rgr_logo.png" alt="Royal Groups Realty" style="height:48px; width:auto;" />
         <h1 style="margin:0;">KPIs</h1>
-        <div style="font-size:13px; color:#8a97a8; margin-bottom:4px;">Calls logged, stage changes, and dial clicks, attributed by each lead's assigned director.</div>
+        <div style="font-size:13px; color:#8a97a8; margin-bottom:4px;">Calls made, pipeline movement, and offers — by director.</div>
       </div>
       <div class="header-actions">
         <button class="agenda-btn" data-report-range="1">Today</button>
@@ -2140,7 +2141,6 @@ function attachCardListeners() {
 
 /* ---------------- Report mode (ported from probates CRM) ---------------- */
 let reportRangeDays = 7;
-const REPORT_ACTION_LABELS = { call: 'Logged a call', status: 'Changed stage', dial: 'Clicked to dial' };
 async function initReportMode() {
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('report-screen').style.display = 'block';
@@ -2162,14 +2162,26 @@ function renderReportLocked() {
     document.getElementById('auth-btn').click();
   });
 }
+let reportCharts = [];
+function destroyReportCharts() {
+  reportCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
+  reportCharts = [];
+}
 async function renderReport() {
   if (!currentUser) { renderReportLocked(); return; }
   document.querySelectorAll('[data-report-range]').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.getAttribute('data-report-range'), 10) === reportRangeDays);
   });
+  destroyReportCharts();
   const body = document.getElementById('report-body');
-  body.innerHTML = '<div class="empty-state"><div class="big"><span class="spin">⟳</span></div>Loading activity…</div>';
+  body.innerHTML = '<div class="empty-state"><div class="big"><span class="spin">⟳</span></div>Loading KPIs…</div>';
   try {
+    if (typeof Chart !== 'undefined') {
+      Chart.defaults.color = '#8a97a8';
+      Chart.defaults.borderColor = 'rgba(30,53,84,.7)';
+      Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+    }
+    // --- Activity log (range-filtered) ---
     const snap = await db.collection('hotLeadsActivityLog').orderBy('ts', 'desc').limit(5000).get();
     let entries = snap.docs.map(d => d.data());
     if (reportRangeDays > 0) {
@@ -2177,42 +2189,178 @@ async function renderReport() {
       cutoff.setDate(cutoff.getDate() - reportRangeDays);
       entries = entries.filter(e => new Date(e.ts) >= cutoff);
     }
-    const byDirector = {};
-    entries.forEach(e => {
+    const calls = entries.filter(e => e.action === 'call' || e.action === 'outcome');
+    const stageChanges = entries.filter(e => e.action === 'status');
+
+    // Calls by director
+    const callsByDir = {};
+    calls.forEach(e => {
       const d = e.director || 'Unassigned';
-      if (!byDirector[d]) byDirector[d] = { call: 0, status: 0, dial: 0 };
-      if (byDirector[d][e.action] !== undefined) byDirector[d][e.action]++;
+      callsByDir[d] = (callsByDir[d] || 0) + 1;
     });
-    const directors = Object.keys(byDirector).sort();
-    let html = `<table class="report-table"><thead><tr>
-      <th>Director</th><th>Calls Logged</th><th>Stage Changes</th><th>Dial Clicks</th><th>Total</th>
-    </tr></thead><tbody>`;
-    if (!directors.length) {
-      html += `<tr><td colspan="5" style="color:#8a97a8;">No activity in this range.</td></tr>`;
+    const dirLabels = Object.keys(callsByDir).sort((a, b) => callsByDir[b] - callsByDir[a]);
+
+    // Stage changes by destination (detail looks like "→ Trying to Reach")
+    const destCounts = {};
+    stageChanges.forEach(e => {
+      const m = /→\s*(.+)/.exec(e.detail || '');
+      const label = (m && m[1].trim()) || 'Other';
+      destCounts[label] = (destCounts[label] || 0) + 1;
+    });
+
+    // Calls over time buckets
+    const bucketLabels = [], bucketCounts = [];
+    if (reportRangeDays === 1) {
+      const now = new Date();
+      for (let h = 0; h < 24; h++) {
+        const d = new Date(now); d.setHours(h, 0, 0, 0);
+        bucketLabels.push(h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p');
+        bucketCounts.push(0);
+      }
+      calls.forEach(e => {
+        const d = new Date(e.ts);
+        if (d.toDateString() === now.toDateString()) bucketCounts[d.getHours()]++;
+      });
+    } else if (reportRangeDays === 0) {
+      // All time: weekly buckets, last 12 weeks
+      const now = new Date();
+      for (let w = 11; w >= 0; w--) {
+        const d = new Date(now); d.setDate(d.getDate() - w * 7);
+        bucketLabels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+        bucketCounts.push(0);
+      }
+      calls.forEach(e => {
+        const d = new Date(e.ts);
+        const weeksAgo = Math.floor((now - d) / (7 * 24 * 3600 * 1000));
+        if (weeksAgo >= 0 && weeksAgo < 12) bucketCounts[11 - weeksAgo]++;
+      });
+    } else {
+      for (let i = reportRangeDays - 1; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        bucketLabels.push(`${d.getMonth() + 1}/${d.getDate()}`);
+        bucketCounts.push(0);
+      }
+      const map = {};
+      bucketLabels.forEach((l, i) => map[l] = i);
+      calls.forEach(e => {
+        const k = `${new Date(e.ts).getMonth() + 1}/${new Date(e.ts).getDate()}`;
+        // match by label within the window
+        const d = new Date(e.ts);
+        const lbl = `${d.getMonth() + 1}/${d.getDate()}`;
+        if (map[lbl] !== undefined) bucketCounts[map[lbl]]++;
+      });
     }
-    directors.forEach(d => {
-      const c = byDirector[d];
-      const total = c.call + c.status + c.dial;
-      html += `<tr>
-        <td>${escapeHtml(d)}</td>
-        <td class="num">${c.call}</td>
-        <td class="num">${c.status}</td>
-        <td class="num">${c.dial}</td>
-        <td class="num">${total}</td>
-      </tr>`;
-    });
-    html += `</tbody></table>`;
-    const feed = entries.slice(0, 100);
-    html += feed.map(e => `
-      <div class="feed-row">
-        <span class="feed-time">${new Date(e.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-        <span class="feed-director">${escapeHtml(e.director || 'Unassigned')}</span>
-        <span><b>${e.tab === 'zombie' ? '🧟' : '📚'}</b> ${escapeHtml(e.address || '')} — ${escapeHtml(REPORT_ACTION_LABELS[e.action] || e.action)}${e.detail ? ` · ${escapeHtml(e.detail)}` : ''}</span>
-      </div>`).join('') || `<div style="color:#8a97a8; font-size:13px;">No activity in this range.</div>`;
-    body.innerHTML = html;
+
+    // --- Lead data for pipeline distribution (current state, not range-limited) ---
+    let allRows = [];
+    try {
+      const [zVals, sVals] = await Promise.all([
+        fetchSheetRows(CONFIG.ZOMBIE_SHEET_ID),
+        fetchSheetRows(CONFIG.STACKED_SHEET_ID),
+      ]);
+      const [zOvSnap, sOvSnap] = await Promise.all([
+        db.collection(TABS.zombie.collection).get(),
+        db.collection(TABS.stacked.collection).get(),
+      ]);
+      const ovMap = { zombie: {}, stacked: {} };
+      zOvSnap.docs.forEach(d => ovMap.zombie[d.id] = d.data());
+      sOvSnap.docs.forEach(d => ovMap.stacked[d.id] = d.data());
+      for (const tabId of ['zombie', 'stacked']) {
+        const vals = tabId === 'zombie' ? zVals : sVals;
+        const rows = parseSheet(vals, tabId);
+        const sheetKeys = new Set(rows.map(r => r.key));
+        rows.forEach(row => {
+          const ov = ovMap[tabId][row.key] || {};
+          allRows.push({ ...row, ...ov, status: ov.status || 'new', subStage: ov.subStage || '' });
+        });
+        Object.values(ovMap[tabId]).forEach(ov => {
+          if (ov.manual && ov.key && !sheetKeys.has(ov.key)) {
+            allRows.push({ key: ov.key, tab: tabId, manual: true, status: ov.status || 'new', subStage: ov.subStage || '' });
+          }
+        });
+      }
+    } catch (e) { console.error('kpi lead load failed', e); }
+
+    const ACTIVE_KPI = ['new', 'trying', 'callback', 'followup', 'under_contract'];
+    const pipelineCounts = {};
+    STATUSES.forEach(s => pipelineCounts[s.id] = 0);
+    allRows.forEach(l => { if (pipelineCounts[l.status] !== undefined) pipelineCounts[l.status]++; });
+    const activeLeads = allRows.filter(l => ACTIVE_KPI.includes(l.status)).length;
+    const offersSubmitted = allRows.filter(l =>
+      (l.status === 'callback' && l.subStage === 'Submit Offer') ||
+      l.status === 'under_contract' || l.status === 'deal'
+    ).length;
+
+    const rangeLabel = reportRangeDays === 0 ? 'All Time' : reportRangeDays === 1 ? 'Today' : `Last ${reportRangeDays} Days`;
+
+    // --- Render ---
+    body.innerHTML = `
+      <div class="kpi-cards">
+        <div class="kpi-card"><span class="kpi-num" style="color:#5b8fd4;">${calls.length}</span><span class="kpi-label">Calls Made · ${rangeLabel}</span></div>
+        <div class="kpi-card"><span class="kpi-num" style="color:#c084fc;">${stageChanges.length}</span><span class="kpi-label">Pipeline Changes · ${rangeLabel}</span></div>
+        <div class="kpi-card"><span class="kpi-num" style="color:#d4a843;">${offersSubmitted}</span><span class="kpi-label">Offers Submitted · Now</span></div>
+        <div class="kpi-card"><span class="kpi-num" style="color:#4caf82;">${activeLeads}</span><span class="kpi-label">Active Leads · Now</span></div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-panel">
+          <h3>📞 Calls by Director</h3>
+          <div class="kpi-sub">${rangeLabel} · call outcomes logged</div>
+          <div class="chart-wrap"><canvas id="kpi-calls-dir"></canvas></div>
+        </div>
+        <div class="kpi-panel">
+          <h3>🥧 Pipeline Distribution</h3>
+          <div class="kpi-sub">Current lead count per stage · both tabs</div>
+          <div class="chart-wrap"><canvas id="kpi-pipeline"></canvas></div>
+        </div>
+        <div class="kpi-panel">
+          <h3>🔀 Stage Changes</h3>
+          <div class="kpi-sub">${rangeLabel} · where leads moved to</div>
+          <div class="chart-wrap"><canvas id="kpi-stage-flow"></canvas></div>
+        </div>
+        <div class="kpi-panel">
+          <h3>📈 Calls Over Time</h3>
+          <div class="kpi-sub">${rangeLabel} · calls made per ${reportRangeDays === 1 ? 'hour' : reportRangeDays === 0 ? 'week' : 'day'}</div>
+          <div class="chart-wrap"><canvas id="kpi-calls-time"></canvas></div>
+        </div>
+      </div>`;
+
+    if (typeof Chart === 'undefined') {
+      body.innerHTML += '<div class="empty-state"><div class="big">⚠️</div>Chart library failed to load. Check your connection and reopen.</div>';
+      return;
+    }
+
+    // Calls by director — horizontal bars
+    reportCharts.push(new Chart(document.getElementById('kpi-calls-dir'), {
+      type: 'bar',
+      data: { labels: dirLabels.length ? dirLabels : ['No data'], datasets: [{ data: dirLabels.length ? dirLabels.map(d => callsByDir[d]) : [0], backgroundColor: '#d4a843', borderRadius: 6, barThickness: 22 }] },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } },
+    }));
+
+    // Pipeline distribution — doughnut with stage colors
+    const pipeLabels = STATUSES.map(s => s.label);
+    reportCharts.push(new Chart(document.getElementById('kpi-pipeline'), {
+      type: 'doughnut',
+      data: { labels: pipeLabels, datasets: [{ data: STATUSES.map(s => pipelineCounts[s.id]), backgroundColor: STATUSES.map(s => s.color), borderColor: '#0d1b2e', borderWidth: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 12 } } } },
+    }));
+
+    // Stage changes by destination — bars
+    const destLabels = Object.keys(destCounts).sort((a, b) => destCounts[b] - destCounts[a]);
+    reportCharts.push(new Chart(document.getElementById('kpi-stage-flow'), {
+      type: 'bar',
+      data: { labels: destLabels.length ? destLabels : ['No data'], datasets: [{ data: destLabels.length ? destLabels.map(l => destCounts[l]) : [0], backgroundColor: '#c084fc', borderRadius: 6 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } } } },
+    }));
+
+    // Calls over time — line
+    reportCharts.push(new Chart(document.getElementById('kpi-calls-time'), {
+      type: 'line',
+      data: { labels: bucketLabels, datasets: [{ data: bucketCounts, borderColor: '#5b8fd4', backgroundColor: 'rgba(91,143,212,.15)', fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: '#5b8fd4' }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
+    }));
   } catch (e) {
     console.error(e);
-    body.innerHTML = '<div class="empty-state"><div class="big">⚠️</div>Could not load the activity log.</div>';
+    body.innerHTML = '<div class="empty-state"><div class="big">⚠️</div>Could not load KPIs.</div>';
   }
 }
 
