@@ -570,6 +570,18 @@
 .dialer-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
 .dialer-why { font-style: italic; color: #9fb3cc; font-size: 14px; margin-bottom: 12px; line-height: 1.4; }
 .dialer-cadence { font-size: 13px; color: #8a97a8; margin-bottom: 18px; }
+  .cad-tracker { background: rgba(18,37,64,.6); border: 1px solid #1e3554; border-radius: 12px; padding: 14px; margin-bottom: 18px; }
+  .cad-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cad-step-label { font-size: 13px; color: #8a97a8; }
+  .cad-step-label b { color: #d4a843; font-size: 15px; }
+  .cad-now { font-size: 16px; font-weight: 700; color: #e9edf3; margin-bottom: 4px; }
+  .cad-hint { font-size: 12px; color: #8a97a8; margin-bottom: 10px; }
+  .cad-dots { display: flex; gap: 6px; margin-bottom: 10px; }
+  .cad-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: #1a2f4d; color: #5c6b82; border: 1px solid #22385a; }
+  .cad-dot.done { background: #1a3a2a; color: #4caf82; border-color: #4caf82; }
+  .cad-dot.now { background: #d4a843; color: #0d1b2e; border-color: #d4a843; box-shadow: 0 0 12px rgba(212,168,67,.4); }
+  .cad-next { font-size: 12px; color: #8a97a8; border-top: 1px solid #1e3554; padding-top: 10px; }
+  .cad-next b { color: #9fb3cc; }
 .dial-call { display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; font-size: 23px; font-weight: 800; border-radius: 16px; padding: 20px; text-decoration: none; margin-bottom: 10px; box-shadow: 0 4px 18px rgba(212,168,67,.28); }
 .dial-call:active { transform: scale(.98); }
 .dial-text { display: flex; align-items: center; justify-content: center; gap: 8px; background: #22385a; color: #d4a843; border: 1px solid #d4a84366; font-size: 17px; font-weight: 700; border-radius: 14px; padding: 15px; width: 100%; cursor: pointer; font-family: inherit; }
@@ -2547,7 +2559,7 @@ function renderDialerMain() {
       <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
       <div class="dialer-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span>${codeBadges(lead)}</div>
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
-      <div class="dialer-cadence">${cadenceLine(target)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
+      ${cadenceTracker(target)}
       ${phone ? `
         <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}')">📞 ${escapeHtml(formatPhone(phone))}</a>
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
@@ -2874,6 +2886,32 @@ function cadenceLine(lead) {
   const ci = getCadenceInfo(lead);
   const lastAgo = ci.lastTouchAt ? timeAgo(ci.lastTouchAt) : 'never';
   return `📞 ${ci.attempts} attempt${ci.attempts === 1 ? '' : 's'} · last ${lastAgo} · next: ${ci.stepDef.label}`;
+}
+
+// Visual cadence tracker for the dialer — clean step-by-step display
+function cadenceTracker(target) {
+  const ci = getCadenceInfo(target);
+  const step = ci.stepDef.step;
+  const total = CADENCE_STEPS.length;
+  const nextStep = CADENCE_STEPS[(step + 1) % total];
+  const lastAgo = ci.lastTouchAt ? timeAgo(ci.lastTouchAt) : 'never';
+
+  const dots = CADENCE_STEPS.map((s, i) => {
+    const cls = i < step ? 'done' : (i === step ? 'now' : '');
+    const icon = i < step ? '✓' : (i + 1);
+    return `<div class="cad-dot ${cls}" title="${escapeHtml(s.label)}">${icon}</div>`;
+  }).join('');
+
+  return `<div class="cad-tracker">
+    <div class="cad-header">
+      <div class="cad-step-label">Touch <b>${step + 1}</b> of ${total} · ${ci.attempts} attempt${ci.attempts === 1 ? '' : 's'} · last ${lastAgo}</div>
+      ${ci.overdue ? '<span class="overdue-badge">OVERDUE</span>' : ''}
+    </div>
+    <div class="cad-now">👉 ${escapeHtml(ci.stepDef.label)}</div>
+    <div class="cad-hint">${escapeHtml(ci.stepDef.hint)}</div>
+    <div class="cad-dots">${dots}</div>
+    <div class="cad-next">Next up: <b>${escapeHtml(nextStep.label)}</b></div>
+  </div>`;
 }
 
 /* ---------------- Per-heir cadence (zombies) ---------------- */
