@@ -1661,6 +1661,12 @@ function updateTabCounts() {
 async function updateStatus(key, statusId) {
   const lead = getLead(tab, key);
   if (!lead) return;
+  if (lead.status === statusId) return;
+
+  const fromLabel = (STATUS_MAP[lead.status] || {}).label || lead.status;
+  const toLabel = (STATUS_MAP[statusId] || {}).label || statusId;
+  if (!confirm(`Move "${lead.address}" from ${fromLabel} to ${toLabel}?`)) return;
+
   const now = new Date().toISOString();
   const patch = { status: statusId };
   if (!SUBSTAGES[statusId]) patch.subStage = '';
@@ -1677,6 +1683,9 @@ async function updateStatus(key, statusId) {
   await saveOverlay(tab, key, patch);
   logActivity(tab, lead, 'status', `→ ${(STATUS_MAP[statusId] || {}).label}`);
   showToast(`Status → ${(STATUS_MAP[statusId] || {}).label}`);
+  // Keep the lead expanded so you don't lose sight of it
+  expandedKey = key;
+  render();
 }
 
 async function updateSubStage(key, value) {
@@ -2857,6 +2866,14 @@ async function dialerOutcome(outcomeId) {
     showToast('Write a note first', 'error');
     if (noteEl) noteEl.focus();
     return;
+  }
+  // Confirm stage-changing dispositions (lead will leave the dialer queue)
+  const stageChanging = ['talked', 'callback_scheduled', 'not_interested', 'bad_number'];
+  if (stageChanging.includes(outcomeId)) {
+    const cur = dialerCurrent();
+    const leadName = cur && cur.lead ? cur.lead.address : 'this lead';
+    const statusLabel = { talked: 'Qualified Leads', callback_scheduled: 'Follow Ups', not_interested: 'Not Interested', bad_number: 'Dead / Bad Number' }[outcomeId];
+    if (!confirm(`Move "${leadName}" to ${statusLabel}? They'll leave the dialer queue.`)) return;
   }
   if (oc.promptSubstage) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-substage').style.display = 'block'; return; }
   if (oc.promptDate) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-cbdate').style.display = 'block'; return; }
