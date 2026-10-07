@@ -609,12 +609,7 @@
 .zillow-spec { text-align: center; }
 .zillow-spec-val { font-size: 20px; font-weight: 700; color: #e9edf3; }
 .zillow-spec-label { font-size: 11px; color: #8a97a8; }
-  .dialer-stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; justify-content: center; }
-.dialer-notes { margin-top: 60px; }
-  .dialer-stage { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #9aa7ba; cursor: pointer; font-family: inherit; text-align: center; min-width: 90px; }
-  .dialer-stage:hover { border-color: #d4a843; }
-  .dialer-stage.active { border-color: #d4a843; color: #e8c476; box-shadow: 0 0 0 1px #d4a843; }
-  .dialer-stage b { display: block; font-size: 16px; margin-bottom: 2px; }
+  .dialer-notes { margin-top: 75px; }
 .dialer-outcome-grid { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .dialer-outcome-grid .dialer-outcome { flex: 1 1 30%; min-width: 140px; max-width: 32%; }
 .dialer-outcome-grid .dialer-outcome:nth-child(n+4) { flex: 1 1 45%; max-width: 48%; }
@@ -2614,7 +2609,6 @@ function renderDialerMain() {
     </div>
     <button class="dialer-side-btn dialer-side-next" onclick="dialerNext()" title="Next">›</button>
     </div>
-    <div class="dialer-stages" id="dialer-stages"></div>
     <div class="dialer-notes">
       <div class="section-label" style="margin-bottom:8px;">Notes</div>
       <textarea id="dialer-note-input" placeholder="Write your call notes here..." rows="3" style="width:100%;background:rgba(18,37,64,.6);border:1px solid #22385a;border-radius:10px;padding:12px;color:#e9edf3;font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"></textarea>
@@ -2693,19 +2687,6 @@ function renderDialerMain() {
     }
     if (mapFrame && addr) mapFrame.src = 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
   }
-  // Pipeline stage switcher — 7 stages (excludes New, the starting point)
-  const stageEl = body.querySelector('#dialer-stages');
-  if (stageEl && cur && cur.lead) {
-    const stages = STATUSES.filter(s => s.id !== 'new');
-    stageEl.innerHTML = stages.map(s =>
-      `<button class="dialer-stage ${cur.lead.status === s.id ? 'active' : ''}" data-dialer-stage="${s.id}">
-        <b style="color:${s.color}">●</b>${escapeHtml(s.label)}
-      </button>`
-    ).join('');
-    stageEl.querySelectorAll('[data-dialer-stage]').forEach(b => {
-      b.addEventListener('click', () => dialerSetStage(b.getAttribute('data-dialer-stage')));
-    });
-  }
   body.querySelectorAll('[data-dialer-substage]').forEach(b => {
     b.addEventListener('click', () => dialerSubstageDone(b.getAttribute('data-dialer-substage')));
   });
@@ -2714,18 +2695,6 @@ function renderDialerMain() {
 }
 
 let dialerPendingOutcome = null;
-async function dialerSetStage(stageId) {
-  const cur = dialerCurrent();
-  if (!cur || !cur.lead) return;
-  const lead = cur.lead;
-  const oldStatus = lead.status;
-  if (oldStatus === stageId) return;
-  lead.status = stageId;
-  await saveLead(dialer.tabId, lead);
-  logActivity(dialer.tabId, lead, 'status', `${STATUS_MAP[oldStatus]?.label || oldStatus} → ${STATUS_MAP[stageId]?.label || stageId}`);
-  showToast(`Moved to ${STATUS_MAP[stageId]?.label || stageId}`, 'success');
-  renderDialerMain();
-}
 async function dialerOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc || !dialer) return;
