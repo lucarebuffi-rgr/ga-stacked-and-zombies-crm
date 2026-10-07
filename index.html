@@ -2621,14 +2621,16 @@ function renderDialerMain() {
       </div>
     </div>
     <div class="dialer-panels">
-      <a class="dialer-panel" id="dialer-zillow" href="#" target="_blank" rel="noopener">
-        <div class="dialer-panel-label">🏠 Zillow</div>
-        <div class="dialer-panel-sub">View listing</div>
+      <a class="dialer-panel dialer-panel-zillow" id="dialer-zillow" href="#" target="_blank" rel="noopener">
+        <img id="dialer-zillow-img" src="" alt="Zillow listing" style="display:none;width:100%;height:180px;object-fit:cover;border-radius:8px;" />
+        <div id="dialer-zillow-placeholder">
+          <div class="dialer-panel-label">🏠 Zillow</div>
+          <div class="dialer-panel-sub">View listing</div>
+        </div>
       </a>
-      <a class="dialer-panel" id="dialer-maps" href="#" target="_blank" rel="noopener">
-        <div class="dialer-panel-label">🗺️ Street View</div>
-        <div class="dialer-panel-sub">Open in Google Maps</div>
-      </a>
+      <div class="dialer-panel dialer-panel-map" style="padding:0;overflow:hidden;">
+        <iframe id="dialer-map-frame" src="" style="width:100%;height:220px;border:0;border-radius:12px;" loading="lazy" title="Property map"></iframe>
+      </div>
     </div>`;
 
   body.querySelectorAll('[data-dialer-outcome]').forEach(b => {
@@ -2648,9 +2650,9 @@ function renderDialerMain() {
   if (cur2 && cur2.lead) {
     const addr = [cur2.lead.address, cur2.lead.city, cur2.lead.state, cur2.lead.zip].filter(Boolean).join(', ');
     const zEl = body.querySelector('#dialer-zillow');
-    const mEl = body.querySelector('#dialer-maps');
+    const mapFrame = body.querySelector('#dialer-map-frame');
     if (zEl && addr) zEl.href = 'https://www.zillow.com/homes/' + encodeURIComponent(addr) + '_rb/';
-    if (mEl && addr) mEl.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr);
+    if (mapFrame && addr) mapFrame.src = 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
   }
   // Pipeline stage switcher — 7 stages (excludes New, the starting point)
   const stageEl = body.querySelector('#dialer-stages');
