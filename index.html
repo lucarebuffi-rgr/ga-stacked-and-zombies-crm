@@ -595,6 +595,13 @@
 .dialer-panel:hover { border-color: #d4a843; }
 .dialer-panel-label { font-size: 18px; font-weight: 700; color: #e9edf3; margin-bottom: 6px; }
 .dialer-panel-sub { font-size: 13px; color: #8a97a8; }
+.dialer-zillow-card { background: linear-gradient(135deg, #1a2f4d 0%, #0d1b2e 100%); border: 1px solid #2f6fdb; text-align: left; justify-content: space-between; padding: 20px; }
+.dialer-zillow-card:hover { border-color: #d4a843; }
+.zillow-card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.zillow-logo { width: 32px; height: 32px; background: #2f6fdb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: white; }
+.zillow-brand { font-size: 16px; font-weight: 700; color: #e9edf3; }
+.zillow-card-addr { font-size: 14px; color: #9aa7ba; line-height: 1.5; margin-bottom: 16px; }
+.zillow-card-cta { display: inline-block; background: #2f6fdb; color: white; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 8px; }
   .dialer-stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; justify-content: center; }
   .dialer-stage { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #9aa7ba; cursor: pointer; font-family: inherit; text-align: center; min-width: 90px; }
   .dialer-stage:hover { border-color: #d4a843; }
@@ -2621,12 +2628,13 @@ function renderDialerMain() {
       </div>
     </div>
     <div class="dialer-panels">
-      <a class="dialer-panel dialer-panel-zillow" id="dialer-zillow" href="#" target="_blank" rel="noopener">
-        <img id="dialer-zillow-img" src="" alt="Zillow listing" style="display:none;width:100%;height:180px;object-fit:cover;border-radius:8px;" />
-        <div id="dialer-zillow-placeholder">
-          <div class="dialer-panel-label">🏠 Zillow</div>
-          <div class="dialer-panel-sub">View listing</div>
+      <a class="dialer-panel dialer-zillow-card" id="dialer-zillow" href="#" target="_blank" rel="noopener">
+        <div class="zillow-card-top">
+          <span class="zillow-logo">Z</span>
+          <span class="zillow-brand">Zillow</span>
         </div>
+        <div class="zillow-card-addr" id="dialer-zillow-addr"></div>
+        <div class="zillow-card-cta">View listing →</div>
       </a>
       <div class="dialer-panel dialer-panel-map" style="padding:0;overflow:hidden;">
         <iframe id="dialer-map-frame" src="" style="width:100%;height:220px;border:0;border-radius:12px;" loading="lazy" title="Property map"></iframe>
@@ -2650,8 +2658,10 @@ function renderDialerMain() {
   if (cur2 && cur2.lead) {
     const addr = [cur2.lead.address, cur2.lead.city, cur2.lead.state, cur2.lead.zip].filter(Boolean).join(', ');
     const zEl = body.querySelector('#dialer-zillow');
+    const zAddr = body.querySelector('#dialer-zillow-addr');
     const mapFrame = body.querySelector('#dialer-map-frame');
     if (zEl && addr) zEl.href = 'https://www.zillow.com/homes/' + encodeURIComponent(addr) + '_rb/';
+    if (zAddr && addr) zAddr.textContent = addr;
     if (mapFrame && addr) mapFrame.src = 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
   }
   // Pipeline stage switcher — 7 stages (excludes New, the starting point)
