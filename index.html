@@ -713,8 +713,6 @@
     <div id="leads-controls">
     <div class="controls">
       <div class="search-wrap"><span>🔍</span><input type="text" id="search-input" placeholder="Search address, city, zip, why hot…" /></div>
-      <select id="status-filter"></select>
-      <select id="code-filter"></select>
       <select id="director-filter"></select>
       <div class="date-filter-wrap">
         <label for="added-date-filter">Added:</label>
@@ -1298,13 +1296,6 @@ function renderStats() {
 }
 
 function renderFilters() {
-  const sf = document.getElementById('status-filter');
-  sf.innerHTML = `<option value="active" ${statusFilter === 'active' ? 'selected' : ''}>Active only</option>
-    <option value="all" ${statusFilter === 'all' ? 'selected' : ''}>All statuses</option>` +
-    STATUSES.map(s => `<option value="${s.id}" ${statusFilter === s.id ? 'selected' : ''}>${s.label}</option>`).join('');
-  const cf = document.getElementById('code-filter');
-  cf.innerHTML = `<option value="all">All motivations</option>` +
-    TABS[tab].codes.map(c => `<option value="${c}" ${codeFilter === c ? 'selected' : ''}>${c} — ${CODE_META[c].label}</option>`).join('');
   const df = document.getElementById('director-filter');
   df.innerHTML = `<option value="all">All Directors</option>
     <option value="unassigned" ${directorFilter === 'unassigned' ? 'selected' : ''}>Unassigned</option>` +
@@ -3028,8 +3019,6 @@ document.getElementById('tab-stacked').addEventListener('click', () => {
   tab = 'stacked'; resetTabState(); render();
 });
 document.getElementById('search-input').addEventListener('input', e => { search = e.target.value; render(); });
-document.getElementById('status-filter').addEventListener('change', e => { statusFilter = e.target.value; render(); });
-document.getElementById('code-filter').addEventListener('change', e => { codeFilter = e.target.value; render(); });
 document.getElementById('director-filter').addEventListener('change', e => { directorFilter = e.target.value; render(); });
 document.getElementById('added-date-filter').addEventListener('change', e => { addedDateFilter = e.target.value; render(); });
 document.getElementById('added-date-clear').addEventListener('click', () => {
