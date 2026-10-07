@@ -1438,8 +1438,7 @@ function renderCard(lead) {
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.6 6.6 11.7 7.1 12.16a.6.6 0 0 0 .8 0c.5-.46 7.1-6.56 7.1-12.16C19.5 5.36 16.14 2 12 2z" fill="#ffffff"/><circle cx="12" cy="9.5" r="3" fill="#e0483a"/></svg>
         </a>
         <div class="call-meta">
-          <div class="attempts mono">${lead.callAttempts || 0} call${(lead.callAttempts || 0) === 1 ? '' : 's'}</div>
-          <div>${lead.lastCalledAt ? `last: ${timeAgo(lead.lastCalledAt)}` : (lead.dateFlagged ? `flagged ${escapeHtml(lead.dateFlagged)}` : (lead.manual ? 'added manually' : 'from sheet'))}</div>
+          <div class="attempts mono" style="font-size:18px;font-weight:700;">${lead.callAttempts || 0} call${(lead.callAttempts || 0) === 1 ? '' : 's'}</div>
         </div>
         ${lead.hidden && showHidden ? `<button class="unhide-btn" data-unhide="${escapeHtml(lead.key)}">↩ Unhide</button>` : ''}
       </div>
@@ -2889,6 +2888,23 @@ async function dialerApplyOutcome(outcomeId, opts) {
   if (!oc) return; // requireAuth blocked — already toasted
   dialer.stats.called++;
   if (outcomeId === 'talked') dialer.stats.talked++;
+
+  // Update total call count on the lead
+  if (heir) {
+    // For zombies: total up all heir attempts
+    let totalCalls = 0;
+    try {
+      const allHeirs = callableHeirs(lead);
+      totalCalls = allHeirs.reduce((sum, h) => sum + (h.attempts || 0), 0);
+    } catch (e) {}
+    lead.callAttempts = totalCalls;
+  } else {
+    // For stacked: increment lead's call count
+    lead.callAttempts = (lead.callAttempts || 0) + 1;
+  }
+  lead.lastCalledAt = new Date().toISOString();
+  await saveLead(dialer.tabId, lead);
+
   dialer.done.add(dialerTargetKey(item));
   if (oc.promptSms) {
     openSmsSheet(dialer.tabId, lead.key, 'intro', heir ? heir.hid : null);
