@@ -602,6 +602,13 @@
 .zillow-brand { font-size: 16px; font-weight: 700; color: #e9edf3; }
 .zillow-card-addr { font-size: 14px; color: #9aa7ba; line-height: 1.5; margin-bottom: 16px; }
 .zillow-card-cta { display: inline-block; background: #2f6fdb; color: white; font-size: 14px; font-weight: 600; padding: 10px 20px; border-radius: 8px; }
+.zillow-card-specs { display: flex; gap: 16px; margin-bottom: 16px; }
+.zillow-card-zest { margin-bottom: 12px; }
+.zillow-zest-label { font-size: 11px; color: #8a97a8; }
+.zillow-zest-val { font-size: 24px; font-weight: 800; color: #e9edf3; }
+.zillow-spec { text-align: center; }
+.zillow-spec-val { font-size: 20px; font-weight: 700; color: #e9edf3; }
+.zillow-spec-label { font-size: 11px; color: #8a97a8; }
   .dialer-stages { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0; justify-content: center; }
   .dialer-stage { background: rgba(18,37,64,.6); border: 1px solid #22385a; border-radius: 10px; padding: 10px 12px; font-size: 12px; font-weight: 600; color: #9aa7ba; cursor: pointer; font-family: inherit; text-align: center; min-width: 90px; }
   .dialer-stage:hover { border-color: #d4a843; }
@@ -1073,6 +1080,10 @@ function parseSheet(values, tabId) {
       tdAmount: get(row, 'tdamount'),
       tdYears: get(row, 'tdyearsdelinquent') || get(row, 'tdyears'),
       pfAuctionDate: get(row, 'pfauctiondate'),
+      beds: get(row, 'beds'),
+      baths: get(row, 'baths'),
+      sqft: get(row, 'sqft'),
+      zestimate: get(row, 'zestimate'),
       tab: tabId,
     });
   }
@@ -2634,6 +2645,8 @@ function renderDialerMain() {
           <span class="zillow-brand">Zillow</span>
         </div>
         <div class="zillow-card-addr" id="dialer-zillow-addr"></div>
+        <div class="zillow-card-zest" id="dialer-zillow-zest" style="display:none;"></div>
+        <div class="zillow-card-specs" id="dialer-zillow-specs" style="display:none;"></div>
         <div class="zillow-card-cta">View listing →</div>
       </a>
       <div class="dialer-panel dialer-panel-map" style="padding:0;overflow:hidden;">
@@ -2662,6 +2675,21 @@ function renderDialerMain() {
     const mapFrame = body.querySelector('#dialer-map-frame');
     if (zEl && addr) zEl.href = 'https://www.zillow.com/homes/' + encodeURIComponent(addr) + '_rb/';
     if (zAddr && addr) zAddr.textContent = addr;
+    const zZest = body.querySelector('#dialer-zillow-zest');
+    if (zZest && cur2.lead.zestimate) {
+      const znum = parseFloat(String(cur2.lead.zestimate).replace(/[^0-9.\-]/g, ''));
+      const zdisp = isNaN(znum) ? escapeHtml(cur2.lead.zestimate) : '$' + znum.toLocaleString('en-US');
+      zZest.innerHTML = `<div class="zillow-zest-label">Zestimate</div><div class="zillow-zest-val">${zdisp}</div>`;
+      zZest.style.display = 'block';
+    }
+    const zSpecs = body.querySelector('#dialer-zillow-specs');
+    if (zSpecs && cur2.lead) {
+      const specs = [];
+      if (cur2.lead.beds) specs.push(`<div class="zillow-spec"><div class="zillow-spec-val">${escapeHtml(cur2.lead.beds)}</div><div class="zillow-spec-label">beds</div></div>`);
+      if (cur2.lead.baths) specs.push(`<div class="zillow-spec"><div class="zillow-spec-val">${escapeHtml(cur2.lead.baths)}</div><div class="zillow-spec-label">baths</div></div>`);
+      if (cur2.lead.sqft) specs.push(`<div class="zillow-spec"><div class="zillow-spec-val">${escapeHtml(cur2.lead.sqft)}</div><div class="zillow-spec-label">sqft</div></div>`);
+      if (specs.length) { zSpecs.innerHTML = specs.join(''); zSpecs.style.display = 'flex'; }
+    }
     if (mapFrame && addr) mapFrame.src = 'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
   }
   // Pipeline stage switcher — 7 stages (excludes New, the starting point)
