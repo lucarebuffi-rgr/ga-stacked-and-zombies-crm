@@ -2262,7 +2262,7 @@ function smsUseTemplate(kind, btn) {
 /* ---------------- Quo integration ---------------- */
 // TODO: Set this to your Quo proxy endpoint. Until configured, Quo calls
 // are skipped silently and tap-to-dial / SMS UI still works.
-const QUO_PROXY_URL = '';
+const QUO_PROXY_URL = 'https://script.google.com/macros/s/AKfycbw4TyScLuANH0OHOceEoWd1K4yaku98qBCkzvXRj49sSR1jM8u3DevLoPWeO3BamS8l/exec';
 
 function quoConfigured() { return !!(QUO_PROXY_URL && QUO_PROXY_URL.length > 4); }
 
