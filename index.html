@@ -289,6 +289,10 @@
     box-shadow: 0 2px 10px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,255,255,.25);
   }
   .log-call-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,168,67,.32); }
+  .log-call-btn {
+    background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px;
+    box-shadow: 0 2px 10px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,255,255,.25); cursor: pointer;
+  }
   .reset-btn { background: none; border: 1px solid rgba(217,83,79,.6); color: #e07a77; border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 600; }
   .reset-btn:hover { background: rgba(217,83,79,.1); }
   .save-tree-btn { background: rgba(212,168,67,.08); border: 1px solid rgba(212,168,67,.5); color: #e8c476; border-radius: 10px; padding: 9px 15px; font-size: 13px; font-weight: 700; }
@@ -1613,6 +1617,20 @@ function renderDetail(lead) {
       ${isZombie ? heirsHTML(lead) : ''}
 
       ${isZombie ? probateWatchHTML(lead) : ''}
+
+      <div class="detail-section">
+        <div class="section-label">📞 Log a Call</div>
+        <select id="logcall-outcome-${escapeHtml(lead.key)}" class="logcall-select" style="width:100%;padding:10px;border-radius:10px;background:#16294a;border:1px solid #2c4a75;color:#e9edf3;font-size:14px;margin-bottom:8px;">
+          <option value="ghost">👻 No Answer</option>
+          <option value="voicemail">📩 Left Voicemail</option>
+          <option value="talked">💬 Talked / Qualified</option>
+          <option value="callback_scheduled">📅 Scheduled Callback</option>
+          <option value="not_interested">🚫 Not Interested</option>
+          <option value="bad_number">❌ Bad Number</option>
+        </select>
+        <textarea id="logcall-note-${escapeHtml(lead.key)}" placeholder="What happened on the call? (optional)" style="width:100%;padding:10px;border-radius:10px;background:#16294a;border:1px solid #2c4a75;color:#e9edf3;font-size:14px;min-height:60px;margin-bottom:8px;resize:vertical;"></textarea>
+        <button class="log-call-btn" onclick="logCallFromDetail('${escapeHtml(lead.key)}')">+ Log Call</button>
+      </div>
 
       <div class="detail-section">
         <div class="section-label">📜 Timeline</div>
@@ -3601,6 +3619,35 @@ function timelineHTML(lead) {
 function toggleTimelineNote(leadKey, idx) {
   const el = document.getElementById(`tlnote-${leadKey}-${idx}`);
   if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+// Log a call from the CRM detail view (for Qualified/Follow Up leads not in the dialer)
+async function logCallFromDetail(key) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  if (!requireAuth()) return;
+  const outcomeSel = document.getElementById(`logcall-outcome-${key}`);
+  const noteEl = document.getElementById(`logcall-note-${key}`);
+  const outcomeId = outcomeSel ? outcomeSel.value : 'ghost';
+  const note = noteEl ? noteEl.value.trim() : '';
+
+  const outcomeLabels = {
+    ghost: 'No Answer', voicemail: 'Left Voicemail', talked: 'Talked / Qualified',
+    callback_scheduled: 'Scheduled Callback', not_interested: 'Not Interested', bad_number: 'Bad Number'
+  };
+
+  // Save to notes/timeline
+  const notes = (lead.notes || []).slice();
+  notes.push({ at: new Date().toISOString(), outcome: outcomeId, text: note });
+  await saveOverlay(tab, key, { notes });
+
+  // Update call count
+  lead.callAttempts = (lead.callAttempts || 0) + 1;
+  lead.lastCalledAt = new Date().toISOString();
+  await saveLead(tab, lead);
+
+  logActivity(tab, lead, 'call', `${outcomeLabels[outcomeId] || outcomeId}${note ? ' — ' + note : ''}`);
+  showToast('Call logged', 'success');
+  render();
 }
 
 /* ---------------- Probate watch (zombies) ---------------- */
