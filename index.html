@@ -2747,7 +2747,7 @@ function renderDialerMain() {
     <div class="dialer-card-wrap">
     <button class="dialer-side-btn dialer-side-prev" onclick="dialerPrev()" title="Previous">‹</button>
     <div class="dialer-card">
-      <div class="dialer-name">${isHeir ? '👤 ' : ''}${isHeir && cur.heir && (cur.heir.status === 'dead' || cur.heir.deceased) ? '☠️ ' : ''}${escapeHtml(name)}${isHeir ? ' <span class="dialer-tree-icon" onclick="showDialerFamilyTree(event)" title="View family tree">🌳</span>' : ''}</div>
+      <div class="dialer-name">${isHeir ? '👤 ' : ''}${isHeir && cur.heir && (cur.heir.status === 'dead' || cur.heir.deceased) ? '☠️ ' : ''}${escapeHtml(name)}${isHeir && (lead.familyTree || (lead.familyTreeData && lead.familyTreeData.heirs && lead.familyTreeData.heirs.length)) ? ' <span class="dialer-tree-icon" onclick="showDialerFamilyTree(event)" title="View family tree">🌳</span>' : ''}</div>
       ${isHeir && heir.relationship ? `<div class="dialer-rel">${escapeHtml(heir.relationship)}</div>` : ''}
       <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
       <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
@@ -2951,7 +2951,11 @@ function showDialerFamilyTree(e) {
   e.stopPropagation();
   const cur = dialerCurrent();
   if (!cur || !cur.lead) return;
-  const treeHtml = familyTreeHTML(cur.lead);
+  let treeHtml = familyTreeHTML(cur.lead);
+  // If no tree data, show a helpful message
+  if (!treeHtml || treeHtml.includes('tree-box') && !cur.lead.familyTree) {
+    treeHtml = '<div style="color:#8a97a8;text-align:center;padding:20px;">No family tree data available for this lead.<br>Check the main CRM view to add or view the family tree.</div>';
+  }
   const modal = document.createElement('div');
   modal.className = 'dialer-tree-modal';
   modal.innerHTML = `<div class="dialer-tree-content">${treeHtml}</div>`;
