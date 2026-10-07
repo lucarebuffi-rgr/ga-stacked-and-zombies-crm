@@ -1193,8 +1193,14 @@ function renderBulkBar() {
 function codeBadges(lead) {
   return CODE_ORDER.filter(c => lead.codes[c]).map(c => {
     const m = CODE_META[c];
-    return `<span class="code-badge" title="${escapeHtml(m.label)}" style="background:${m.color}1e;color:${m.color};border-color:${m.color}66">${c}<span class="code-date">${escapeHtml(lead.codes[c])}</span></span>`;
+    return `<span class="code-badge" title="${escapeHtml(m.label)}" style="background:${m.color}1e;color:${m.color};border-color:${m.color}66">${c}</span>`;
   }).join('');
+}
+
+function listDatesLine(lead) {
+  return CODE_ORDER.filter(c => lead.codes[c]).map(c => {
+    return `${c}: ${escapeHtml(lead.codes[c])}`;
+  }).join(' · ');
 }
 
 function renderCard(lead) {
@@ -1314,10 +1320,11 @@ function renderDetail(lead) {
       </div>` : ''}
 
       <div class="fin-grid" style="margin-bottom:14px;">
-        ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div>` : ''}<div class="fin-field"><label>${isStacked ? 'Main POC Phone (saved in CRM — sheets have no phone column)' : 'Phone (saved in CRM — sheets have no phone column)'}</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div>${isStacked ? `<div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
+        ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div><div class="fin-field"><label>Main POC Phone (saved in CRM — sheets have no phone column)</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div><div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
         <div class="fin-field">
           <label>Motivation signals</label>
           <div class="code-badges" style="margin-top:8px;">${codeBadges(lead) || '<span style="font-size:12px;color:#8a97a8;">none</span>'}</div>
+          ${listDatesLine(lead) ? `<div style="font-size:11px;color:#8a97a8;margin-top:4px;">${listDatesLine(lead)}</div>` : ''}
         </div>
         ${lead.dateFlagged ? `<div class="fin-field"><label>Date Flagged</label><div style="padding:8px 0;font-size:14px;" class="mono">${escapeHtml(lead.dateFlagged)}</div></div>` : ''}
       </div>
@@ -2553,14 +2560,6 @@ function heirsHTML(lead) {
       <input type="tel" placeholder="Phone" data-heir-phone="${escapeHtml(lead.key)}" />
       <button class="btn-gold" data-heir-add="${escapeHtml(lead.key)}">+ Add heir</button>
     </div>`;
-  // Keep the freeform tree as research notes below
-  out += `<div class="section-label" style="margin-top:14px;">📝 Research notes (freeform family tree)</div>
-    ${lead.familyTree && !treeDrafts[lead.key] ? `${familyTreeHTML(lead)}
-    <div class="tree-hint">Last updated ${lead.familyTreeUpdatedAt ? timeAgo(lead.familyTreeUpdatedAt) : '—'}</div>` : ''}
-    <textarea class="note-input" rows="3" style="margin-top:8px;" placeholder="Paste the family tree text — or a RESEARCHER JSON block" data-tree-input="${escapeHtml(lead.key)}">${escapeHtml(treeDrafts[lead.key] !== undefined ? treeDrafts[lead.key] : (lead.familyTree || ''))}</textarea>
-    <div class="detail-actions">
-      <button class="save-tree-btn" data-save-tree="${escapeHtml(lead.key)}">💾 Save Research Notes</button>
-    </div></div>`;
   return out;
 }
 
