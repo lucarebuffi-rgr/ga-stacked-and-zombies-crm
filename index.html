@@ -2594,6 +2594,10 @@ function renderDialerMain() {
     <button class="dialer-side-btn dialer-side-next" onclick="dialerNext()" title="Next">›</button>
     </div>
     <div class="dialer-stages" id="dialer-stages"></div>
+    <div class="dialer-notes">
+      <div class="section-label" style="margin-bottom:8px;">Notes</div>
+      <textarea id="dialer-note-input" placeholder="Write your call notes here..." rows="3" style="width:100%;background:rgba(18,37,64,.6);border:1px solid #22385a;border-radius:10px;padding:12px;color:#e9edf3;font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"></textarea>
+    </div>
     <div class="dialer-outcomes">
       <div class="section-label" style="margin-bottom:8px;">Call Disposition</div>
       <div class="dialer-outcome-grid">
@@ -2682,21 +2686,33 @@ async function dialerSetStage(stageId) {
 async function dialerOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc || !dialer) return;
+  // Require a note before disposition
+  const noteEl = document.getElementById('dialer-note-input');
+  const note = noteEl ? noteEl.value.trim() : '';
+  if (!note) {
+    showToast('Write a note first', 'error');
+    if (noteEl) noteEl.focus();
+    return;
+  }
   if (oc.promptSubstage) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-substage').style.display = 'block'; return; }
   if (oc.promptDate) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-cbdate').style.display = 'block'; return; }
-  await dialerApplyOutcome(outcomeId, {});
+  await dialerApplyOutcome(outcomeId, { note });
 }
 async function dialerSubstageDone(subStage) {
   const oid = dialerPendingOutcome; dialerPendingOutcome = null;
   document.getElementById('dialer-substage').style.display = 'none';
-  await dialerApplyOutcome(oid, { subStage });
+  await dialerApplyOutcome(oid, { subStage, note: getDialerNote() });
 }
 async function dialerCallbackDateDone() {
   const d = document.getElementById('dialer-cb-date').value;
   if (!d) { showToast('Pick a date', 'error'); return; }
   const oid = dialerPendingOutcome; dialerPendingOutcome = null;
   document.getElementById('dialer-cbdate').style.display = 'none';
-  await dialerApplyOutcome(oid, { callbackDate: d });
+  await dialerApplyOutcome(oid, { callbackDate: d, note: getDialerNote() });
+}
+function getDialerNote() {
+  const el = document.getElementById('dialer-note-input');
+  return el ? el.value.trim() : '';
 }
 async function dialerApplyOutcome(outcomeId, opts) {
   const cur = dialerCurrent();
