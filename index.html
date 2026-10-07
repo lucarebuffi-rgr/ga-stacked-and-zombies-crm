@@ -1414,7 +1414,7 @@ function renderCard(lead) {
         <button class="fire-btn ${isFire ? 'active' : ''}" data-fire="${escapeHtml(lead.key)}" data-fire-current="${isFire}" title="Favorite this lead">🔥</button>
         <div class="lead-main">
           <div class="lead-name-line">
-            <span class="lead-name">${escapeHtml(tab === 'stacked' ? (lead.mainPocName || titleCaseAddress(lead.address)) : ((lead.familyTreeData && lead.familyTreeData.deceased) || titleCaseAddress(lead.address)))}</span>
+            <span class="lead-name">${escapeHtml(tab === 'stacked' ? (lead.mainPocName || titleCaseAddress(lead.address)) : (getDeceasedName(lead) || titleCaseAddress(lead.address)))}</span>
             <span class="status-badge" style="background:${status.color}22;color:${status.color};border-color:${status.color}55">${status.label}</span>
             ${lead.subStage ? `<span class="substage-badge">${escapeHtml(lead.subStage)}</span>` : ''}
             ${isFire ? `<span class="fire-badge">🔥 FIRE LEAD</span>` : ''}
@@ -1753,6 +1753,20 @@ function familyTreeTextFromData(data, addressLine) {
   });
   if (data.notes) { lines.push(''); lines.push('Notes: ' + data.notes); }
   return lines.join('\n');
+}
+// Get the deceased owner's name for a zombie lead, from family tree data or text
+function getDeceasedName(lead) {
+  if (!lead) return '';
+  // Try structured data first
+  if (lead.familyTreeData && lead.familyTreeData.deceased) return lead.familyTreeData.deceased;
+  // Try parsing the family tree text
+  if (lead.familyTree) {
+    try {
+      const data = parseFamilyTreeText(lead.familyTree);
+      if (data && data.deceased) return data.deceased;
+    } catch (e) {}
+  }
+  return '';
 }
 function familyTreeHTML(lead) {
   var rawText = lead ? lead.familyTree : '';
