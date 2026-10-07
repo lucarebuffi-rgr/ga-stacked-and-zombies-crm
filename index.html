@@ -581,6 +581,9 @@
   .cad-dot.done { background: #1a3a2a; color: #4caf82; border-color: #4caf82; }
   .cad-dot.now { background: #d4a843; color: #0d1b2e; border-color: #d4a843; box-shadow: 0 0 12px rgba(212,168,67,.4); }
   .cad-next { font-size: 12px; color: #8a97a8; border-top: 1px solid #1e3554; padding-top: 10px; }
+.cad-recycle-info { font-size: 13px; color: #d4a843; font-weight: 600; margin-top: 10px; text-align: center; }
+.cad-recycle-btn { display: block; width: 100%; margin-top: 10px; padding: 12px; background: rgba(212,168,67,.15); border: 1px solid #d4a843; border-radius: 10px; color: #e8c476; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
+.cad-recycle-btn:hover { background: rgba(212,168,67,.25); }
   .cad-next b { color: #9fb3cc; }
 .dial-call { display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; font-size: 23px; font-weight: 800; border-radius: 16px; padding: 20px; text-decoration: none; margin-bottom: 10px; box-shadow: 0 4px 18px rgba(212,168,67,.28); }
 .dial-call:active { transform: scale(.98); }
@@ -2471,11 +2474,16 @@ let dialer = null; // { tabId, queue:[{key, heirId, overdue, attempts}], idx, st
 
 function buildDialerQueue(tabId) {
   const items = [];
+  const now = new Date();
   for (const l of allLeads(tabId)) {
     if (l.hidden) continue;
     if (!['new', 'trying'].includes(l.status)) continue; // new + trying only — follow-ups/qualified live on tasks
+    // Skip if in recycling cooldown
+    if (l.recycleUntil && new Date(l.recycleUntil) > now) continue;
     if (tabId === 'zombie') {
       for (const h of callableHeirsWithPhones(l)) {
+        // Skip heir if in recycling cooldown
+        if (h.recycleUntil && new Date(h.recycleUntil) > now) continue;
         const ci = getCadenceInfo(h);
         items.push({ key: l.key, heirId: h.hid, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
       }
@@ -2748,6 +2756,52 @@ function dialerNext() {
   dialer.idx++;
   renderDialerMain();
 }
+async function recycleLead() {
+  const cur = dialerCurrent();
+  if (!cur || !cur.lead) return;
+  const lead = cur.lead;
+  const isHeir = !!cur.heir;
+  const target = isHeir ? cur.heir : lead;
+  const currentCount = target.recycleCount || 0;
+
+  if (currentCount >= 3) {
+    if (!confirm('This lead has been through 3 full cycles with no answer. Mark as Dead?')) return;
+    lead.status = 'dead';
+    await saveLead(dialer.tabId, lead);
+    logActivity(dialer.tabId, lead, 'status', 'Recycled 3x with no answer → Dead');
+    showToast('Marked as Dead', 'success');
+    dialerNext();
+    return;
+  }
+
+  if (!confirm(`Recycle this ${isHeir ? 'heir' : 'lead'}? They'll come back in 11 days for round ${currentCount + 2} of 3.`)) return;
+
+  const recycleUntil = new Date();
+  recycleUntil.setDate(recycleUntil.getDate() + 11);
+
+  if (isHeir) {
+    // Per-heir recycling for zombies
+    await saveHeirCadence(dialer.tabId, lead.key, cur.heir.hid, cur.heir.src || 'tree', {
+      recycleCount: currentCount + 1,
+      recycleUntil: recycleUntil.toISOString(),
+      cadenceStep: 0,
+      attempts: 0,
+      cycleStartDate: null,
+    });
+  } else {
+    // Per-lead recycling for stacked
+    lead.recycleCount = currentCount + 1;
+    lead.recycleUntil = recycleUntil.toISOString();
+    lead.cadenceStep = 0;
+    lead.attempts = 0;
+    lead.cycleStartDate = null;
+    await saveLead(dialer.tabId, lead);
+  }
+
+  logActivity(dialer.tabId, lead, 'recycle', `Recycled (round ${currentCount + 1} of 3) — back in 11 days`);
+  showToast(`Recycled — back in 11 days (round ${currentCount + 2} of 3)`, 'success');
+  dialerNext();
+}
 function dialerPrev() {
   if (!dialer) return;
   let i = dialer.idx - 1;
@@ -3001,12 +3055,17 @@ function cadenceTracker(target) {
   const total = CADENCE_STEPS.length;
   const nextStep = CADENCE_STEPS[(step + 1) % total];
   const lastAgo = ci.lastTouchAt ? timeAgo(ci.lastTouchAt) : 'never';
+  const recycleCount = target.recycleCount || 0;
+  const isComplete = ci.attempts >= 9; // all 9 touches done
 
   const dots = CADENCE_STEPS.map((s, i) => {
     const cls = i < step ? 'done' : (i === step ? 'now' : '');
     const icon = i < step ? '✓' : (i + 1);
     return `<div class="cad-dot ${cls}" title="${escapeHtml(s.label)}">${icon}</div>`;
   }).join('');
+
+  const recycleHtml = recycleCount > 0 ? `<div class="cad-recycle-info">♻️ Round ${recycleCount + 1} of 3</div>` : '';
+  const recycleBtn = isComplete ? `<button class="cad-recycle-btn" onclick="recycleLead()">♻️ Recycle</button>` : '';
 
   return `<div class="cad-tracker">
     <div class="cad-header">
@@ -3017,6 +3076,8 @@ function cadenceTracker(target) {
     <div class="cad-hint">${escapeHtml(ci.stepDef.hint)}</div>
     <div class="cad-dots">${dots}</div>
     <div class="cad-next">Next up: <b>${escapeHtml(nextStep.label)}</b></div>
+    ${recycleHtml}
+    ${recycleBtn}
   </div>`;
 }
 
