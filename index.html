@@ -177,6 +177,22 @@
     cursor: pointer; color: #8a97a8; white-space: nowrap; background: rgba(255,255,255,.02);
   }
   .status-step:hover { border-color: currentColor; transform: translateY(-1px); }
+  /* Slim status bar: colored badge + dropdown (replaces the 8-pill track) */
+  .status-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .status-badge-lg { font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 20px; white-space: nowrap; }
+  .status-select {
+    flex: 1; background: #0d1b2e; border: 1px solid #22385a; color: #dfe6f0; border-radius: 10px;
+    padding: 9px 12px; font-size: 13px; font-weight: 600; cursor: pointer; max-width: 220px;
+  }
+  .status-select:focus { outline: none; border-color: #d4a843; }
+  /* Subtle footer reset link */
+  .detail-footer { margin-top: 22px; padding-top: 14px; border-top: 1px solid #1a2c47; text-align: center; }
+  .reset-link { font-size: 11px; color: #5a6a82; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .reset-link:hover { color: #e07a77; }
+  /* Tighter, calmer sections */
+  .detail-section { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid rgba(26,44,71,.6); }
+  .detail-section:last-child { border-bottom: none; }
+  .section-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #d4a843; font-weight: 700; margin-bottom: 10px; }
   .substage-track { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
   .substage-step {
     font-size: 12px; font-weight: 700; padding: 7px 13px; border-radius: 9px; border: 1px solid #22385a;
@@ -1302,17 +1318,23 @@ function render() {
 
 /* ---------------- Expanded detail ---------------- */
 function renderDetail(lead) {
-  const draft = drafts[lead.key] || { outcome: 'no_answer', text: '' };
   const taskDraft = taskDrafts[lead.key] || {};
   const notes = lead.notes || [];
   const tasks = (lead.tasks || []).slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const isZombie = tab === 'zombie'; const isStacked = tab === 'stacked';
+  const curStatus = STATUS_MAP[lead.status] || STATUSES[0];
+  // WHY HOT: hide if empty or just a date (e.g. "09/29/2026")
+  const whyHotRaw = (lead.whyHot || '').trim();
+  const whyHotIsDate = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(whyHotRaw);
+  const showWhyHot = isZombie && whyHotRaw && !whyHotIsDate;
 
   return `
     <div class="lead-detail">
-      <div class="status-track">
-        ${STATUSES.map(s => `<div class="status-step" data-status-step="${escapeHtml(lead.key)}" data-status-value="${s.id}"
-            style="${s.id === lead.status ? `background:${s.color};border-color:${s.color};color:#0d1b2e;` : `color:${s.color};`}">${s.label}</div>`).join('')}
+      <div class="status-bar">
+        <span class="status-badge-lg" style="background:${curStatus.color}22;color:${curStatus.color};border:1px solid ${curStatus.color}66">${curStatus.label}</span>
+        <select class="status-select" data-status-select="${escapeHtml(lead.key)}" aria-label="Change status">
+          ${STATUSES.map(s => `<option value="${s.id}" ${s.id === lead.status ? 'selected' : ''}>${s.label}</option>`).join('')}
+        </select>
       </div>
       ${SUBSTAGES[lead.status] ? `
       <div class="substage-track">
@@ -1357,27 +1379,16 @@ function renderDetail(lead) {
         </div>
       </div>
 
-      ${isZombie && lead.whyHot ? `
+      ${showWhyHot ? `
       <div class="detail-section">
         <div class="section-label">Why Hot</div>
-        <div class="whyhot-box">${escapeHtml(lead.whyHot)}</div>
+        <div class="whyhot-box">${escapeHtml(whyHotRaw)}</div>
       </div>` : ''}
 
       ${isZombie ? heirsHTML(lead) : ''}
 
       ${isZombie ? probateWatchHTML(lead) : ''}
 
-      <div class="outcome-row">
-        <select data-outcome-select="${escapeHtml(lead.key)}">
-          ${OUTCOMES.map(o => `<option value="${o.id}" ${o.id === draft.outcome ? 'selected' : ''}>${o.label}</option>`).join('')}
-        </select>
-      </div>
-      <textarea class="note-input" rows="2" placeholder="What happened on the call? (optional)" data-note-input="${escapeHtml(lead.key)}">${escapeHtml(draft.text)}</textarea>
-      <div class="detail-actions">
-        <button class="log-call-btn" data-log-call="${escapeHtml(lead.key)}">+ Log Call</button>
-        <button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button>
-        <button class="reset-btn" data-reset-lead="${escapeHtml(lead.key)}">Reset CRM data</button>
-      </div>
       <div class="detail-section">
         <div class="section-label">📜 Timeline</div>
         ${timelineHTML(lead)}
@@ -1421,6 +1432,8 @@ function renderDetail(lead) {
         </div>`}
         ${lead.driveFolderUrl ? `<div class="drive-carousel" id="drive-carousel-${escapeHtml(lead.key)}" data-drive-carousel="${escapeHtml(lead.key)}" data-drive-url="${escapeHtml(lead.driveFolderUrl)}"></div>` : ''}
       </div>` : ''}
+
+      <div class="detail-footer"><span class="reset-link" data-reset-lead="${escapeHtml(lead.key)}">Reset CRM data</span></div>
     </div>`;
 }
 
@@ -1619,27 +1632,6 @@ async function saveFamilyTree(key) {
   if (lead) logActivity(tab, lead, 'family-tree', 'Family tree saved');
   showToast('Family tree saved');
 }
-async function logCall(key) {
-  const outcomeSel = document.querySelector(`[data-outcome-select="${CSS.escape(key)}"]`);
-  const noteTa = document.querySelector(`[data-note-input="${CSS.escape(key)}"]`);
-  const outcomeId = outcomeSel ? outcomeSel.value : 'no_answer';
-  const text = noteTa ? noteTa.value.trim() : '';
-  const outcome = OUTCOME_MAP[outcomeId] || {};
-  const lead = getLead(tab, key);
-  if (!lead) return;
-  const notes = (lead.notes || []).slice();
-  notes.push({ at: new Date().toISOString(), outcome: outcomeId, text });
-  await saveOverlay(tab, key, {
-    notes,
-    status: outcome.status || lead.status,
-    callAttempts: (lead.callAttempts || 0) + 1,
-    lastCalledAt: new Date().toISOString(),
-  });
-  delete drafts[key];
-  logActivity(tab, lead, 'call', `${outcome.label}${text ? ' — ' + text : ''}`);
-  showToast(`Call logged: ${outcome.label}`);
-}
-
 async function resetOverlay(key) {
   if (!requireAuth()) return;
   if (!confirm('Reset this lead\u2019s CRM data (status, notes, calls, tasks, family tree)? The sheet row is untouched.')) return;
@@ -1963,26 +1955,16 @@ function attachCardListeners() {
   document.querySelectorAll('[data-status-step]').forEach(el => {
     el.addEventListener('click', () => updateStatus(el.getAttribute('data-status-step'), el.getAttribute('data-status-value')));
   });
+  document.querySelectorAll('[data-status-select]').forEach(s => {
+    s.addEventListener('click', e => e.stopPropagation());
+    s.addEventListener('change', () => { updateStatus(s.getAttribute('data-status-select'), s.value); });
+  });
   document.querySelectorAll('[data-substage-step]').forEach(el => {
     el.addEventListener('click', () => updateSubStage(el.getAttribute('data-substage-step'), el.getAttribute('data-substage-value')));
   });
   document.querySelectorAll('[data-phone-input]').forEach(inp => {
     inp.addEventListener('click', e => e.stopPropagation());
     inp.addEventListener('change', () => savePhone(inp.getAttribute('data-phone-input'), inp.value));
-  });
-  document.querySelectorAll('[data-outcome-select]').forEach(s => {
-    s.addEventListener('click', e => e.stopPropagation());
-    s.addEventListener('change', () => {
-      const key = s.getAttribute('data-outcome-select');
-      drafts[key] = { ...(drafts[key] || {}), outcome: s.value };
-    });
-  });
-  document.querySelectorAll('[data-note-input]').forEach(ta => {
-    ta.addEventListener('click', e => e.stopPropagation());
-    ta.addEventListener('input', () => {
-      const key = ta.getAttribute('data-note-input');
-      drafts[key] = { ...(drafts[key] || { outcome: 'no_answer' }), text: ta.value };
-    });
   });
   document.querySelectorAll('[data-tree-input]').forEach(ta => {
     ta.addEventListener('click', e => e.stopPropagation());
@@ -1992,9 +1974,6 @@ function attachCardListeners() {
   });
   document.querySelectorAll('[data-save-tree]').forEach(btn => {
     btn.addEventListener('click', e => { e.stopPropagation(); saveFamilyTree(btn.getAttribute('data-save-tree')); });
-  });
-  document.querySelectorAll('[data-log-call]').forEach(btn => {
-    btn.addEventListener('click', e => { e.stopPropagation(); logCall(btn.getAttribute('data-log-call')); });
   });
   document.querySelectorAll('[data-reset-lead]').forEach(btn => {
     btn.addEventListener('click', e => { e.stopPropagation(); resetOverlay(btn.getAttribute('data-reset-lead')); });
@@ -2424,15 +2403,7 @@ function buildTimeline(lead) {
   (lead.smsLog || []).forEach(s => {
     items.push({ ts: s.at, type: 'sms', icon: '💬', title: 'SMS sent', text: s.content || '' });
   });
-  (lead.tasks || []).forEach(t => {
-    items.push({
-      ts: t.completedAt || t.date || '', type: 'task',
-      icon: t.done ? '✅' : '📋',
-      title: (t.done ? 'Task done: ' : 'Task: ') + (t.name || ''),
-      text: (t.date ? formatTaskDate(t.date) : '') + (t.notes ? ' — ' + t.notes : ''),
-      taskId: t.id, done: !!t.done,
-    });
-  });
+  // Tasks live in the TASKS section — not duplicated here.
   (lead.statusHistory || []).forEach(h => {
     items.push({ ts: h.at, type: 'status', icon: '🔄', title: 'Status → ' + ((STATUS_MAP[h.to] || {}).label || h.to), text: '' });
   });
@@ -2532,9 +2503,10 @@ async function deleteHeir(key, heirId) {
 function heirsHTML(lead) {
   const heirs = lead.heirs || [];
   const prog = heirProgress(lead);
+  const hasTree = !!(lead.familyTree || (lead.familyTreeData && lead.familyTreeData.heirs && lead.familyTreeData.heirs.length));
   let out = `<div class="detail-section"><div class="section-label">👥 Heirs ${prog ? `<span class="heir-progress">${prog.contacted} of ${prog.total} contacted</span>` : ''}</div>`;
-  // Visual family tree (read-only) — restored 2026-10-06 per Luca: show the tree, hide the editable draft
-  if (lead.familyTree || (lead.familyTreeData && lead.familyTreeData.heirs && lead.familyTreeData.heirs.length)) {
+  // Visual family tree (read-only)
+  if (hasTree) {
     out += `<div class="section-label" style="margin-top:4px;margin-bottom:8px;">🌳 Family Tree</div>${familyTreeHTML(lead)}`;
   }
   if (heirs.length) {
@@ -2555,7 +2527,7 @@ function heirsHTML(lead) {
         </div>
       </div>`;
     }).join('') + '</div>';
-  } else {
+  } else if (!hasTree) {
     out += '<div class="timeline-empty">No heirs tracked yet — add them as RESEARCHER identifies them.</div>';
   }
   out += `<div class="heir-add-row">
