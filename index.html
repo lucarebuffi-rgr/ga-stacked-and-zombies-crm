@@ -319,8 +319,8 @@
   .task-form-row input { padding: 9px 11px; border-radius: 10px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; }
   .task-form-row input[type="text"] { flex: 1 1 160px; }
   .task-form textarea { width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; resize: vertical; margin-bottom: 8px; line-height: 1.5; }
-  .add-task-btn { background: #16294a; border: 1px solid #2c4a75; color: #e9edf3; border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 700; }
-  .add-task-btn:hover { border-color: rgba(212,168,67,.55); color: #e8c476; }
+  .add-task-btn { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 10px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,255,255,.25); cursor: pointer; }
+  .add-task-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,168,67,.32); }
   .task-cancel-edit-btn { background: none; border: 1px solid #22385a; color: #8a97a8; border-radius: 10px; padding: 9px 15px; font-size: 13px; }
 
   /* ---------- Empty / loading ---------- */
@@ -3588,16 +3588,19 @@ function buildTimeline(lead) {
 function timelineHTML(lead) {
   const items = buildTimeline(lead).slice(0, 30);
   if (!items.length) return '<div class="timeline-empty">No activity yet — log a call or add a note to start the timeline.</div>';
-  return `<div class="timeline">${items.map(it => `
+  return `<div class="timeline">${items.map((it, idx) => `
     <div class="timeline-item">
-      <div class="timeline-icon">${it.icon}</div>
       <div class="timeline-body">
-        <div class="timeline-title">${escapeHtml(it.title)}
-          <span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
+        <div class="timeline-title" onclick="toggleTimelineNote('${escapeHtml(lead.key)}', ${idx})" style="cursor:pointer;">
+          🕐 ${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''} &nbsp;<b style="color:#e8c476;">${escapeHtml(it.title)}</b>
         </div>
-        ${it.text ? `<div class="timeline-text">${escapeHtml(it.text)}</div>` : ''}
+        ${it.text ? `<div class="timeline-text" id="tlnote-${escapeHtml(lead.key)}-${idx}" style="display:none;margin-top:6px;">${escapeHtml(it.text)}</div>` : ''}
       </div>
     </div>`).join('')}</div>`;
+}
+function toggleTimelineNote(leadKey, idx) {
+  const el = document.getElementById(`tlnote-${leadKey}-${idx}`);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
 }
 
 /* ---------------- Probate watch (zombies) ---------------- */
