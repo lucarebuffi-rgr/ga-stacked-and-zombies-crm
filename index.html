@@ -2628,8 +2628,8 @@ function renderSop() {
         <li><strong>📞📞 Double Dial + VM + SMS</strong> — Called twice with voicemail. Then asks if you want to send the intro text.</li>
         <li><strong>💬 Qualified</strong> — You spoke with them. Asks if they're Must Underwrite or Submit Offer, then moves to Qualified Leads.</li>
         <li><strong>📅 Follow Up Scheduled</strong> — They asked for a callback. Pick the date, moves to Follow Ups.</li>
-        <li><strong>🚫 Not Interested</strong> — They're not interested. Removed from the calling queue.</li>
-        <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. Moved to Dead / Bad Number and flagged for a new phone lookup.</li>
+        <li><strong>🚫 Not Interested</strong> — They're not interested. For stacked leads, removed from the calling queue. For zombie heirs, only that heir is marked — the lead stays active so you can call the other heirs.</li>
+        <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. For stacked leads, moved to Dead / Bad Number. For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
       </ul>
       <div class="sop-tip"><p>💡 <strong>You must write a note before tapping a disposition.</strong> The note saves automatically with the outcome.</p></div>
     </div>
