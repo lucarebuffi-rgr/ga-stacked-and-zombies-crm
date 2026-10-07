@@ -3361,10 +3361,10 @@ const SESSION_OUTCOMES = [
   { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
   { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
   { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
-  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
+  { id: 'talked',            label: '💬 Qualified',          status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
   { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
   { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
-  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
+  { id: 'callback_scheduled',label: '📅 Follow Up Scheduled', status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
