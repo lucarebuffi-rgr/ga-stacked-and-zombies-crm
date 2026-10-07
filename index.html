@@ -588,6 +588,8 @@
 .cad-recycle-info { font-size: 13px; color: #d4a843; font-weight: 600; margin-top: 10px; text-align: center; }
 .cad-recycle-btn { display: block; width: 100%; margin-top: 10px; padding: 12px; background: rgba(212,168,67,.15); border: 1px solid #d4a843; border-radius: 10px; color: #e8c476; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .cad-recycle-btn:hover { background: rgba(212,168,67,.25); }
+.cad-undo-btn { display: block; width: 100%; margin-top: 8px; padding: 8px; background: transparent; border: 1px solid #3a4a5c; border-radius: 8px; color: #8a97a8; font-size: 13px; cursor: pointer; font-family: inherit; }
+.cad-undo-btn:hover { border-color: #8a97a8; color: #b8c4d4; }
   .cad-next b { color: #9fb3cc; }
 .dial-call { display: flex; align-items: center; justify-content: center; gap: 10px; background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; font-size: 23px; font-weight: 800; border-radius: 16px; padding: 20px; text-decoration: none; margin-bottom: 10px; box-shadow: 0 4px 18px rgba(212,168,67,.28); }
 .dial-call:active { transform: scale(.98); }
@@ -2964,6 +2966,39 @@ function showDialerFamilyTree(e) {
   });
   document.body.appendChild(modal);
 }
+async function undoCadenceStep() {
+  const cur = dialerCurrent();
+  if (!cur || !cur.lead) return;
+  const lead = cur.lead;
+  const isHeir = !!cur.heir;
+  const target = isHeir ? cur.heir : lead;
+  const ci = getCadenceInfo(target);
+
+  if (ci.attempts <= 0 || ci.step <= 0) {
+    showToast('Nothing to undo', 'info');
+    return;
+  }
+
+  if (!confirm(`Undo the last touch? This will move ${isHeir ? 'this heir' : 'this lead'} back from Touch ${ci.step + 1} to Touch ${ci.step}.`)) return;
+
+  const newStep = ci.step - 1;
+  const newAttempts = ci.attempts - 1;
+
+  if (isHeir) {
+    await saveHeirCadence(dialer.tabId, lead.key, cur.heir.hid, cur.heir.src || 'tree', {
+      cadenceStep: newStep,
+      attempts: newAttempts,
+    });
+  } else {
+    lead.cadenceStep = newStep;
+    lead.attempts = newAttempts;
+    await saveLead(dialer.tabId, lead);
+  }
+
+  logActivity(dialer.tabId, lead, 'cadence', `Undid Touch ${ci.step + 1} — back to Touch ${newStep + 1}`);
+  showToast(`Back to Touch ${newStep + 1}`, 'success');
+  renderDialerMain();
+}
 function dialerPrev() {
   if (!dialer) return;
   let i = dialer.idx - 1;
@@ -3229,6 +3264,7 @@ function cadenceTracker(target) {
 
   const recycleHtml = recycleCount > 0 ? `<div class="cad-recycle-info">♻️ Round ${recycleCount + 1} of 3</div>` : '';
   const recycleBtn = isComplete ? `<button class="cad-recycle-btn" onclick="recycleLead()">♻️ Recycle</button>` : '';
+  const undoBtn = ci.attempts > 0 ? `<button class="cad-undo-btn" onclick="undoCadenceStep()" title="Undo last touch">↩️ Undo last touch</button>` : '';
 
   return `<div class="cad-tracker">
     <div class="cad-header">
@@ -3241,6 +3277,7 @@ function cadenceTracker(target) {
     <div class="cad-next">Next up: <b>${escapeHtml(nextStep.label)}</b></div>
     ${recycleHtml}
     ${recycleBtn}
+    ${undoBtn}
   </div>`;
 }
 
