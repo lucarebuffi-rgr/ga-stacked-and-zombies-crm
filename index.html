@@ -322,6 +322,13 @@
   .task-form-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
   .task-form-row input { padding: 9px 11px; border-radius: 10px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; }
   .task-form-row input[type="text"] { flex: 1 1 160px; }
+  /* Gold calendar/clock picker icons */
+  .task-form-row input[type="date"]::-webkit-calendar-picker-indicator,
+  .task-form-row input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(77%) sepia(42%) saturate(638%) hue-rotate(2deg) brightness(105%) contrast(97%);
+    opacity: 1; cursor: pointer; width: 18px; height: 18px;
+  }
+  .task-form-row input[type="date"], .task-form-row input[type="time"] { color-scheme: dark; }
   .task-form textarea { width: 100%; padding: 9px 11px; border-radius: 10px; border: 1px solid #22385a; background: #0b1626; color: #e9edf3; font-size: 13px; resize: vertical; margin-bottom: 8px; line-height: 1.5; }
   .add-task-btn { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 20px; font-weight: 700; font-size: 14px; box-shadow: 0 2px 10px rgba(212,168,67,.22), inset 0 1px 0 rgba(255,255,255,.25); cursor: pointer; }
   .add-task-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(212,168,67,.32); }
@@ -1056,6 +1063,7 @@ let editingDriveLink = {}; // key -> true while the drive URL is being edited
 const driveCache = {}; // folderId -> { status: 'done'|'error', files: [...], name }
 let drafts = {};
 let taskDrafts = {};
+let taskFormOpen = {};
 let treeDrafts = {}; // per-lead in-progress family tree text, survives re-renders until saved
 let editingTask = {};
 let sheetError = null;
@@ -1650,15 +1658,17 @@ function renderDetail(lead) {
             <button class="task-edit-btn" data-task-edit="${escapeHtml(lead.key)}" data-task-id-edit="${t.id}" title="Edit task">✎</button>
             <button class="task-delete-btn" data-task-delete="${escapeHtml(lead.key)}" data-task-id-del="${t.id}">✕</button>
           </div>`).join('')}</div>` : ''}
+        ${taskFormOpen[lead.key] || editingTask[lead.key] ? `
         <div class="task-form-row" style="margin-top:10px;">
           <input type="text" placeholder="Task name" value="${escapeHtml(taskDraft.name || '')}" data-task-name-input="${escapeHtml(lead.key)}" />
           <input type="date" value="${taskDraft.date || ''}" data-task-date-input="${escapeHtml(lead.key)}" />
           <input type="time" value="${taskDraft.time || ''}" data-task-time-input="${escapeHtml(lead.key)}" />
         </div>
         <textarea placeholder="Task notes (optional)" data-task-notes-input="${escapeHtml(lead.key)}">${escapeHtml(taskDraft.notes || '')}</textarea>
-        <div style="display:flex; gap:10px; align-items:center;">
-          <button class="add-task-btn" data-add-task="${escapeHtml(lead.key)}">${editingTask[lead.key] ? '✓ Update Task' : '+ Add Task'}</button>
-          ${editingTask[lead.key] ? `<button class="task-cancel-edit-btn" data-task-cancel-edit="${escapeHtml(lead.key)}">Cancel</button>` : ''}
+        ` : ''}
+        <div style="display:flex; gap:10px; align-items:center; margin-top:8px;">
+          <button class="add-task-btn" data-add-task="${escapeHtml(lead.key)}">${editingTask[lead.key] ? '✓ Update Task' : (taskFormOpen[lead.key] ? '✓ Save Task' : '+ Add Task')}</button>
+          ${editingTask[lead.key] ? `<button class="task-cancel-edit-btn" data-task-cancel-edit="${escapeHtml(lead.key)}">Cancel</button>` : (taskFormOpen[lead.key] ? `<button class="task-cancel-edit-btn" onclick="taskFormOpen['${escapeHtml(lead.key)}']=false;render();">Cancel</button>` : '')}
         </div>
       </div>
 
@@ -1928,6 +1938,12 @@ async function resetOverlay(key) {
 function getTasks(lead) { return (lead.tasks || []).slice(); }
 
 async function addTask(key) {
+  // First click: open the form. Second click: save.
+  if (!taskFormOpen[key] && !editingTask[key]) {
+    taskFormOpen[key] = true;
+    render();
+    return;
+  }
   const nameEl = document.querySelector(`[data-task-name-input="${CSS.escape(key)}"]`);
   const dateEl = document.querySelector(`[data-task-date-input="${CSS.escape(key)}"]`);
   const timeEl = document.querySelector(`[data-task-time-input="${CSS.escape(key)}"]`);
@@ -1948,7 +1964,7 @@ async function addTask(key) {
   };
   const next = editId ? tasks.map(t => t.id === editId ? task : t) : [...tasks, task];
   await saveOverlay(tab, key, { tasks: next });
-  delete taskDrafts[key]; delete editingTask[key];
+  delete taskDrafts[key]; delete editingTask[key]; delete taskFormOpen[key];
   logActivity(tab, lead, editId ? 'task-updated' : 'task-added', name);
   showToast(editId ? 'Task updated' : 'Task added');
 }
@@ -3611,6 +3627,7 @@ function timelineHTML(lead) {
       <div class="timeline-body">
         <div class="timeline-title" onclick="toggleTimelineNote('${escapeHtml(lead.key)}', ${idx})" style="cursor:pointer;">
           🕐 ${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''} &nbsp;<b style="color:#e8c476;">${escapeHtml(it.title)}</b>
+          ${it.text ? `<span id="tlarrow-${escapeHtml(lead.key)}-${idx}" style="color:#e8c476;font-size:11px;margin-left:4px;">▼</span>` : ''}
         </div>
         ${it.text ? `<div class="timeline-text" id="tlnote-${escapeHtml(lead.key)}-${idx}" style="display:none;margin-top:6px;">${escapeHtml(it.text)}</div>` : ''}
       </div>
@@ -3618,7 +3635,12 @@ function timelineHTML(lead) {
 }
 function toggleTimelineNote(leadKey, idx) {
   const el = document.getElementById(`tlnote-${leadKey}-${idx}`);
-  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  const arrow = document.getElementById(`tlarrow-${leadKey}-${idx}`);
+  if (el) {
+    const isHidden = el.style.display === 'none';
+    el.style.display = isHidden ? 'block' : 'none';
+    if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+  }
 }
 // Log a call from the CRM detail view (for Qualified/Follow Up leads not in the dialer)
 async function logCallFromDetail(key) {
