@@ -144,7 +144,13 @@
     #lead-list { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   }
   .lead-card .lead-row { flex: 1; overflow: hidden; }
-  .lead-card.expanded { aspect-ratio: auto; grid-column: 1 / -1; }
+  /* Lead detail modal */
+  #lead-modal { position:fixed; inset:0; z-index:2000; background:#0d1b2e; display:none; overflow-y:auto; }
+  #lead-modal.open { display:block; }
+  .lm-wrap { max-width:640px; margin:0 auto; padding:14px 14px 40px; }
+  .lm-top { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0 12px; position:sticky; top:0; background:#0d1b2e; z-index:5; }
+  .lm-close { background:#22385a; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:8px 12px; font-size:13px; cursor:pointer; }
+  .lm-title { font-size:15px; font-weight:800; color:#f3dda0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .lead-card:hover { transform: translateY(-2px); border-color: rgba(212,168,67,.35); box-shadow: 0 10px 26px rgba(0,0,0,.45), 0 0 0 1px rgba(212,168,67,.08); }
   .lead-card.is-fire { border-color: rgba(224,149,74,.55); }
   .lead-row { padding: 15px 18px; display: flex; align-items: center; gap: 13px; flex-wrap: wrap; cursor: pointer; }
@@ -909,7 +915,7 @@ function formatTaskTime(t) {
 let tab = 'zombie';
 let sheetRows = { zombie: [], stacked: [] };   // parsed from Google Sheets (read-only master)
 let overlays  = { zombie: {}, stacked: {} };   // Firestore interactive layer, keyed by addrKey
-let expandedKey = null;
+let modalLeadKey = null;
 let search = '';
 let statusFilter = 'active';
 let codeFilter = 'all';
@@ -1257,18 +1263,14 @@ function listDatesLine(lead) {
 
 function renderCard(lead) {
   const status = STATUS_MAP[lead.status] || STATUSES[0];
-  const isOpen = expandedKey === lead.key;
   const isFire = !!lead.fireLead;
   const notes = lead.notes || [];
   const phone = lead.phone || '';
   const isSelected = selectedIds.has(lead.key);
   const isDormant = DORMANT_INDICATOR_STAGES.includes(lead.status) && !hasOpenTask(lead);
 
-  let detail = '';
-  if (isOpen) detail = renderDetail(lead);
-
   return `
-    <div class="lead-card ${isFire ? 'is-fire' : ''} ${isOpen ? 'expanded' : ''}">
+    <div class="lead-card ${isFire ? 'is-fire' : ''}">
       <div class="lead-row" data-row-toggle="${escapeHtml(lead.key)}">
         <div class="lead-topbar">
           <span class="lead-name">${escapeHtml(lead.address)}</span>
@@ -1304,9 +1306,7 @@ function renderCard(lead) {
           <div>${lead.lastCalledAt ? `last: ${timeAgo(lead.lastCalledAt)}` : (lead.dateFlagged ? `flagged ${escapeHtml(lead.dateFlagged)}` : (lead.manual ? 'added manually' : 'from sheet'))}</div>
         </div>
         ${lead.hidden && showHidden ? `<button class="unhide-btn" data-unhide="${escapeHtml(lead.key)}">↩ Unhide</button>` : ''}
-        <button class="toggle-btn">${isOpen ? '▴' : '▾'}</button>
       </div>
-      ${detail}
     </div>`;
 }
 
@@ -1352,6 +1352,10 @@ function render() {
     renderAgenda();
   }
   attachCardListeners();
+  // Keep the lead modal in sync if it's open
+  if (modalLeadKey && document.getElementById('lead-modal').classList.contains('open')) {
+    renderLeadModal();
+  }
 }
 
 /* ---------------- Expanded detail ---------------- */
@@ -1716,7 +1720,7 @@ async function resetOverlay(key) {
   const lead = getLead(tab, key);
   await db.collection(TABS[tab].collection).doc(key).delete().catch(() => {});
   delete drafts[key]; delete taskDrafts[key]; delete editingTask[key]; delete treeDrafts[key];
-  if (expandedKey === key) expandedKey = null;
+  if (modalLeadKey === key) closeLeadModal();
   if (lead) logActivity(tab, lead, 'reset', 'CRM overlay cleared');
   showToast('Lead reset to sheet data');
   render();
@@ -1915,17 +1919,11 @@ async function unhideLead(key) {
 function attachCardListeners() {
   document.querySelectorAll('[data-row-toggle]').forEach(row => {
     row.addEventListener('click', (e) => {
-      if (e.target.closest('[data-fire],[data-call-link],.quick-link-btn,.toggle-btn,input,select,textarea,button')) {
-        // let specific controls handle their own clicks, except the toggle button
-        if (!e.target.closest('.toggle-btn')) return;
+      if (e.target.closest('[data-fire],[data-call-link],.quick-link-btn,input,select,textarea,button')) {
+        return;
       }
       const key = row.getAttribute('data-row-toggle');
-      expandedKey = expandedKey === key ? null : key;
-      render();
-      if (expandedKey) {
-        const el = document.querySelector(`[data-row-toggle="${CSS.escape(expandedKey)}"]`);
-        if (el) el.scrollIntoView({ block: 'nearest' });
-      }
+      openLeadModal(key);
     });
   });
   document.querySelectorAll('[data-call-link]').forEach(a => {
@@ -2203,7 +2201,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const isReportMode = urlParams.get('report') === '1';
 
 function resetTabState() {
-  expandedKey = null;
+  if (modalLeadKey) closeLeadModal();
   statusFilter = 'active'; codeFilter = 'all'; directorFilter = 'all';
   addedDateFilter = ''; document.getElementById('added-date-filter').value = '';
   viewMode = 'leads'; agendaDirectorFilter = 'all';
@@ -2299,6 +2297,7 @@ if (isReportMode) {
 </script>
 <!-- ===== CRM REVAMP (2026-10-06): call session + SMS sheet overlays ===== -->
 <div id="call-session"></div>
+<div id="lead-modal"></div>
 <div id="sms-sheet">
   <div class="sms-backdrop" onclick="closeSmsSheet()"></div>
   <div class="sms-panel">
@@ -2988,6 +2987,35 @@ async function sendSmsFromSheet() {
   } finally {
     btn.disabled = false; btn.textContent = '➤ Send SMS';
   }
+}
+
+/* ---------------- Lead detail modal ---------------- */
+function openLeadModal(key) {
+  modalLeadKey = key;
+  renderLeadModal();
+  document.getElementById('lead-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLeadModal() {
+  modalLeadKey = null;
+  document.getElementById('lead-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  render();
+}
+function renderLeadModal() {
+  const el = document.getElementById('lead-modal');
+  const lead = modalLeadKey ? getLead(tab, modalLeadKey) : null;
+  if (!lead) { el.classList.remove('open'); document.body.style.overflow = ''; return; }
+  el.innerHTML = `<div class="lm-wrap">
+    <div class="lm-top">
+      <button class="lm-close" onclick="closeLeadModal()">✕ Close</button>
+      <div class="lm-title">${escapeHtml(lead.address)}</div>
+      <div style="width:70px;"></div>
+    </div>
+    ${renderDetail(lead)}
+  </div>`;
+  el.scrollTop = 0;
+  attachCardListeners();
 }
 
 /* ---------------- Call session mode ---------------- */
