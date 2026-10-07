@@ -394,6 +394,111 @@
     .detail-actions .btn-gold, .detail-actions .btn-ghost{width:100%; justify-content:center;}
     table{font-size:13px;}
   }
+/* ===== CRM REVAMP (2026-10-06): call session, SMS, timeline, heirs, cadence ===== */
+.cs-hidden { display:none !important; }
+
+/* Call session overlay */
+#call-session { position:fixed; inset:0; z-index:2000; background:#0d1b2e; display:none; overflow-y:auto; }
+#call-session.open { display:block; }
+.cs-wrap { max-width:560px; margin:0 auto; padding:14px 14px 40px; }
+.cs-top { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 0 12px; position:sticky; top:0; background:#0d1b2e; z-index:5; }
+.cs-end { background:#22385a; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:8px 12px; font-size:13px; }
+.cs-progress { font-size:13px; color:#8a97a8; font-weight:700; }
+.cs-stats { font-size:13px; color:#d4a843; font-weight:700; }
+.cs-card { background:#12263f; border:1px solid #22385a; border-radius:16px; padding:18px 16px; margin-bottom:14px; }
+.cs-step { font-size:13px; color:#9fb3cc; margin-bottom:10px; }
+.cs-step b { color:#d4a843; }
+.cs-hint { display:block; font-size:12px; color:#8a97a8; margin-top:2px; }
+.cs-name { margin:4px 0; font-size:24px; color:#fff; }
+.cs-addr { font-size:14px; color:#9fb3cc; margin-bottom:10px; }
+.cs-badges { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+.cs-why { font-size:13px; color:#c9d4e8; font-style:italic; background:#0d1b2e; border-radius:8px; padding:10px 12px; margin-bottom:10px; }
+.cs-cadence { font-size:12.5px; color:#8a97a8; margin-bottom:14px; }
+.overdue-badge { background:#d9534f22; color:#d9534f; border:1px solid #d9534f55; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.cs-dial { display:block; text-align:center; background:linear-gradient(180deg,#e3b95c,#c9992f); color:#0d1b2e; font-size:22px; font-weight:800; border-radius:14px; padding:18px; text-decoration:none; margin-bottom:10px; }
+.cs-text { display:block; width:100%; background:#22385a; color:#e9edf3; border:1px solid #2f4d78; border-radius:10px; padding:12px; font-size:15px; font-weight:700; margin-bottom:12px; }
+.cs-nophone { text-align:center; color:#d9534f; padding:14px; }
+.cs-timeline { border-top:1px solid #22385a; padding-top:10px; margin-top:4px; }
+.cs-tl-row { display:flex; gap:8px; font-size:12.5px; color:#9fb3cc; padding:4px 0; }
+.cs-outcomes { background:#12263f; border:1px solid #22385a; border-radius:16px; padding:16px; margin-bottom:14px; }
+.cs-outcome-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cs-outcome { background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:10px; padding:13px 8px; font-size:13.5px; font-weight:600; }
+.cs-outcome:active { background:#d4a843; color:#0d1b2e; }
+.cs-next { display:block; width:100%; background:#22385a; color:#d4a843; border:1px solid #d4a84366; border-radius:12px; padding:15px; font-size:16px; font-weight:800; }
+.cs-done { text-align:center; padding:60px 20px; color:#e9edf3; }
+.cs-done h2 { color:#d4a843; }
+.cs-done p { color:#9fb3cc; margin-bottom:20px; }
+#cs-cb-date { background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:10px; font-size:15px; }
+
+/* SMS bottom sheet */
+#sms-sheet { position:fixed; inset:0; z-index:2100; display:none; }
+#sms-sheet.open { display:block; }
+.sms-backdrop { position:absolute; inset:0; background:rgba(0,0,0,.6); }
+.sms-panel { position:absolute; left:0; right:0; bottom:0; background:#12263f; border-top:1px solid #d4a84355; border-radius:18px 18px 0 0; padding:18px 16px 30px; max-width:560px; margin:0 auto; }
+.sms-panel h3 { margin:0 0 4px; color:#d4a843; }
+.sms-to { font-size:13px; color:#9fb3cc; margin-bottom:12px; }
+.sms-templates { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.sms-tpl { background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:9px 12px; font-size:13px; }
+.sms-tpl.active { border-color:#d4a843; color:#d4a843; }
+#sms-sheet-text { width:100%; min-height:110px; background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:10px; padding:12px; font-size:16px; box-sizing:border-box; }
+.sms-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+#sms-count { font-size:12px; color:#8a97a8; }
+#sms-send-btn { background:linear-gradient(180deg,#e3b95c,#c9992f); color:#0d1b2e; border:none; border-radius:10px; padding:13px 26px; font-size:15px; font-weight:800; }
+.sms-cancel { background:none; border:none; color:#8a97a8; font-size:14px; padding:10px; }
+
+/* Unified timeline */
+.timeline { display:flex; flex-direction:column; gap:2px; margin-top:8px; }
+.timeline-item { display:flex; gap:10px; padding:9px 0; border-bottom:1px solid #1a2f4d; }
+.timeline-item:last-child { border-bottom:none; }
+.timeline-icon { font-size:17px; width:26px; text-align:center; flex-shrink:0; }
+.timeline-body { flex:1; min-width:0; }
+.timeline-title { font-size:13.5px; color:#e9edf3; font-weight:600; }
+.timeline-ts { font-size:11.5px; color:#8a97a8; font-weight:400; margin-left:8px; }
+.timeline-text { font-size:13px; color:#9fb3cc; margin-top:3px; white-space:pre-wrap; }
+.timeline-empty { font-size:13px; color:#8a97a8; padding:12px 0; font-style:italic; }
+
+/* Cadence / probate / resurrection badges */
+.cadence-line { font-size:12px; color:#8a97a8; margin-top:6px; }
+.probate-badge { background:#c084fc22; color:#c084fc; border:1px solid #c084fc55; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+.probate-flag { background:#d9534f22; color:#d9534f; border:1px solid #d9534f66; border-radius:8px; padding:8px 12px; font-size:13px; font-weight:700; margin-top:8px; }
+.resurrect-banner { background:#4caf8222; color:#4caf82; border:1px solid #4caf8255; border-radius:8px; padding:9px 12px; font-size:13px; font-weight:600; margin-top:8px; }
+.retrace-flag { background:#e0954a22; color:#e0954a; border:1px solid #e0954a55; border-radius:6px; padding:2px 8px; font-size:11px; font-weight:700; }
+
+/* Heirs */
+.heir-list { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.heir-card { background:#0d1b2e; border:1px solid #22385a; border-radius:10px; padding:10px 12px; }
+.heir-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; }
+.heir-name { font-size:14.5px; font-weight:700; color:#e9edf3; }
+.heir-rel { font-size:12px; color:#8a97a8; }
+.heir-status { font-size:11px; font-weight:700; border-radius:6px; padding:3px 9px; white-space:nowrap; }
+.heir-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.heir-actions select { background:#12263f; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:8px; font-size:13px; }
+.heir-del { background:none; border:none; color:#d9534f; font-size:15px; padding:6px; }
+.heir-nophone { font-size:12px; color:#8a97a8; }
+.heir-progress { font-size:12px; color:#d4a843; font-weight:700; margin-left:8px; }
+.heir-add-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+.heir-add-row input { flex:1 1 120px; background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:10px; font-size:14px; }
+.heir-add-row .btn-gold { padding:10px 16px; font-size:14px; }
+
+/* Text / SMS buttons on cards */
+.text-btn { display:inline-flex; align-items:center; gap:4px; background:#22385a; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:7px 11px; font-size:12.5px; font-weight:600; text-decoration:none; }
+.card-action-row { display:flex; gap:8px; align-items:center; margin-top:6px; flex-wrap:wrap; }
+
+/* Start Calling button */
+#start-calling-btn { background:linear-gradient(180deg,#e3b95c,#c9992f); color:#0d1b2e; border:1px solid rgba(255,255,255,.14); border-radius:10px; padding:10px 18px; font-weight:800; font-size:14px; }
+#call-next-btn { background:#22385a; color:#d4a843; border:1px solid #d4a84366; border-radius:10px; padding:10px 14px; font-weight:700; font-size:14px; }
+
+/* Bulk outcome bar */
+.bulk-outcome-row { display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+.bulk-outcome-row select { background:#0d1b2e; color:#e9edf3; border:1px solid #2f4d78; border-radius:8px; padding:9px; font-size:13.5px; }
+
+@media (max-width:640px){
+  .cs-outcome-grid { grid-template-columns:1fr 1fr; }
+  .cs-name { font-size:22px; }
+  .cs-dial { font-size:20px; padding:16px; }
+  .heir-add-row input { flex:1 1 100%; }
+}
+
 </style>
 </head>
 <body>
@@ -414,6 +519,8 @@
         <span class="sync-note" id="user-chip" style="display:none;"></span>
         <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
         <button class="btn-gold" id="add-lead-btn">+ Add Lead</button>
+        <button id="start-calling-btn" onclick="startCallSession()">📞 Start Calling</button>
+        <button id="call-next-btn" onclick="callNextLead()">▶ Call Next</button>
         <span class="sync-note" id="sync-note"><span class="spin">⟳</span> Loading sheets…</span>
         <button class="btn-ghost" id="refresh-btn">⟳ Refresh sheets</button>
         <a class="btn-ghost" href="?report=1" style="display:inline-flex;align-items:center;">📊 Report</a>
@@ -474,6 +581,18 @@
       <label><input type="checkbox" id="select-all-checkbox" class="lead-checkbox" /> Select all</label>
       <button class="btn-danger" id="delete-selected-btn" disabled>Delete Selected (0)</button>
       <button class="btn-text" id="toggle-hidden-btn" style="display:none;"></button>
+      <div class="bulk-outcome-row">
+        <select id="bulk-outcome-select">
+          <option value="">Log outcome for selected…</option>
+          <option value="ghost">👻 Ghost / No Answer</option>
+          <option value="voicemail">📩 Voicemail Left</option>
+          <option value="double_dial">📞📞 Double Dial + LVM</option>
+          <option value="talked">💬 Talked</option>
+          <option value="bad_number">❌ Bad Number</option>
+          <option value="not_interested">🚫 Not Interested</option>
+        </select>
+        <button class="btn-gold" id="bulk-outcome-btn">Apply</button>
+      </div>
     </div>
     </div>
     <div class="sheet-note" id="sheet-note"></div>
@@ -1108,8 +1227,12 @@ function renderCard(lead) {
           <div class="lead-address">📍 ${escapeHtml(lead.city)}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
           <div class="code-badges">${codeBadges(lead)}</div>
           ${tab === 'zombie' && lead.whyHot ? `<div class="lead-whyhot">“${escapeHtml(lead.whyHot.length > 120 ? lead.whyHot.slice(0, 120) + '…' : lead.whyHot)}”</div>` : ''}
+          ${['new','trying','followup'].includes(lead.status) ? cadenceCardHTML(lead) : ''}
+          ${probateCardHTML(lead)}
+          ${lead.needsRetrace ? '<span class="retrace-flag">🔄 Needs re-trace</span>' : ''}
+          ${resurrectCardHTML(lead)}
         </div>
-        ${phone ? `<a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a>` : ''} ${tab === 'stacked' && lead.mainPocName ? `<div style="font-size:11px;color:#9fb3cc;margin-top:2px;">👤 ${escapeHtml(lead.mainPocName)}</div>` : ''}
+        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''} ${tab === 'stacked' && lead.mainPocName ? `<div style="font-size:11px;color:#9fb3cc;margin-top:2px;">👤 ${escapeHtml(lead.mainPocName)}</div>` : ''}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -1233,17 +1356,9 @@ function renderDetail(lead) {
         <div class="whyhot-box">${escapeHtml(lead.whyHot)}</div>
       </div>` : ''}
 
-      ${isZombie ? `
-      <div class="detail-section">
-        <div class="section-label">🌳 Family Tree</div>
-        ${lead.familyTree && !treeDrafts[lead.key] ? `${familyTreeHTML(lead)}
-        <div class="tree-hint">Last updated ${lead.familyTreeUpdatedAt ? timeAgo(lead.familyTreeUpdatedAt) : '—'}</div>` : ''}
-        <textarea class="note-input" rows="3" style="margin-top:8px;" placeholder="Paste the family tree text — or a RESEARCHER JSON block" data-tree-input="${escapeHtml(lead.key)}">${escapeHtml(treeDrafts[lead.key] !== undefined ? treeDrafts[lead.key] : (lead.familyTree || ''))}</textarea>
-        <div class="detail-actions">
-          <button class="save-tree-btn" data-save-tree="${escapeHtml(lead.key)}">💾 Save Family Tree</button>
-        </div>
-        <div class="tree-hint">Delivered by the RESEARCHER chat — obituaries, heirs, probate-status confirmation.</div>
-      </div>` : ''}
+      ${isZombie ? heirsHTML(lead) : ''}
+
+      ${isZombie ? probateWatchHTML(lead) : ''}
 
       <div class="outcome-row">
         <select data-outcome-select="${escapeHtml(lead.key)}">
@@ -1253,15 +1368,13 @@ function renderDetail(lead) {
       <textarea class="note-input" rows="2" placeholder="What happened on the call? (optional)" data-note-input="${escapeHtml(lead.key)}">${escapeHtml(draft.text)}</textarea>
       <div class="detail-actions">
         <button class="log-call-btn" data-log-call="${escapeHtml(lead.key)}">+ Log Call</button>
+        <button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button>
         <button class="reset-btn" data-reset-lead="${escapeHtml(lead.key)}">Reset CRM data</button>
       </div>
-      ${notes.length ? `<div class="notes-list">${notes.slice().reverse().map(n => `
-        <div class="note-entry">
-          <div class="note-meta">🕒 ${new Date(n.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-            <span class="note-outcome">${escapeHtml((OUTCOME_MAP[n.outcome] || {}).label || n.outcome || '')}</span>
-          </div>
-          ${n.text ? `<div class="note-text">${escapeHtml(n.text)}</div>` : ''}
-        </div>`).join('')}</div>` : ''}
+      <div class="detail-section">
+        <div class="section-label">📜 Timeline</div>
+        ${timelineHTML(lead)}
+      </div>
 
       <div class="task-form">
         <div style="font-size:12px; color:#8a97a8; margin-bottom:8px; font-weight:700;">TASKS</div>
@@ -1318,8 +1431,19 @@ function updateTabCounts() {
 async function updateStatus(key, statusId) {
   const lead = getLead(tab, key);
   if (!lead) return;
+  const now = new Date().toISOString();
   const patch = { status: statusId };
   if (!SUBSTAGES[statusId]) patch.subStage = '';
+  // timeline: status history
+  const sh = (lead.statusHistory || []).slice();
+  if (lead.status !== statusId) sh.push({ at: now, from: lead.status, to: statusId });
+  patch.statusHistory = sh;
+  // resurrection snapshot when killing a lead
+  if ((statusId === 'dead' || statusId === 'not_interested') && lead.status !== statusId) {
+    patch.deadAt = now;
+    patch.deadCodes = { ...(lead.codes || {}) };
+  }
+  if (statusId !== 'dead') patch.needsRetrace = false;
   await saveOverlay(tab, key, patch);
   logActivity(tab, lead, 'status', `→ ${(STATUS_MAP[statusId] || {}).label}`);
   showToast(`Status → ${(STATUS_MAP[statusId] || {}).label}`);
@@ -1418,7 +1542,7 @@ function familyTreeHTML(lead) {
     return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
-      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '">' + escapeHtml(h.phone) + '</a></div>' : '') + '</div>';
+      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + '</div>';
   };
   var html = '<div class="vtree-wrap"><div class="vtree">';
   if (groups.parents.length) {
@@ -1732,8 +1856,47 @@ function attachCardListeners() {
       e.stopPropagation();
       const key = a.getAttribute('data-call-link');
       const lead = getLead(tab, key);
-      if (lead) logActivity(tab, lead, 'dial', 'Clicked to dial');
+      if (lead) {
+        ensureQuoContact(lead.mainPocName || lead.address, lead.phone);
+        logActivity(tab, lead, 'dial', 'Clicked to dial');
+      }
     });
+  });
+  // Text buttons on cards -> SMS sheet
+  document.querySelectorAll('[data-text-lead]').forEach(b => {
+    b.addEventListener('click', e => {
+      e.stopPropagation();
+      openSmsSheet(tab, b.getAttribute('data-text-lead'), null);
+    });
+  });
+  // Heir status changes
+  document.querySelectorAll('[data-heir-status]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      updateHeir(sel.getAttribute('data-heir-status'), sel.getAttribute('data-heir-id'), { status: sel.value });
+    });
+  });
+  document.querySelectorAll('[data-heir-add]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.getAttribute('data-heir-add');
+      const nameEl = document.querySelector(`[data-heir-name="${CSS.escape(key)}"]`);
+      const relEl = document.querySelector(`[data-heir-rel="${CSS.escape(key)}"]`);
+      const phoneEl = document.querySelector(`[data-heir-phone="${CSS.escape(key)}"]`);
+      const name = nameEl ? nameEl.value.trim() : '';
+      if (!name) { showToast('Enter the heir name', 'error'); return; }
+      addHeir(key, { name, relationship: relEl ? relEl.value.trim() : '', phone: phoneEl ? phoneEl.value.trim() : '' });
+    });
+  });
+  document.querySelectorAll('[data-heir-del]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      deleteHeir(btn.getAttribute('data-heir-del'), btn.getAttribute('data-heir-id'));
+    });
+  });
+  // Probate watch buttons
+  document.querySelectorAll('[data-probate-checked]').forEach(btn => {
+    btn.addEventListener('click', () => probateChecked(btn.getAttribute('data-probate-checked')));
+  });
+  document.querySelectorAll('[data-probate-filed]').forEach(btn => {
+    btn.addEventListener('click', () => probateFiled(btn.getAttribute('data-probate-filed')));
   });
   document.querySelectorAll('[data-select]').forEach(cb => {
     cb.addEventListener('click', e => e.stopPropagation());
@@ -1990,6 +2153,11 @@ document.getElementById('select-all-checkbox').addEventListener('change', e => {
   render();
 });
 document.getElementById('delete-selected-btn').addEventListener('click', deleteSelected);
+  document.getElementById('bulk-outcome-btn').addEventListener('click', () => {
+    const sel = document.getElementById('bulk-outcome-select');
+    if (sel.value) bulkApplyOutcome(sel.value);
+    sel.value = '';
+  });
 document.getElementById('toggle-hidden-btn').addEventListener('click', () => { showHidden = !showHidden; render(); });
 document.getElementById('today-tasks-btn').addEventListener('click', () => {
   viewMode = viewMode === 'today' ? 'leads' : 'today'; render();
@@ -2047,6 +2215,690 @@ if (isReportMode) {
     if (lastSyncAt && !sheetError) note.textContent = `Synced from sheets · ${timeAgo(lastSyncAt)}`;
   }, 60000);
 }
+</script>
+<!-- ===== CRM REVAMP (2026-10-06): call session + SMS sheet overlays ===== -->
+<div id="call-session"></div>
+<div id="sms-sheet">
+  <div class="sms-backdrop" onclick="closeSmsSheet()"></div>
+  <div class="sms-panel">
+    <h3>💬 Send SMS</h3>
+    <div class="sms-to">To: <span id="sms-sheet-phone">—</span></div>
+    <div class="sms-templates">
+      <button class="sms-tpl" onclick="smsUseTemplate('day2', this)">Day 2 intro</button>
+      <button class="sms-tpl" onclick="smsUseTemplate('day6', this)">Day 6 follow-up</button>
+      <button class="sms-tpl" onclick="smsUseTemplate('custom', this)">Custom</button>
+    </div>
+    <textarea id="sms-sheet-text" placeholder="Type your message…" oninput="updateSmsCount()"></textarea>
+    <div class="sms-foot">
+      <span id="sms-count">0 chars</span>
+      <div>
+        <button class="sms-cancel" onclick="closeSmsSheet()">Cancel</button>
+        <button id="sms-send-btn" onclick="sendSmsFromSheet()">➤ Send SMS</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+function smsUseTemplate(kind, btn) {
+  document.querySelectorAll('.sms-tpl').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const lead = smsSheetLeadKey ? getLead(tab, smsSheetLeadKey) : null;
+  const ta = document.getElementById('sms-sheet-text');
+  if (kind === 'custom') { ta.value = ''; ta.focus(); }
+  else if (lead) ta.value = smsTemplate(kind, lead);
+  updateSmsCount();
+}
+</script>
+
+<script>
+/* =====================================================================
+   CRM REVAMP MODULE (2026-10-06)
+   Call session mode, cadence engine, Quo integration, SMS, priority queue,
+   unified timeline, probate watch, heir tracking, resurrection alerts,
+   bulk outcome logging.
+   All new overlay fields live in Firestore overlays — sheet data untouched.
+   ===================================================================== */
+
+/* ---------------- Quo integration ---------------- */
+// TODO: Set this to your Quo proxy endpoint. Until configured, Quo calls
+// are skipped silently and tap-to-dial / SMS UI still works.
+const QUO_PROXY_URL = '';
+
+function quoConfigured() { return !!(QUO_PROXY_URL && QUO_PROXY_URL.length > 4); }
+
+// Fire-and-forget: save seller as a Quo contact before dialing.
+// Never blocks, never delays the tel: link, never throws.
+function ensureQuoContact(name, phone) {
+  try {
+    if (!quoConfigured()) return;
+    const digits = digitsOnly(phone || '');
+    if (!digits) return;
+    const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+    const firstName = parts[0] || 'Seller';
+    const lastName = parts.slice(1).join(' ');
+    fetch(QUO_PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'createContact', firstName, lastName, phone: digits }),
+    }).catch(() => {});
+  } catch (e) { /* silent */ }
+}
+
+// Send an SMS via the Quo proxy. Throws on failure so the UI can report it.
+async function sendSmsViaQuo(phone, message) {
+  if (!quoConfigured()) throw new Error('Quo proxy not configured yet — set QUO_PROXY_URL');
+  const digits = digitsOnly(phone || '');
+  if (!digits) throw new Error('No phone number on this lead');
+  if (!message || !message.trim()) throw new Error('Message is empty');
+  const res = await fetch(QUO_PROXY_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'sendSms', to: digits, content: message.trim() }),
+  });
+  if (!res.ok) throw new Error('Quo SMS failed (HTTP ' + res.status + ')');
+  return res.json().catch(() => ({}));
+}
+
+/* ---------------- Cadence engine ---------------- */
+// Luca's 10-touch cycle. dayOffset = days after cycleStartDate.
+// Step 1 includes the intro SMS (updated 2026-10-06).
+const CADENCE_STEPS = [
+  { step: 0, day: 1, dayOffset: 0, short: 'Ghost Call AM',      label: 'Day 1 AM — Ghost Call',              type: 'call',     hint: 'Call, no voicemail if no answer' },
+  { step: 1, day: 1, dayOffset: 0, short: 'Double Dial+LVM+SMS', label: 'Day 1 — Double Dial + LVM + SMS intro', type: 'call_sms', hint: 'Two rapid calls, leave voicemail, send intro SMS' },
+  { step: 2, day: 1, dayOffset: 0, short: 'Call PM + LVM',       label: 'Day 1 PM — Call + LVM',              type: 'call',     hint: 'Call in the afternoon, leave voicemail' },
+  { step: 3, day: 2, dayOffset: 1, short: 'SMS',                 label: 'Day 2 — SMS',                        type: 'sms',      hint: 'Send follow-up text' },
+  { step: 4, day: 3, dayOffset: 2, short: 'Ghost Call',          label: 'Day 3 — Ghost Call',                 type: 'call',     hint: 'Call, no voicemail if no answer' },
+  { step: 5, day: 4, dayOffset: 3, short: 'Call AM/PM + LVM',    label: 'Day 4 — Call AM/PM + LVM',           type: 'call',     hint: 'Call morning and afternoon, leave voicemail' },
+  { step: 6, day: 6, dayOffset: 5, short: 'SMS',                 label: 'Day 6 — SMS',                        type: 'sms',      hint: 'Send follow-up text' },
+  { step: 7, day: 7, dayOffset: 6, short: 'Call AM + LVM',       label: 'Day 7 AM — Call + LVM',              type: 'call',     hint: 'Call in the morning, leave voicemail' },
+  { step: 8, day: 7, dayOffset: 6, short: 'Call PM',             label: 'Day 7 PM — Call',                    type: 'call',     hint: 'Call in the afternoon' },
+];
+const CADENCE_CYCLE_DAYS = 10; // after step 8, restart at step 0 on Day 11
+
+function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+
+function getCadenceInfo(lead) {
+  const step = (lead.cadenceStep != null ? lead.cadenceStep : 0);
+  const stepDef = CADENCE_STEPS[step] || CADENCE_STEPS[0];
+  const cycleStart = lead.cycleStartDate ? new Date(lead.cycleStartDate) : null;
+  let dueDate = null;
+  if (cycleStart && !isNaN(cycleStart)) {
+    dueDate = new Date(cycleStart);
+    dueDate.setDate(dueDate.getDate() + stepDef.dayOffset);
+  }
+  const attempts = lead.attempts || 0;
+  const overdue = !!(dueDate && attempts > 0 && startOfDay(dueDate) < startOfDay(new Date()));
+  return { step, stepDef, dueDate, overdue, attempts, lastTouchAt: lead.lastTouchAt || null, lastTouchType: lead.lastTouchType || null };
+}
+
+function cadenceLine(lead) {
+  const ci = getCadenceInfo(lead);
+  const lastAgo = ci.lastTouchAt ? timeAgo(ci.lastTouchAt) : 'never';
+  return `📞 ${ci.attempts} attempt${ci.attempts === 1 ? '' : 's'} · last ${lastAgo} · next: ${ci.stepDef.label}`;
+}
+
+// Advance to the next cadence step after a touch. Loops to step 0 on Day 11.
+async function advanceCadence(tabId, key, touchType) {
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  const now = new Date();
+  let step = (lead.cadenceStep != null ? lead.cadenceStep : 0);
+  let cycleStart = lead.cycleStartDate ? new Date(lead.cycleStartDate) : null;
+  if (!(lead.attempts || 0) || !cycleStart || isNaN(cycleStart)) {
+    cycleStart = now; step = 0; // first touch starts the cycle today
+  }
+  step += 1;
+  if (step > 8) { step = 0; cycleStart = new Date(cycleStart); cycleStart.setDate(cycleStart.getDate() + CADENCE_CYCLE_DAYS); }
+  await saveOverlay(tabId, key, {
+    cadenceStep: step,
+    cycleStartDate: cycleStart.toISOString(),
+    attempts: (lead.attempts || 0) + 1,
+    lastTouchAt: now.toISOString(),
+    lastTouchType: touchType || 'touch',
+  });
+}
+
+/* ---------------- Priority queue ---------------- */
+const STATUS_SCORE = { new: 15, trying: 10, followup: 5, callback: 0, under_contract: -50, not_interested: -100, dead: -100, deal: -100 };
+
+function scoreLead(lead) {
+  let score = 0;
+  const newest = newestCodeDate(lead);
+  if (newest) {
+    const daysAgo = (Date.now() - newest) / 86400000;
+    score += Math.max(0, 40 - daysAgo * 1.5);
+  }
+  score += Object.keys(lead.codes || {}).length * 10;
+  const lt = lead.lastTouchAt ? new Date(lead.lastTouchAt).getTime() : 0;
+  if (!lt) score += 25;
+  else {
+    const daysSince = (Date.now() - lt) / 86400000;
+    if (daysSince < 1) score -= 20;
+    else score += Math.min(20, daysSince * 2);
+  }
+  score += (STATUS_SCORE[lead.status] || 0);
+  if (getCadenceInfo(lead).overdue) score += 15;
+  if (lead.fireLead) score += 10;
+  return score;
+}
+
+// Leads that need contact, best first. Used by Call Session and "Call Next".
+function buildCallQueue(tabId) {
+  return allLeads(tabId)
+    .filter(l => !l.hidden && ['new', 'trying', 'followup'].includes(l.status) && (l.phone || '').trim())
+    .sort((a, b) => scoreLead(b) - scoreLead(a))
+    .map(l => l.key);
+}
+
+/* ---------------- SMS templates ---------------- */
+function smsTemplate(kind, lead) {
+  const name = (lead.mainPocName || '').split(' ')[0] || 'there';
+  const addr = lead.address || 'the property';
+  if (kind === 'intro') return `Hi ${name}, this is Luca — I just tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
+  if (kind === 'day2')  return `Hi ${name}, this is Luca — I tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
+  if (kind === 'day6')  return `Hi ${name}, Luca again — following up on ${addr}. Still interested in hearing a cash offer? No pressure either way.`;
+  return '';
+}
+
+/* ---------------- Unified timeline ---------------- */
+// Combines notes (calls), SMS log, tasks, and status history into one feed.
+// Existing data structures are untouched — this only renders them together.
+function buildTimeline(lead) {
+  const items = [];
+  (lead.notes || []).forEach(n => {
+    const oc = OUTCOME_MAP[n.outcome] || {};
+    items.push({
+      ts: n.at, type: 'call',
+      icon: n.outcome === 'talked' ? '💬' : (n.outcome === 'sms_sent' ? '💬' : '📞'),
+      title: n.outcome === 'sms_sent' ? 'SMS sent' : ('Call — ' + (oc.label || n.outcome || 'logged')),
+      text: n.text || '',
+    });
+  });
+  (lead.smsLog || []).forEach(s => {
+    items.push({ ts: s.at, type: 'sms', icon: '💬', title: 'SMS sent', text: s.content || '' });
+  });
+  (lead.tasks || []).forEach(t => {
+    items.push({
+      ts: t.completedAt || t.date || '', type: 'task',
+      icon: t.done ? '✅' : '📋',
+      title: (t.done ? 'Task done: ' : 'Task: ') + (t.name || ''),
+      text: (t.date ? formatTaskDate(t.date) : '') + (t.notes ? ' — ' + t.notes : ''),
+      taskId: t.id, done: !!t.done,
+    });
+  });
+  (lead.statusHistory || []).forEach(h => {
+    items.push({ ts: h.at, type: 'status', icon: '🔄', title: 'Status → ' + ((STATUS_MAP[h.to] || {}).label || h.to), text: '' });
+  });
+  items.sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0));
+  return items;
+}
+
+function timelineHTML(lead) {
+  const items = buildTimeline(lead).slice(0, 30);
+  if (!items.length) return '<div class="timeline-empty">No activity yet — log a call or add a note to start the timeline.</div>';
+  return `<div class="timeline">${items.map(it => `
+    <div class="timeline-item">
+      <div class="timeline-icon">${it.icon}</div>
+      <div class="timeline-body">
+        <div class="timeline-title">${escapeHtml(it.title)}
+          <span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span>
+        </div>
+        ${it.text ? `<div class="timeline-text">${escapeHtml(it.text)}</div>` : ''}
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+/* ---------------- Probate watch (zombies) ---------------- */
+const PROBATE_CHECK_DAYS = 30;
+
+function probateWatchInfo(lead) {
+  if (tab !== 'zombie' && lead.tab !== 'zombie') return null;
+  let due = lead.probateCheckDue ? new Date(lead.probateCheckDue) : null;
+  if ((!due || isNaN(due)) && lead.addedAt) {
+    due = new Date(lead.addedAt); due.setDate(due.getDate() + PROBATE_CHECK_DAYS);
+  } else if (!due || isNaN(due)) {
+    const f = parseSheetDate(lead.dateFlagged);
+    due = new Date(f || Date.now()); due.setDate(due.getDate() + PROBATE_CHECK_DAYS);
+  }
+  const overdue = due < startOfDay(new Date());
+  return { due, overdue, flagged: !!lead.probateFiled };
+}
+
+async function probateChecked(key) {
+  const d = new Date(); d.setDate(d.getDate() + PROBATE_CHECK_DAYS);
+  await saveOverlay(tab, key, { probateCheckDue: d.toISOString(), probateFiled: false });
+  const lead = getLead(tab, key);
+  if (lead) logActivity(tab, lead, 'probate-check', 'Probate check — none filed');
+  showToast('Probate check logged — next due in 30 days');
+  render();
+}
+async function probateFiled(key) {
+  if (!confirm('Flag this lead — probate has been FILED? It may no longer be a zombie.')) return;
+  await saveOverlay(tab, key, { probateFiled: true });
+  const lead = getLead(tab, key);
+  if (lead) logActivity(tab, lead, 'probate-filed', '⚠️ Probate filed — needs review');
+  showToast('Flagged for review — probate filed', 'error');
+  render();
+}
+
+/* ---------------- Heir tracking (zombies) ---------------- */
+const HEIR_STATUSES = [
+  { id: 'not_contacted', label: 'Not contacted', color: '#8a97a8' },
+  { id: 'contacted',     label: 'Contacted',      color: '#5b8fd4' },
+  { id: 'interested',    label: 'Interested',     color: '#4caf82' },
+  { id: 'not_interested',label: 'Not interested', color: '#e0954a' },
+  { id: 'dead',          label: 'Deceased',       color: '#d9534f' },
+];
+const HEIR_STATUS_MAP = Object.fromEntries(HEIR_STATUSES.map(s => [s.id, s]));
+
+function heirProgress(lead) {
+  const heirs = lead.heirs || [];
+  if (!heirs.length) return null;
+  const contacted = heirs.filter(h => h.status && h.status !== 'not_contacted').length;
+  return { contacted, total: heirs.length };
+}
+
+async function addHeir(key, heir) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const heirs = (lead.heirs || []).slice();
+  heirs.push({ id: 'h' + Date.now().toString(36), name: heir.name, relationship: heir.relationship || '', phone: heir.phone || '', status: 'not_contacted', addedAt: new Date().toISOString() });
+  await saveOverlay(tab, key, { heirs });
+  logActivity(tab, lead, 'heir-added', heir.name);
+  render();
+}
+async function updateHeir(key, heirId, patch) {
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  const heirs = (lead.heirs || []).map(h => h.id === heirId ? { ...h, ...patch } : h);
+  await saveOverlay(tab, key, { heirs });
+  render();
+}
+async function deleteHeir(key, heirId) {
+  if (!confirm('Remove this heir?')) return;
+  const lead = getLead(tab, key);
+  if (!lead) return;
+  await saveOverlay(tab, key, { heirs: (lead.heirs || []).filter(h => h.id !== heirId) });
+  render();
+}
+
+function heirsHTML(lead) {
+  const heirs = lead.heirs || [];
+  const prog = heirProgress(lead);
+  let out = `<div class="detail-section"><div class="section-label">👥 Heirs ${prog ? `<span class="heir-progress">${prog.contacted} of ${prog.total} contacted</span>` : ''}</div>`;
+  if (heirs.length) {
+    out += '<div class="heir-list">' + heirs.map(h => {
+      const st = HEIR_STATUS_MAP[h.status] || HEIR_STATUS_MAP.not_contacted;
+      return `<div class="heir-card">
+        <div class="heir-top">
+          <div><div class="heir-name">${escapeHtml(h.name || '—')}</div>
+          ${h.relationship ? `<div class="heir-rel">${escapeHtml(h.relationship)}</div>` : ''}</div>
+          <span class="heir-status" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${st.label}</span>
+        </div>
+        <div class="heir-actions">
+          ${h.phone ? `<a class="call-link mono" href="tel:${digitsOnly(h.phone)}" onclick="ensureQuoContact('${escapeHtml(h.name || '').replace(/'/g, "\\'")}', '${digitsOnly(h.phone)}')">📞 ${escapeHtml(formatPhone(h.phone))}</a>` : '<span class="heir-nophone">no phone</span>'}
+          <select data-heir-status="${escapeHtml(lead.key)}" data-heir-id="${h.id}">
+            ${HEIR_STATUSES.map(s => `<option value="${s.id}" ${h.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
+          </select>
+          <button class="heir-del" data-heir-del="${escapeHtml(lead.key)}" data-heir-id="${h.id}" title="Remove heir">✕</button>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  } else {
+    out += '<div class="timeline-empty">No heirs tracked yet — add them as RESEARCHER identifies them.</div>';
+  }
+  out += `<div class="heir-add-row">
+      <input type="text" placeholder="Heir name" data-heir-name="${escapeHtml(lead.key)}" />
+      <input type="text" placeholder="Relationship" data-heir-rel="${escapeHtml(lead.key)}" />
+      <input type="tel" placeholder="Phone" data-heir-phone="${escapeHtml(lead.key)}" />
+      <button class="btn-gold" data-heir-add="${escapeHtml(lead.key)}">+ Add heir</button>
+    </div>`;
+  // Keep the freeform tree as research notes below
+  out += `<div class="section-label" style="margin-top:14px;">📝 Research notes (freeform family tree)</div>
+    ${lead.familyTree && !treeDrafts[lead.key] ? `${familyTreeHTML(lead)}
+    <div class="tree-hint">Last updated ${lead.familyTreeUpdatedAt ? timeAgo(lead.familyTreeUpdatedAt) : '—'}</div>` : ''}
+    <textarea class="note-input" rows="3" style="margin-top:8px;" placeholder="Paste the family tree text — or a RESEARCHER JSON block" data-tree-input="${escapeHtml(lead.key)}">${escapeHtml(treeDrafts[lead.key] !== undefined ? treeDrafts[lead.key] : (lead.familyTree || ''))}</textarea>
+    <div class="detail-actions">
+      <button class="save-tree-btn" data-save-tree="${escapeHtml(lead.key)}">💾 Save Research Notes</button>
+    </div></div>`;
+  return out;
+}
+
+/* ---------------- Resurrection alerts ---------------- */
+function resurrectionInfo(lead) {
+  if (!['dead', 'not_interested'].includes(lead.status) || !lead.deadAt) return null;
+  const deadAt = new Date(lead.deadAt).getTime();
+  const fresh = [];
+  for (const code of Object.keys(lead.codes || {})) {
+    const t = parseSheetDate(lead.codes[code]);
+    if (t && t > deadAt) fresh.push({ code, date: lead.codes[code] });
+  }
+  return fresh.length ? fresh : null;
+}
+
+/* ---------------- Post-call automation ---------------- */
+const SESSION_OUTCOMES = [
+  { id: 'ghost',             label: '👻 Ghost / No Answer',   status: 'trying',         touch: 'ghost_call',    advance: true },
+  { id: 'voicemail',         label: '📩 Voicemail Left',      status: 'trying',         touch: 'voicemail',     advance: true },
+  { id: 'double_dial',       label: '📞📞 Double Dial + LVM',  status: 'trying',         touch: 'double_dial',   advance: true, promptSms: 'intro' },
+  { id: 'talked',            label: '💬 Talked',              status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, taskDays: 2, taskName: 'Follow up after conversation' },
+  { id: 'bad_number',        label: '❌ Bad Number',          status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true },
+  { id: 'not_interested',    label: '🚫 Not Interested',      status: 'not_interested', touch: 'not_interested',advance: false },
+  { id: 'callback_scheduled',label: '📅 Callback Scheduled',  status: 'callback',       touch: 'callback_sched',advance: false, promptDate: true },
+];
+
+// Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
+async function applyOutcome(tabId, key, outcomeId, opts = {}) {
+  const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
+  if (!oc) return;
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  if (!requireAuth()) return;
+  const now = new Date().toISOString();
+  const notes = (lead.notes || []).slice();
+  notes.push({ at: now, outcome: oc.id, text: opts.note || '' });
+
+  const patch = { notes, status: oc.status };
+  if (!SUBSTAGES[oc.status]) patch.subStage = lead.subStage && SUBSTAGES[oc.status] ? lead.subStage : '';
+  // status history for the unified timeline
+  const sh = (lead.statusHistory || []).slice();
+  if (lead.status !== oc.status) sh.push({ at: now, from: lead.status, to: oc.status });
+  patch.statusHistory = sh;
+  // resurrection snapshot when killing a lead
+  if ((oc.status === 'dead' || oc.status === 'not_interested') && lead.status !== oc.status) {
+    patch.deadAt = now;
+    patch.deadCodes = { ...(lead.codes || {}) };
+  }
+  if (oc.flagRetrace) patch.needsRetrace = true;
+  if (opts.subStage) patch.subStage = opts.subStage;
+  await saveOverlay(tabId, key, patch);
+
+  // cadence advance (skip for terminal/positive outcomes)
+  if (oc.advance) await advanceCadence(tabId, key, oc.touch);
+  else {
+    // still count the touch
+    await saveOverlay(tabId, key, {
+      attempts: (lead.attempts || 0) + 1,
+      lastTouchAt: now, lastTouchType: oc.touch,
+    });
+  }
+
+  // follow-up task
+  if (oc.taskDays) {
+    const d = new Date(); d.setDate(d.getDate() + oc.taskDays);
+    await addTaskDirect(tabId, key, oc.taskName || 'Follow up', d);
+  }
+  if (opts.callbackDate) {
+    await addTaskDirect(tabId, key, 'Callback — ' + (lead.mainPocName || lead.address), new Date(opts.callbackDate));
+  }
+
+  logActivity(tabId, lead, 'outcome', `${oc.label}${opts.note ? ' — ' + opts.note : ''}`);
+  return oc;
+}
+
+async function addTaskDirect(tabId, key, name, dateObj) {
+  const lead = getLead(tabId, key);
+  if (!lead) return;
+  const tasks = (lead.tasks || []).slice();
+  const iso = dateObj.toISOString().slice(0, 10);
+  tasks.push({ id: 't' + Date.now().toString(36), name, date: iso, time: '', notes: '', done: false });
+  await saveOverlay(tabId, key, { tasks });
+}
+
+/* ---------------- SMS panel ---------------- */
+let smsSheetLeadKey = null;
+let smsSheetPrefill = null; // 'intro' | 'day2' | 'day6' | null
+
+function openSmsSheet(tabId, key, prefill) {
+  smsSheetLeadKey = key;
+  smsSheetPrefill = prefill || null;
+  const lead = getLead(tabId, key);
+  const phone = lead ? lead.phone : '';
+  document.getElementById('sms-sheet-phone').textContent = phone ? formatPhone(phone) : 'no phone';
+  const ta = document.getElementById('sms-sheet-text');
+  ta.value = prefill ? smsTemplate(prefill, lead) : (prefill === null && smsSheetPrefill === null ? '' : smsTemplate('day2', lead));
+  if (prefill) ta.value = smsTemplate(prefill, lead);
+  document.getElementById('sms-sheet').classList.add('open');
+  updateSmsCount();
+}
+function closeSmsSheet() {
+  document.getElementById('sms-sheet').classList.remove('open');
+  smsSheetLeadKey = null; smsSheetPrefill = null;
+}
+function updateSmsCount() {
+  const ta = document.getElementById('sms-sheet-text');
+  document.getElementById('sms-count').textContent = (ta.value.length) + ' chars · ' + Math.ceil(ta.value.length / 160) + ' seg';
+}
+async function sendSmsFromSheet() {
+  const key = smsSheetLeadKey;
+  if (!key) return;
+  const lead = getLead(tab, key);
+  const text = document.getElementById('sms-sheet-text').value.trim();
+  if (!lead || !text) { showToast('Enter a message first', 'error'); return; }
+  if (!requireAuth()) return;
+  const btn = document.getElementById('sms-send-btn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    await sendSmsViaQuo(lead.phone, text);
+    const smsLog = (lead.smsLog || []).slice();
+    smsLog.push({ at: new Date().toISOString(), content: text, dir: 'out' });
+    const notes = (lead.notes || []).slice();
+    notes.push({ at: new Date().toISOString(), outcome: 'sms_sent', text: text.slice(0, 200) });
+    await saveOverlay(tab, key, { smsLog, notes });
+    await advanceCadence(tab, key, 'sms');
+    logActivity(tab, lead, 'sms', 'SMS sent: ' + text.slice(0, 120));
+    showToast('SMS sent ✓');
+    closeSmsSheet();
+    render();
+  } catch (e) {
+    console.error(e);
+    showToast(e.message || 'SMS failed', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = '➤ Send SMS';
+  }
+}
+
+/* ---------------- Call session mode ---------------- */
+let callSession = null; // { tabId, queue:[keys], idx, stats:{called,talked,callbacks}, done:Set }
+
+function startCallSession(tabId) {
+  const queue = buildCallQueue(tabId || tab);
+  if (!queue.length) { showToast('No leads need calling right now 🎉', 'success'); return; }
+  callSession = { tabId: tabId || tab, queue, idx: 0, stats: { called: 0, talked: 0, callbacks: 0 }, done: new Set() };
+  document.getElementById('call-session').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderCallSession();
+}
+function endCallSession() {
+  const s = callSession ? `Called ${callSession.stats.called} · talked ${callSession.stats.talked} · callbacks ${callSession.stats.callbacks}` : '';
+  callSession = null;
+  document.getElementById('call-session').classList.remove('open');
+  document.body.style.overflow = '';
+  if (s) showToast('Session: ' + s, 'success');
+  render();
+}
+function sessionLead() {
+  if (!callSession) return null;
+  // skip done leads
+  while (callSession.idx < callSession.queue.length && callSession.done.has(callSession.queue[callSession.idx])) callSession.idx++;
+  if (callSession.idx >= callSession.queue.length) return null;
+  return getLead(callSession.tabId, callSession.queue[callSession.idx]);
+}
+
+function renderCallSession() {
+  const el = document.getElementById('call-session');
+  if (!callSession) { el.classList.remove('open'); return; }
+  const lead = sessionLead();
+  const total = callSession.queue.length;
+  if (!lead) {
+    el.innerHTML = `<div class="cs-wrap"><div class="cs-done">
+      <div style="font-size:48px;">🎉</div>
+      <h2>Queue complete!</h2>
+      <p>Called ${callSession.stats.called} · Conversations ${callSession.stats.talked} · Callbacks ${callSession.stats.callbacks}</p>
+      <button class="btn-gold" onclick="endCallSession()">End Session</button>
+    </div></div>`;
+    return;
+  }
+  const ci = getCadenceInfo(lead);
+  const tl = buildTimeline(lead).slice(0, 3);
+  const st = STATUS_MAP[lead.status] || STATUSES[0];
+  const phone = lead.phone || '';
+  const name = lead.mainPocName || lead.address;
+
+  el.innerHTML = `<div class="cs-wrap">
+    <div class="cs-top">
+      <button class="cs-end" onclick="endCallSession()">✕ End</button>
+      <div class="cs-progress">Lead ${callSession.idx + 1} of ${total}</div>
+      <div class="cs-stats">📞 ${callSession.stats.called} · 💬 ${callSession.stats.talked} · 📅 ${callSession.stats.callbacks}</div>
+    </div>
+    <div class="cs-card">
+      <div class="cs-step">Next: <b>${escapeHtml(ci.stepDef.label)}</b> <span class="cs-hint">${escapeHtml(ci.stepDef.hint)}</span></div>
+      <h2 class="cs-name">${escapeHtml(lead.mainPocName || 'Unknown')}</h2>
+      <div class="cs-addr">📍 ${escapeHtml(fullAddressStr(lead))}</div>
+      <div class="cs-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span> ${codeBadges(lead)}</div>
+      ${lead.whyHot ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
+      <div class="cs-cadence">${cadenceLine(lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
+      ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
+      <button class="cs-text" onclick="openSmsSheet(callSession.tabId, '${escapeHtml(lead.key)}', ${ci.stepDef.type === 'sms' ? "'day2'" : 'null'})">💬 Text</button>` : '<div class="cs-nophone">No phone on file</div>'}
+      ${tl.length ? `<div class="cs-timeline"><div class="section-label">Recent</div>${tl.map(it => `<div class="cs-tl-row"><span>${it.icon}</span><span>${escapeHtml(it.title)}</span><span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span></div>`).join('')}</div>` : ''}
+    </div>
+    <div class="cs-outcomes" id="cs-outcomes">
+      <div class="section-label">Log outcome</div>
+      <div class="cs-outcome-grid">
+        ${SESSION_OUTCOMES.map(o => `<button class="cs-outcome" data-cs-outcome="${o.id}">${o.label}</button>`).join('')}
+      </div>
+      <div class="cs-substage" id="cs-substage" style="display:none;">
+        <div class="section-label">Qualification substage</div>
+        <div style="display:flex;gap:8px;">
+          ${(SUBSTAGES.callback || []).map(ss => `<button class="cs-outcome" data-cs-substage="${escapeHtml(ss)}">${escapeHtml(ss)}</button>`).join('')}
+          <button class="cs-outcome" data-cs-substage="">Skip</button>
+        </div>
+      </div>
+      <div class="cs-cbdate" id="cs-cbdate" style="display:none;">
+        <div class="section-label">Callback date</div>
+        <div style="display:flex;gap:8px;">
+          <input type="date" id="cs-cb-date" />
+          <button class="btn-gold" data-cs-cb-confirm>Set</button>
+        </div>
+      </div>
+    </div>
+    <button class="cs-next" onclick="csNext()">Next Lead →</button>
+  </div>`;
+
+  // wire outcome buttons
+  el.querySelectorAll('[data-cs-outcome]').forEach(b => {
+    b.addEventListener('click', () => csOutcome(b.getAttribute('data-cs-outcome')));
+  });
+  el.querySelectorAll('[data-cs-substage]').forEach(b => {
+    b.addEventListener('click', () => csSubstageDone(b.getAttribute('data-cs-substage')));
+  });
+  const cbBtn = el.querySelector('[data-cs-cb-confirm]');
+  if (cbBtn) cbBtn.addEventListener('click', csCallbackDateDone);
+}
+
+function csMarkDialed() { /* hook: dial tapped; outcome still logged explicitly */ }
+
+let csPendingOutcome = null;
+async function csOutcome(outcomeId) {
+  const lead = sessionLead();
+  if (!lead || !callSession) return;
+  const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
+  if (!oc) return;
+  if (oc.promptSubstage) { csPendingOutcome = outcomeId; document.getElementById('cs-substage').style.display = 'block'; return; }
+  if (oc.promptDate) { csPendingOutcome = outcomeId; document.getElementById('cs-cbdate').style.display = 'block'; return; }
+  await csApplyOutcome(outcomeId, {});
+}
+async function csSubstageDone(subStage) {
+  const oid = csPendingOutcome; csPendingOutcome = null;
+  document.getElementById('cs-substage').style.display = 'none';
+  await csApplyOutcome(oid, { subStage });
+}
+async function csCallbackDateDone() {
+  const d = document.getElementById('cs-cb-date').value;
+  if (!d) { showToast('Pick a date', 'error'); return; }
+  const oid = csPendingOutcome; csPendingOutcome = null;
+  document.getElementById('cs-cbdate').style.display = 'none';
+  await csApplyOutcome(oid, { callbackDate: d });
+}
+async function csApplyOutcome(outcomeId, opts) {
+  const lead = sessionLead();
+  if (!lead || !callSession) return;
+  const oc = await applyOutcome(callSession.tabId, lead.key, outcomeId, opts);
+  callSession.stats.called++;
+  if (outcomeId === 'talked') callSession.stats.talked++;
+  if (outcomeId === 'callback_scheduled') callSession.stats.callbacks++;
+  callSession.done.add(lead.key);
+  // After Double Dial + LVM, prompt the intro SMS (cadence step 1 includes SMS)
+  if (oc && oc.promptSms) {
+    openSmsSheet(callSession.tabId, lead.key, 'intro');
+    showToast('Send the intro SMS, then continue →');
+  }
+  csNext(true);
+}
+function csNext(fromOutcome) {
+  if (!callSession) return;
+  if (!fromOutcome) callSession.done.add(callSession.queue[callSession.idx]);
+  callSession.idx++;
+  renderCallSession();
+}
+
+/* ---------------- Bulk outcome logging ---------------- */
+
+
+
+function probateWatchHTML(lead) {
+  const pw = probateWatchInfo(lead);
+  if (!pw) return '';
+  if (pw.flagged) return '<div class="detail-section"><div class="probate-flag">⚠️ Probate has been filed — this lead may no longer be a zombie. Review before continuing cadence.</div></div>';
+  return `<div class="detail-section"><div class="section-label">🔍 Probate Watch</div>
+    <div style="font-size:13px;color:#9fb3cc;">Next check due: <b>${pw.due.toLocaleDateString()}</b> ${pw.overdue ? '<span class="overdue-badge">OVERDUE</span>' : ''}</div>
+    <div class="detail-actions" style="margin-top:8px;">
+      <button class="btn-ghost" data-probate-checked="${escapeHtml(lead.key)}">✓ Mark checked — no probate</button>
+      <button class="btn-ghost" data-probate-filed="${escapeHtml(lead.key)}" style="color:#d9534f;border-color:#d9534f55;">⚠️ Probate filed!</button>
+    </div></div>`;
+}
+
+// Card HTML helpers (used by renderCard template)
+function cadenceCardHTML(lead) {
+  const ci = getCadenceInfo(lead);
+  return '<div class="cadence-line">' + cadenceLine(lead) + (ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : '') + '</div>';
+}
+function probateCardHTML(lead) {
+  const pw = probateWatchInfo(lead);
+  if (!pw) return '';
+  if (pw.flagged) return '<div class="probate-flag">⚠️ Probate filed — needs review</div>';
+  if (pw.overdue) return '<span class="probate-badge">🔍 Probate check due</span>';
+  return '';
+}
+function resurrectCardHTML(lead) {
+  const r = resurrectionInfo(lead);
+  if (!r) return '';
+  return '<div class="resurrect-banner">♻️ New activity — worth another look? (' + r.map(x => escapeHtml(x.code + ' ' + x.date)).join(', ') + ')</div>';
+}
+
+// "Call Next": jump straight into a session with the single best lead.
+function callNextLead() {
+  const q = buildCallQueue(tab);
+  if (!q.length) { showToast('No leads need calling right now 🎉', 'success'); return; }
+  callSession = { tabId: tab, queue: q.slice(0, 1), idx: 0, stats: { called: 0, talked: 0, callbacks: 0 }, done: new Set() };
+  document.getElementById('call-session').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderCallSession();
+}
+
+async function bulkApplyOutcome(outcomeId) {
+  if (!selectedIds.size) return;
+  if (!requireAuth()) return;
+  if (!confirm(`Log "${(SESSION_OUTCOMES.find(o => o.id === outcomeId) || {}).label}" for ${selectedIds.size} leads?`)) return;
+  let n = 0;
+  for (const key of [...selectedIds]) {
+    try { await applyOutcome(tab, key, outcomeId, {}); n++; } catch (e) { console.error(e); }
+  }
+  selectedIds.clear();
+  showToast(`Logged for ${n} leads`, 'success');
+  render();
+}
+
 </script>
 </body>
 </html>
