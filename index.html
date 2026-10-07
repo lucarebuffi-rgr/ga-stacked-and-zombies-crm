@@ -1631,13 +1631,19 @@ function familyTreeHTML(lead) {
   var vcard = function (h, cls, relLabel, sub) {
     // per-heir cadence line (skip for the deceased card)
     var cadHtml = '';
+    var isDeadHeir = false;
     if (cls !== 'deceased') {
       var hid = treeHeirId(fullName(h));
       var uh = null;
       try { uh = callableHeirs(lead).find(function (x) { return x.hid === hid; }); } catch (e) { uh = null; }
-      if (uh) cadHtml = heirCadenceLineHTML(uh);
+      if (uh) {
+        cadHtml = heirCadenceLineHTML(uh);
+        isDeadHeir = uh.status === 'dead';
+      }
     }
-    return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + escapeHtml(fullName(h) || '—') + '</div>' +
+    // Also check direct status on the tree heir object
+    if (h.status === 'dead' || h.deceased) isDeadHeir = true;
+    return '<div class="v-card ' + (cls || '') + '"><div class="v-name">' + (isDeadHeir ? '☠️ ' : '') + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
       (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
@@ -2767,7 +2773,7 @@ function heirsHTML(lead) {
       const uh = callableHeirs(lead).find(x => x.hid === h.id);
       return `<div class="heir-card">
         <div class="heir-top">
-          <div><div class="heir-name">${escapeHtml(h.name || '—')}</div>
+          <div><div class="heir-name">${h.status === 'dead' ? '☠️ ' : ''}${escapeHtml(h.name || '—')}</div>
           ${h.relationship ? `<div class="heir-rel">${escapeHtml(h.relationship)}</div>` : ''}</div>
           <span class="heir-status" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${st.label}</span>
         </div>
