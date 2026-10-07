@@ -450,6 +450,89 @@
     .detail-actions .btn-gold, .detail-actions .btn-ghost{width:100%; justify-content:center;}
     table{font-size:13px;}
   }
+  /* ===== MOBILE OPTIMIZATION (2026-10-07): phone-first CRM experience ===== */
+  @media (max-width:640px){
+    /* Safe-area for notched iPhones */
+    body{ padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    .content{ padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+
+    /* Agenda buttons: 2x2 thumb-friendly grid */
+    .agenda-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .agenda-btn{ min-height:48px; font-size:14px; padding:12px 10px; text-align:center; }
+
+    /* Lead cards: roomier, bigger tap targets */
+    .lead-card{ border-radius:16px; margin-bottom:12px; }
+    .lead-row{ padding:14px 12px; gap:10px; align-items:flex-start; }
+    .lead-main{ flex:1 1 100%; order:-1; min-width:0; }
+    .lead-name{ font-size:18px; }
+    .lead-address{ font-size:14px; }
+    .toggle-btn{ min-width:44px; min-height:44px; font-size:20px; }
+    .lead-checkbox{ width:22px; height:22px; }
+    .fire-btn{ font-size:22px; padding:8px; }
+
+    /* Phone: big full-width call button */
+    .card-action-row{ flex:1 1 100%; display:flex; gap:8px; margin-top:4px; }
+    .call-link{
+      flex:1; display:flex; align-items:center; justify-content:center;
+      min-height:52px; font-size:18px; border-radius:12px;
+      background:rgba(232,196,118,.1); border:1px solid rgba(232,196,118,.35);
+    }
+    .text-btn{ min-height:52px; padding:0 20px; font-size:15px; border-radius:12px; }
+
+    /* Quick links: thumb-sized */
+    .quick-link-btn{ width:52px; height:52px; border-radius:14px; }
+    .quick-link-btn svg{ width:22px; height:22px; }
+    .call-meta{ margin-left:auto; text-align:right; }
+
+    /* Header: compact, no overflow */
+    .header-actions{ flex-wrap:wrap; gap:8px; }
+    .header-actions .btn-gold, .header-actions .btn-ghost{ flex:1 1 auto; min-height:44px; }
+
+    /* Detail view: full-width actions, stacked inputs */
+    .log-call-btn, .add-task-btn{ width:100%; min-height:52px; font-size:16px; justify-content:center; }
+    .task-form-row{ flex-direction:column; }
+    .task-form-row input{ width:100%; font-size:16px; padding:13px 12px; }
+    .task-form textarea{ font-size:16px; }
+    .logcall-select{ font-size:16px !important; padding:13px 10px !important; }
+    #logcall-note, textarea[id^="logcall-note"]{ font-size:16px !important; }
+
+    /* Heir cards: stack, big phone buttons */
+    .heir-card{ padding:14px; }
+    .heir-actions{ flex-wrap:wrap; gap:8px; }
+    .heir-actions .call-link{ flex:1 1 100%; min-height:48px; }
+    .heir-actions select{ flex:1; min-height:48px; font-size:16px; }
+
+    /* Timeline: comfortable reading */
+    .timeline-title{ font-size:15px; padding:10px 0; }
+    .timeline-text{ font-size:14px; line-height:1.5; }
+
+    /* Call session: bigger outcome buttons */
+    .cs-outcome-grid{ grid-template-columns:1fr 1fr; gap:10px; }
+    .cs-outcome{ min-height:64px; font-size:15px; }
+    .cs-dial{ min-height:64px; font-size:22px; }
+    .cs-notes{ font-size:16px; }
+
+    /* Dialer mode: thumb-friendly */
+    .dialer-wrap{ padding:16px 12px calc(32px + env(safe-area-inset-bottom)); }
+    .dialer-card{ padding:20px 16px; }
+    .dialer-name{ font-size:24px; }
+
+    /* Family tree builder: usable textarea */
+    textarea[data-tree-input]{ font-size:14px; min-height:160px; }
+
+    /* Status select + substage: no iOS zoom, easy tap */
+    .status-select{ font-size:16px; min-height:48px; }
+    .substage-step{ min-height:44px; display:flex; align-items:center; justify-content:center; }
+
+    /* Bulk bar: stack on mobile */
+    .bulk-bar{ flex-direction:column; align-items:stretch; gap:8px; }
+    .bulk-bar select, .bulk-bar button{ width:100%; min-height:48px; font-size:16px; }
+
+    /* KPI stats: keep 3-col but compact */
+    .stats-grid{ grid-template-columns:repeat(3,1fr); gap:8px; }
+    .stat-card{ padding:12px 6px; }
+    .stat-num{ font-size:20px; }
+  }
 /* ===== CRM REVAMP (2026-10-06): call session, SMS, timeline, heirs, cadence ===== */
 .cs-hidden { display:none !important; }
 
