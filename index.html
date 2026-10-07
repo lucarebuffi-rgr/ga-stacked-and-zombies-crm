@@ -702,6 +702,7 @@
       <button class="agenda-btn" id="today-tasks-btn">📅 Today's Tasks (<span class="count" id="today-count">0</span>)</button>
       <button class="agenda-btn" id="tomorrow-tasks-btn">📅 Tomorrow's Tasks (<span class="count" id="tomorrow-count">0</span>)</button>
       <button class="agenda-btn" id="dormant-tasks-btn">📅 Dormant Tasks 😴 (<span class="count" id="dormant-count">0</span>)</button>
+      <button class="agenda-btn" id="loose-ends-btn">📅 Loose Ends 🚨 (<span class="count" id="loose-ends-count">0</span>)</button>
     </div>
 
     <div id="agenda-controls">
@@ -944,7 +945,7 @@ const SUBSTAGES = { callback: ['Must Underwrite', 'Submit Offer'] };
 /* ---------------- Ported from the probates CRM: directors, agenda, photos ---------------- */
 const DIRECTORS = ['Luca Rebuffi', 'Jalen Albright', 'Salena Carter', 'Ricky Roland', 'Tony Oddo'];
 // Stages where a lead with no open task shows the "no task scheduled" warning on its collapsed row.
-const DORMANT_INDICATOR_STAGES = ['callback', 'followup', 'under_contract'];
+const DORMANT_INDICATOR_STAGES = ['callback', 'followup'];
 // Stages where the property-photos (Google Drive) section appears on the expanded card.
 const PHOTO_STAGES = ['callback', 'followup', 'under_contract', 'deal'];
 const OUTCOMES = [
@@ -1044,7 +1045,7 @@ let directorFilter = 'all';
 let agendaDirectorFilter = 'all';
 let addedDateFilter = '';
 let sortBy = 'newest';
-let viewMode = 'leads'; // 'leads' | 'today' | 'tomorrow' | 'dormant'
+let viewMode = 'leads'; // 'leads' | 'today' | 'tomorrow' | 'dormant' | 'looseends'
 let selectedIds = new Set();
 let showHidden = false;
 let editingDriveLink = {}; // key -> true while the drive URL is being edited
@@ -1339,24 +1340,36 @@ function getDormantTasks() {
   items.sort((a, b) => (a.task.date + (a.task.time || '99:99')).localeCompare(b.task.date + (b.task.time || '99:99')));
   return items;
 }
+// Leads with the NO TASK alert: Qualified or Follow Ups without an open task
+function getLooseEnds() {
+  return allLeads(tab).filter(lead => DORMANT_INDICATOR_STAGES.includes(lead.status) && !hasOpenTask(lead));
+}
 function renderAgendaToggle() {
   const todayStr = localDateStrOffset(0);
   const tomorrowStr = localDateStrOffset(1);
   document.getElementById('today-count').textContent = getAllTasksFor(todayStr).filter(i => !i.task.done).length;
   document.getElementById('tomorrow-count').textContent = getAllTasksFor(tomorrowStr).filter(i => !i.task.done).length;
   document.getElementById('dormant-count').textContent = getDormantTasks().length;
+  document.getElementById('loose-ends-count').textContent = getLooseEnds().length;
   document.getElementById('today-tasks-btn').classList.toggle('active', viewMode === 'today');
   document.getElementById('tomorrow-tasks-btn').classList.toggle('active', viewMode === 'tomorrow');
   document.getElementById('dormant-tasks-btn').classList.toggle('active', viewMode === 'dormant');
+  document.getElementById('loose-ends-btn').classList.toggle('active', viewMode === 'looseends');
 }
 function renderAgenda() {
   const container = document.getElementById('lead-list');
   const isDormantView = viewMode === 'dormant';
+  const isLooseEndsView = viewMode === 'looseends';
   let items = isDormantView ? getDormantTasks() : getAllTasksFor(viewMode === 'today' ? localDateStrOffset(0) : localDateStrOffset(1));
-  if (agendaDirectorFilter === 'unassigned') items = items.filter(i => !i.lead.acquisitionDirector);
+  if (isLooseEndsView) {
+    const looseEnds = getLooseEnds();
+    if (agendaDirectorFilter === 'unassigned') items = looseEnds.filter(l => !l.acquisitionDirector).map(lead => ({ lead }));
+    else if (agendaDirectorFilter !== 'all') items = looseEnds.filter(l => l.acquisitionDirector === agendaDirectorFilter).map(lead => ({ lead }));
+    else items = looseEnds.map(lead => ({ lead }));
+  } else if (agendaDirectorFilter === 'unassigned') items = items.filter(i => !i.lead.acquisitionDirector);
   else if (agendaDirectorFilter !== 'all') items = items.filter(i => i.lead.acquisitionDirector === agendaDirectorFilter);
   if (!items.length) {
-    container.innerHTML = `<div class="empty-state">${isDormantView ? 'No dormant tasks — everything is on track.' : `No tasks scheduled for ${viewMode === 'today' ? 'today' : 'tomorrow'}.`}</div>`;
+    container.innerHTML = `<div class="empty-state">${isDormantView ? 'No dormant tasks — everything is on track.' : isLooseEndsView ? 'No loose ends — all qualified/follow-up leads have tasks.' : `No tasks scheduled for ${viewMode === 'today' ? 'today' : 'tomorrow'}.`}</div>`;
     return;
   }
   // One card per lead even if that lead has more than one qualifying task.
@@ -3112,6 +3125,9 @@ document.getElementById('tomorrow-tasks-btn').addEventListener('click', () => {
 });
 document.getElementById('dormant-tasks-btn').addEventListener('click', () => {
   viewMode = viewMode === 'dormant' ? 'leads' : 'dormant'; render();
+});
+document.getElementById('loose-ends-btn').addEventListener('click', () => {
+  viewMode = viewMode === 'looseends' ? 'leads' : 'looseends'; render();
 });
 document.getElementById('agenda-back-btn').addEventListener('click', () => { viewMode = 'leads'; render(); });
 document.getElementById('agenda-director-filter').addEventListener('change', e => { agendaDirectorFilter = e.target.value; render(); });
