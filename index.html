@@ -2894,7 +2894,7 @@ async function sendSmsViaQuo(phone, message) {
 // Luca's 10-touch cycle. dayOffset = days after cycleStartDate.
 // Step 1 includes the intro SMS (updated 2026-10-06).
 const CADENCE_STEPS = [
-  { step: 0, day: 1, dayOffset: 0, short: 'Ghost Call AM',      label: 'Day 1 AM — Ghost Call',              type: 'call',     hint: 'Call, no voicemail if no answer' },
+  { step: 0, day: 1, dayOffset: 0, short: 'Ghost Call AM',      label: 'Day 1 AM — Ghost Call',              type: 'call',     hint: 'Just one call; no VM, no SMS' },
   { step: 1, day: 1, dayOffset: 0, short: 'Double Dial+LVM+SMS', label: 'Day 1 — Double Dial + LVM + SMS intro', type: 'call_sms', hint: 'Two rapid calls, leave voicemail, send intro SMS' },
   { step: 2, day: 1, dayOffset: 0, short: 'Call PM + LVM',       label: 'Day 1 PM — Call + LVM',              type: 'call',     hint: 'Call in the afternoon, leave voicemail' },
   { step: 3, day: 2, dayOffset: 1, short: 'SMS',                 label: 'Day 2 — SMS',                        type: 'sms',      hint: 'Send follow-up text' },
