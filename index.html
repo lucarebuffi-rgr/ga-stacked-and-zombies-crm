@@ -2825,7 +2825,7 @@ function renderSop() {
       <ol>
         <li>Tap the big gold <strong>📞 phone number</strong> button to call. This also saves the contact to the calling system.</li>
         <li>Tap <strong>💬 Text</strong> to send an SMS through the system.</li>
-        <li>After the call, <strong>write your notes</strong> in the Notes field. This is required before you can log a disposition.</li>
+        <li>After the call, you can <strong>write notes</strong> in the Notes field (optional) — then tap a disposition.</li>
         <li>Tap the ⓘ icon next to any disposition to see what it does.</li>
       </ol>
     </div>
@@ -2843,7 +2843,7 @@ function renderSop() {
         <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. For stacked leads, moved to Dead / Bad Number. For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
         <li><strong>☠️ Dead Lead</strong> — Lead is dead, not callable anymore. Removed from the dialer queue immediately (no retrace flag). For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
       </ul>
-      <div class="sop-tip"><p>💡 <strong>You must write a note before tapping a disposition.</strong> The note saves automatically with the outcome.</p></div>
+      <div class="sop-tip"><p>💡 <strong>Notes are optional.</strong> Anything you write saves automatically with the outcome.</p></div>
     </div>
 
     <div class="sop-section">
@@ -3075,14 +3075,9 @@ let dialerPendingOutcome = null;
 async function dialerOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc || !dialer) return;
-  // Require a note before disposition
+  // Note is optional — grab it if present
   const noteEl = document.getElementById('dialer-note-input');
   const note = noteEl ? noteEl.value.trim() : '';
-  if (!note) {
-    showToast('Write a note first', 'error');
-    if (noteEl) noteEl.focus();
-    return;
-  }
   // Confirm stage-changing dispositions (lead will leave the dialer queue)
   const stageChanging = ['talked', 'callback_scheduled', 'not_interested', 'bad_number', 'dead_lead'];
   if (stageChanging.includes(outcomeId)) {
@@ -3484,6 +3479,10 @@ function quoConfigured() { return !!(QUO_PROXY_URL && QUO_PROXY_URL.length > 4);
 
 // Fire-and-forget: save seller as a Quo contact before dialing.
 // Never blocks, never delays the tel: link, never throws.
+// NOTE: uses text/plain (not application/json) so the browser skips the CORS
+// preflight — Apps Script web apps can't answer OPTIONS, so a JSON content-type
+// gets blocked and the contact is never saved. The script still JSON.parses
+// e.postData.contents, so the payload format is unchanged.
 function ensureQuoContact(name, phone) {
   try {
     if (!quoConfigured()) return;
@@ -3494,7 +3493,7 @@ function ensureQuoContact(name, phone) {
     const lastName = parts.slice(1).join(' ');
     fetch(QUO_PROXY_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: 'createContact', firstName, lastName, phone: digits }),
     }).catch(() => {});
   } catch (e) { /* silent */ }
@@ -3508,7 +3507,7 @@ async function sendSmsViaQuo(phone, message) {
   if (!message || !message.trim()) throw new Error('Message is empty');
   const res = await fetch(QUO_PROXY_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ action: 'sendSms', to: digits, content: message.trim() }),
   });
   if (!res.ok) throw new Error('Quo SMS failed (HTTP ' + res.status + ')');
