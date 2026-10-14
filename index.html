@@ -3457,7 +3457,7 @@ document.getElementById('user-chip').addEventListener('click', async () => {
   <div class="sms-panel">
     <h3>💬 Send SMS</h3>
     <div class="sms-to">To: <span id="sms-sheet-phone">—</span></div>
-    <div class="sms-templates">
+    <div class="sms-templates" id="sms-template-btns">
       <button class="sms-tpl" onclick="smsUseTemplate('day2', this)">Day 2 intro</button>
       <button class="sms-tpl" onclick="smsUseTemplate('day6', this)">Day 6 follow-up</button>
       <button class="sms-tpl" onclick="smsUseTemplate('custom', this)">Custom</button>
@@ -3476,7 +3476,8 @@ document.getElementById('user-chip').addEventListener('click', async () => {
 function smsUseTemplate(kind, btn) {
   document.querySelectorAll('.sms-tpl').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const lead = smsSheetLeadKey ? getLead(tab, smsSheetLeadKey) : null;
+  const t = window.smsSheetTabId || tab;
+  const lead = smsSheetLeadKey ? getLead(t, smsSheetLeadKey) : null;
   const ta = document.getElementById('sms-sheet-text');
   if (kind === 'custom') { ta.value = ''; ta.focus(); }
   else if (lead) ta.value = smsTemplate(kind, lead);
@@ -3824,7 +3825,30 @@ function smsTemplate(kind, lead, nameOverride) {
   if (kind === 'intro') return `Hi ${name}, this is Luca — I just tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
   if (kind === 'day2')  return `Hi ${name}, this is Luca — I tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
   if (kind === 'day6')  return `Hi ${name}, Luca again — following up on ${addr}. Still interested in hearing a cash offer? No pressure either way.`;
+  // Stacked-lead templates (Luca, 2026-10-14)
+  if (kind === 'stacked1') return `This is Luca... I'm looking to speak with the owner of ${addr}.\n${name}?`;
+  if (kind === 'stacked2') return `Hey ${name}, Luca here again.\nJust wanted to make sure you saw my last text?`;
+  if (kind === 'stacked3') return `Hi ${name}, not trying to bother you..\nSimply wanted to see if you were looking to sell ${addr}?`;
   return '';
+}
+// Template buttons per tab — zombies keep the classic set until Luca sends theirs
+function smsKindsForTab(tabId) {
+  if (tabId === 'stacked') return [
+    { id: 'stacked1', label: 'SMS 1 · Day 1' },
+    { id: 'stacked2', label: 'SMS 2 · Day 2' },
+    { id: 'stacked3', label: 'SMS 3 · Day 6' },
+  ];
+  return [
+    { id: 'day2', label: 'Day 2 intro' },
+    { id: 'day6', label: 'Day 6 follow-up' },
+  ];
+}
+// Map legacy prefill kinds to the tab's template set
+function resolveSmsKind(kind, tabId) {
+  if (tabId === 'stacked') {
+    return { intro: 'stacked1', day2: 'stacked2', day6: 'stacked3' }[kind] || kind;
+  }
+  return kind;
 }
 
 /* ---------------- Unified timeline ---------------- */
@@ -4214,12 +4238,21 @@ async function cleanupAutoTasks() {
 /* ---------------- SMS panel ---------------- */
 let smsSheetLeadKey = null;
 let smsSheetPrefill = null; // 'intro' | 'day2' | 'day6' | null
+window.smsSheetTabId = null;
 
 let smsSheetHeirId = null;
 function openSmsSheet(tabId, key, prefill, heirId) {
   smsSheetLeadKey = key;
   smsSheetPrefill = prefill || null;
   smsSheetHeirId = heirId || null;
+  window.smsSheetTabId = tabId || null;
+  // Render the template buttons for this tab (stacked has its own SMS 1/2/3 set)
+  const btnWrap = document.getElementById('sms-template-btns');
+  if (btnWrap) {
+    btnWrap.innerHTML = smsKindsForTab(tabId).map(k =>
+      `<button class="sms-tpl" onclick="smsUseTemplate('${k.id}', this)">${escapeHtml(k.label)}</button>`
+    ).join('') + `<button class="sms-tpl" onclick="smsUseTemplate('custom', this)">Custom</button>`;
+  }
   const lead = getLead(tabId, key);
   let phone = lead ? lead.phone : '';
   let smsName = '';
@@ -4229,14 +4262,16 @@ function openSmsSheet(tabId, key, prefill, heirId) {
   }
   document.getElementById('sms-sheet-phone').textContent = (smsName ? smsName + ' · ' : '') + (phone ? formatPhone(phone) : 'no phone');
   const ta = document.getElementById('sms-sheet-text');
-  ta.value = prefill ? smsTemplate(prefill, lead, smsName) : (prefill === null && smsSheetPrefill === null ? '' : smsTemplate('day2', lead, smsName));
-  if (prefill) ta.value = smsTemplate(prefill, lead, smsName);
+  const effPrefill = resolveSmsKind(prefill, tabId);
+  ta.value = effPrefill ? smsTemplate(effPrefill, lead, smsName) : (prefill === null && smsSheetPrefill === null ? '' : smsTemplate(resolveSmsKind('day2', tabId), lead, smsName));
+  if (effPrefill) ta.value = smsTemplate(effPrefill, lead, smsName);
   document.getElementById('sms-sheet').classList.add('open');
   updateSmsCount();
 }
 function closeSmsSheet() {
   document.getElementById('sms-sheet').classList.remove('open');
   smsSheetLeadKey = null; smsSheetPrefill = null; smsSheetHeirId = null;
+  window.smsSheetTabId = null;
 }
 function updateSmsCount() {
   const ta = document.getElementById('sms-sheet-text');
@@ -4245,7 +4280,7 @@ function updateSmsCount() {
 async function sendSmsFromSheet() {
   const key = smsSheetLeadKey;
   if (!key) return;
-  const lead = getLead(tab, key);
+  const lead = getLead(window.smsSheetTabId || tab, key);
   const text = document.getElementById('sms-sheet-text').value.trim();
   if (!lead || !text) { showToast('Enter a message first', 'error'); return; }
   if (!requireAuth()) return;
