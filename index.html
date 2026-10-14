@@ -882,6 +882,7 @@
           <option value="talked">💬 Talked</option>
           <option value="bad_number">❌ Bad Number</option>
           <option value="not_interested">🚫 Not Interested</option>
+          <option value="dead_lead">☠️ Dead Lead</option>
         </select>
         <button class="btn-gold" id="bulk-outcome-btn">Apply</button>
       </div>
@@ -1773,6 +1774,7 @@ function renderDetail(lead) {
           <option value="callback_scheduled">📅 Scheduled Callback</option>
           <option value="not_interested">🚫 Not Interested</option>
           <option value="bad_number">❌ Bad Number</option>
+          <option value="dead_lead">☠️ Dead Lead</option>
         </select>
         <textarea id="logcall-note-${escapeHtml(lead.key)}" placeholder="What happened on the call? (optional)" style="width:100%;padding:10px;border-radius:10px;background:#16294a;border:1px solid #2c4a75;color:#e9edf3;font-size:14px;min-height:60px;margin-bottom:8px;resize:vertical;"></textarea>
         <button class="log-call-btn" onclick="logCallFromDetail('${escapeHtml(lead.key)}')">+ Log Call</button>
@@ -2839,6 +2841,7 @@ function renderSop() {
         <li><strong>📅 Follow Up Scheduled</strong> — They asked for a callback. Pick the date, moves to Follow Ups.</li>
         <li><strong>🚫 Not Interested</strong> — They're not interested. For stacked leads, removed from the calling queue. For zombie heirs, only that heir is marked — the lead stays active so you can call the other heirs.</li>
         <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. For stacked leads, moved to Dead / Bad Number. For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
+        <li><strong>☠️ Dead Lead</strong> — Lead is dead, not callable anymore. Removed from the dialer queue immediately (no retrace flag). For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
       </ul>
       <div class="sop-tip"><p>💡 <strong>You must write a note before tapping a disposition.</strong> The note saves automatically with the outcome.</p></div>
     </div>
@@ -3081,11 +3084,11 @@ async function dialerOutcome(outcomeId) {
     return;
   }
   // Confirm stage-changing dispositions (lead will leave the dialer queue)
-  const stageChanging = ['talked', 'callback_scheduled', 'not_interested', 'bad_number'];
+  const stageChanging = ['talked', 'callback_scheduled', 'not_interested', 'bad_number', 'dead_lead'];
   if (stageChanging.includes(outcomeId)) {
     const cur = dialerCurrent();
     const leadName = cur && cur.lead ? cur.lead.address : 'this lead';
-    const statusLabel = { talked: 'Qualified Leads', callback_scheduled: 'Follow Ups', not_interested: 'Not Interested', bad_number: 'Dead / Bad Number' }[outcomeId];
+    const statusLabel = { talked: 'Qualified Leads', callback_scheduled: 'Follow Ups', not_interested: 'Not Interested', bad_number: 'Dead / Bad Number', dead_lead: 'Dead Leads' }[outcomeId];
     if (!confirm(`Move "${leadName}" to ${statusLabel}? They'll leave the dialer queue.`)) return;
   }
   if (oc.promptSubstage) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-substage').style.display = 'block'; return; }
@@ -3863,7 +3866,7 @@ async function logCallFromDetail(key) {
 
   const outcomeLabels = {
     ghost: 'No Answer', voicemail: 'Left Voicemail', talked: 'Talked / Qualified',
-    callback_scheduled: 'Scheduled Callback', not_interested: 'Not Interested', bad_number: 'Bad Number'
+    callback_scheduled: 'Scheduled Callback', not_interested: 'Not Interested', bad_number: 'Bad Number', dead_lead: 'Dead Lead'
   };
 
   // Save to notes/timeline
@@ -4054,6 +4057,7 @@ const SESSION_OUTCOMES = [
   { id: 'callback_scheduled',label: '📅 Follow Up Scheduled',    status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
   { id: 'not_interested',    label: '🚫 Not Interested',         status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
   { id: 'bad_number',        label: '❌ Bad Number',             status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
+  { id: 'dead_lead',         label: '☠️ Dead Lead',              status: 'dead',           touch: 'dead_lead',     advance: false, tip: 'Lead is dead — no longer callable. Removes them from the dialer queue immediately. No retrace flag.' },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
