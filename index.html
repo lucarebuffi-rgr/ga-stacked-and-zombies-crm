@@ -697,7 +697,13 @@
 }
 .dialer-rel { color: #8a97a8; font-size: 14px; margin: 4px 0 12px; }
 .dialer-addr { font-size: 17px; font-weight: 700; color: #e9edf3; margin-bottom: 2px; }
-.dialer-city { color: #8a97a8; font-size: 14px; margin-bottom: 12px; padding-left: 24px; }
+.dialer-city { color: #8a97a8; font-size: 14px; padding-left: 24px; }
+.dialer-addr-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.dialer-map-btns { display: flex; gap: 8px; flex-shrink: 0; }
+.dialer-map-btn { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid transparent; cursor: pointer; }
+.dialer-map-btn.zillow { background: #0f6fff; border-color: #0f6fff; }
+.dialer-map-btn.gmaps { background: #e0483a; border-color: #e0483a; }
+.dialer-map-btn:active { transform: scale(.94); }
 .dialer-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; align-items: center; }
 .dialer-why { font-style: italic; color: #9fb3cc; font-size: 14px; margin-bottom: 12px; line-height: 1.4; }
 .dialer-cadence { font-size: 13px; color: #8a97a8; margin-bottom: 18px; }
@@ -2825,7 +2831,7 @@ function renderSop() {
       <ol>
         <li>Tap the big gold <strong>📞 phone number</strong> button to call. This also saves the contact to the calling system.</li>
         <li>Tap <strong>💬 Text</strong> to send an SMS through the system.</li>
-        <li>After the call, you can <strong>write notes</strong> in the Notes field (optional) — then tap a disposition.</li>
+        <li>After the call, you can <strong>write notes</strong> in the Notes field — required for 💬 Qualified and 📅 Follow Up Scheduled, optional otherwise — then tap a disposition.</li>
         <li>Tap the ⓘ icon next to any disposition to see what it does.</li>
       </ol>
     </div>
@@ -2843,7 +2849,7 @@ function renderSop() {
         <li><strong>❌ Bad Number</strong> — Number is wrong/disconnected. For stacked leads, moved to Dead / Bad Number. For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
         <li><strong>☠️ Dead Lead</strong> — Lead is dead, not callable anymore. Removed from the dialer queue immediately (no retrace flag). For zombie heirs, only that heir is marked — the lead stays active for the other heirs.</li>
       </ul>
-      <div class="sop-tip"><p>💡 <strong>Notes are optional.</strong> Anything you write saves automatically with the outcome.</p></div>
+      <div class="sop-tip"><p>💡 <strong>Notes are required for 💬 Qualified and 📅 Follow Up Scheduled</strong> — optional for every other disposition. Anything you write saves automatically with the outcome.</p></div>
     </div>
 
     <div class="sop-section">
@@ -2969,8 +2975,20 @@ function renderDialerMain() {
     <div class="dialer-card">
       <div class="dialer-name">${isHeir ? '👤 ' : ''}${isHeir && cur.heir && (cur.heir.status === 'dead' || cur.heir.deceased) ? '☠️ ' : ''}${escapeHtml(name)}${isHeir && (lead.familyTree || (lead.familyTreeData && lead.familyTreeData.heirs && lead.familyTreeData.heirs.length)) ? ' <span class="dialer-tree-icon" onclick="showDialerFamilyTree(event)" title="View family tree">🌳</span>' : ''}</div>
       ${isHeir && heir.relationship ? `<div class="dialer-rel">${escapeHtml(heir.relationship)}</div>` : ''}
-      <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
-      <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
+      <div class="dialer-addr-row">
+        <div>
+          <div class="dialer-addr">📍 ${escapeHtml(titleCaseAddress(lead.address))}</div>
+          <div class="dialer-city">${escapeHtml(titleCaseAddress(lead.city))}${lead.city ? ', ' : ''}${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
+        </div>
+        <div class="dialer-map-btns">
+          <a class="dialer-map-btn zillow" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a class="dialer-map-btn gmaps" href="https://www.google.com/maps/place/${encodeURIComponent(fullAddressStr(lead))}" target="_blank" rel="noopener" title="Google Maps / Street View" onclick="event.stopPropagation()">
+            <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.6 6.6 11.7 7.1 12.16a.6.6 0 0 0 .8 0c.5-.46 7.1-6.56 7.1-12.16C19.5 5.36 16.14 2 12 2z" fill="#ffffff"/><circle cx="12" cy="9.5" r="3" fill="#e0483a"/></svg>
+          </a>
+        </div>
+      </div>
       <div class="dialer-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span>${codeBadges(lead)}</div>
       ${keyBannersHTML(lead)}
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
@@ -3075,9 +3093,14 @@ let dialerPendingOutcome = null;
 async function dialerOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc || !dialer) return;
-  // Note is optional — grab it if present
+  // Note required only for Qualified / Follow Up Scheduled — optional for the rest
   const noteEl = document.getElementById('dialer-note-input');
   const note = noteEl ? noteEl.value.trim() : '';
+  if (['talked', 'callback_scheduled'].includes(outcomeId) && !note) {
+    showToast('Write a note first', 'error');
+    if (noteEl) noteEl.focus();
+    return;
+  }
   // Confirm stage-changing dispositions (lead will leave the dialer queue)
   const stageChanging = ['talked', 'callback_scheduled', 'not_interested', 'bad_number', 'dead_lead'];
   if (stageChanging.includes(outcomeId)) {
