@@ -2006,7 +2006,7 @@ function familyTreeHTML(lead, opts) {
     return '<div class="v-card ' + (cls || '') + (isCurrent ? ' current-heir' : '') + '"><div class="v-name">' + (isDeadHeir ? '☠️ ' : '') + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
-      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
+      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\',\'' + escapeHtml(fullAddressStr(lead) || '').replace(/'/g, "\\'") + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
   };
   var html = '<div class="vtree-wrap"><div class="tree-zoom-stage"><div class="vtree">';
   if (groups.parents.length) {
@@ -2306,7 +2306,7 @@ function attachCardListeners() {
       const key = a.getAttribute('data-call-link');
       const lead = getLead(tab, key);
       if (lead) {
-        ensureQuoContact(lead.mainPocName || lead.address, lead.phone);
+        ensureQuoContact(lead.mainPocName || lead.address, lead.phone, fullAddressStr(lead));
         logActivity(tab, lead, 'dial', 'Clicked to dial');
       }
     });
@@ -2994,7 +2994,7 @@ function renderDialerMain() {
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
       ${cadenceTracker(target)}
       ${phone ? `
-        <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}')">📞 ${escapeHtml(formatPhone(phone))}</a>
+        <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(phone))}</a>
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
       ` : '<div class="dialer-nophone">No phone on file</div>'}
     </div>
@@ -3503,11 +3503,12 @@ function quoConfigured() { return !!(QUO_PROXY_URL && QUO_PROXY_URL.length > 4);
 
 // Fire-and-forget: save seller as a Quo contact before dialing.
 // Never blocks, never delays the tel: link, never throws.
+// Company = property address (shows in Quo's Company field).
 // NOTE: uses text/plain (not application/json) so the browser skips the CORS
 // preflight — Apps Script web apps can't answer OPTIONS, so a JSON content-type
 // gets blocked and the contact is never saved. The script still JSON.parses
 // e.postData.contents, so the payload format is unchanged.
-function ensureQuoContact(name, phone) {
+function ensureQuoContact(name, phone, company) {
   try {
     if (!quoConfigured()) return;
     const digits = digitsOnly(phone || '');
@@ -3515,10 +3516,12 @@ function ensureQuoContact(name, phone) {
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
     const firstName = parts[0] || 'Seller';
     const lastName = parts.slice(1).join(' ');
+    const body = { action: 'createContact', firstName, lastName, phone: digits };
+    if (company) body.company = company;
     fetch(QUO_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'createContact', firstName, lastName, phone: digits }),
+      body: JSON.stringify(body),
     }).catch(() => {});
   } catch (e) { /* silent */ }
 }
@@ -4039,7 +4042,7 @@ function heirsHTML(lead) {
           <span class="heir-status" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${st.label}</span>
         </div>
         <div class="heir-actions">
-          ${h.phone ? `<a class="call-link mono" href="tel:${digitsOnly(h.phone)}" onclick="ensureQuoContact('${escapeHtml(h.name || '').replace(/'/g, "\\'")}', '${digitsOnly(h.phone)}')">📞 ${escapeHtml(formatPhone(h.phone))}</a>` : '<span class="heir-nophone">no phone</span>'}
+          ${h.phone ? `<a class="call-link mono" href="tel:${digitsOnly(h.phone)}" onclick="ensureQuoContact('${escapeHtml(h.name || '').replace(/'/g, "\\'")}', '${digitsOnly(h.phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(h.phone))}</a>` : '<span class="heir-nophone">no phone</span>'}
           <select data-heir-status="${escapeHtml(lead.key)}" data-heir-id="${h.id}">
             ${HEIR_STATUSES.map(s => `<option value="${s.id}" ${h.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
           </select>
@@ -4415,7 +4418,7 @@ function renderCallSession() {
       <div class="cs-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span> ${codeBadges(lead)}</div>
       ${lead.whyHot && !isHeirTarget ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
       <div class="cs-cadence">${cadenceLine(isHeirTarget ? heir : lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
-      ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
+      ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
       <button class="cs-text" onclick="openSmsSheet(callSession.tabId, '${escapeHtml(lead.key)}', ${ci.stepDef.type === 'sms' ? "'day2'" : 'null'}${isHeirTarget ? `, '${escapeHtml(heir.hid)}'` : ''})">💬 Text</button>` : '<div class="cs-nophone">No phone on file</div>'}
       ${heirSwitcher}
       ${tl.length ? `<div class="cs-timeline"><div class="section-label">Recent</div>${tl.map(it => `<div class="cs-tl-row"><span>${it.icon}</span><span>${escapeHtml(it.title)}</span><span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span></div>`).join('')}</div>` : ''}
