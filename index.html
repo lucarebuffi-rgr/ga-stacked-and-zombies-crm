@@ -55,7 +55,7 @@
     background: rgba(10,20,35,.9); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 20;
     transition: transform .25s ease, opacity .25s ease;
   }
-  /* Mobile: header fades/slides away on scroll down, returns on scroll up */
+  /* Mobile: header slides away on scroll down, stays hidden until back at the top */
   @media (max-width:640px){
     .header.header-hidden { transform: translateY(-110%); opacity: 0; pointer-events: none; }
   }
@@ -4095,7 +4095,7 @@ function toggleTreeBuilder(key) {
       if (!header) return;
       const y = window.scrollY;
       if (y > 120 && y > lastY + 4) header.classList.add('header-hidden');
-      else if (y < lastY - 4 || y <= 120) header.classList.remove('header-hidden');
+      else if (y <= 120) header.classList.remove('header-hidden');
       lastY = y;
     });
   }, { passive: true });
