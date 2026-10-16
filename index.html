@@ -777,23 +777,15 @@
   @media (min-width: 500px) { .dialer-side-prev { left: -64px; } .dialer-side-next { right: -64px; } }
   /* Mobile: side arrows move to a clean nav row under the card */
   .dialer-nav-row { display: none; }
-  .dialer-nav-btn {
-    flex: 1; min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 700;
-    background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba;
-    cursor: pointer; font-family: inherit;
-  }
-  .dialer-nav-btn:active { border-color: #d4a843; color: #e8c476; }
   @media (max-width: 499px) {
     .dialer-side-btn { display: none; }
     .dialer-nav-row { display: flex; gap: 10px; margin: 0 0 14px; }
-  }
-  /* Desktop: two-column dialer — lead card left, notes + dispositions right */
-  .dialer-cols { max-width: 560px; margin: 0 auto; }
-  @media (min-width: 1024px) {
-    .dialer-cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; max-width: 1120px; align-items: start; }
-    .dialer-cols .dialer-side-btn { display: none; }
-    .dialer-cols .dialer-nav-row { display: flex; gap: 10px; margin: 12px 0 0; }
-    .dialer-col-right .dialer-notes { margin-top: 0; }
+    .dialer-nav-btn {
+      flex: 1; min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 700;
+      background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba;
+      cursor: pointer; font-family: inherit;
+    }
+    .dialer-nav-btn:active { border-color: #d4a843; color: #e8c476; }
   }
 .dialer-nav button { flex: 1; padding: 16px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; font-family: inherit; }
 .dialer-prev { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; color: #9aa7ba; }
@@ -2977,8 +2969,6 @@ function renderDialerMain() {
       <div style="width:70px;"></div>
     </div>
     <div class="dialer-stats">📞 ${dialer.stats.called} called · 💬 ${dialer.stats.talked} talked</div>
-    <div class="dialer-cols">
-    <div class="dialer-col-left">
     <div class="dialer-card-wrap">
     <button class="dialer-side-btn dialer-side-prev" onclick="dialerPrev()" title="Previous">‹</button>
     <div class="dialer-card">
@@ -3013,8 +3003,6 @@ function renderDialerMain() {
       <button class="dialer-nav-btn" onclick="dialerPrev()">‹ Prev</button>
       <button class="dialer-nav-btn" onclick="dialerNext()">Next ›</button>
     </div>
-    </div>
-    <div class="dialer-col-right">
     <div class="dialer-notes">
       <div class="section-label" style="margin-bottom:8px;">Notes</div>
       <textarea id="dialer-note-input" placeholder="Write your call notes here..." rows="3" style="width:100%;background:rgba(18,37,64,.6);border:1px solid #22385a;border-radius:10px;padding:12px;color:#e9edf3;font-family:inherit;font-size:14px;resize:vertical;box-sizing:border-box;"></textarea>
@@ -3038,8 +3026,6 @@ function renderDialerMain() {
           <button class="btn-gold" data-dialer-cb-confirm>Set</button>
         </div>
       </div>
-    </div>
-    </div>
     </div>
     `;
 
