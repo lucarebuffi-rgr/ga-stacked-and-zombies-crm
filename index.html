@@ -777,6 +777,9 @@
   .dialer-card-wrap { position: relative; }
   .dialer-side-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 52px; height: 80px; border-radius: 12px; background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; font-size: 22px; cursor: pointer; font-family: inherit; z-index: 5; display: flex; align-items: center; justify-content: center; }
   .dialer-side-btn:hover { border-color: #d4a843; color: #e8c476; }
+  .cb-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cb-chip { background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; min-height: 48px; }
+  .cb-chip.sel { border-color: #d4a843; background: rgba(212,168,67,.15); color: #e8c476; }
   .dialer-side-prev { left: -8px; }
   .dialer-side-next { right: -8px; }
   @media (min-width: 500px) { .dialer-side-prev { left: -64px; } .dialer-side-next { right: -64px; } }
@@ -3038,8 +3041,9 @@ function renderDialerMain() {
       </div>
       <div class="dialer-sub" id="dialer-cbdate" style="display:none;">
         <div class="section-label" style="margin-bottom:8px;">Callback date</div>
+        <div class="cb-chips" id="dialer-cb-chips"></div>
         <div style="display:flex;gap:8px;">
-          <input type="date" id="dialer-cb-date" style="flex:1;background:#0d1b2e;color:#e9edf3;border:1px solid #2f4d78;border-radius:8px;padding:10px;" />
+          <input type="date" id="dialer-cb-date" style="flex:1;background:#0d1b2e;color:#e9edf3;border:1px solid #2f4d78;border-radius:8px;padding:10px;color-scheme:dark;" onchange="document.querySelectorAll('#dialer-cb-chips .cb-chip').forEach(c=>c.classList.remove('sel'))" />
           <button class="btn-gold" data-dialer-cb-confirm>Set</button>
         </div>
       </div>
@@ -3112,13 +3116,25 @@ async function dialerOutcome(outcomeId) {
     if (!confirm(`Move "${leadName}" to ${statusLabel}? They'll leave the dialer queue.`)) return;
   }
   if (oc.promptSubstage) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-substage').style.display = 'block'; return; }
-  if (oc.promptDate) { dialerPendingOutcome = outcomeId; document.getElementById('dialer-cbdate').style.display = 'block'; return; }
+  if (oc.promptDate) { dialerPendingOutcome = outcomeId; cbInitPicker('dialer-cb-chips', 'dialer-cb-date'); document.getElementById('dialer-cbdate').style.display = 'block'; return; }
   await dialerApplyOutcome(outcomeId, { note });
 }
 async function dialerSubstageDone(subStage) {
   const oid = dialerPendingOutcome; dialerPendingOutcome = null;
   document.getElementById('dialer-substage').style.display = 'none';
   await dialerApplyOutcome(oid, { subStage, note: getDialerNote() });
+}
+function cbChipsHTML(chipsId, inputId) {
+  const chips = [[0, 'Today'], [1, 'Tomorrow'], [2, 'In 2 days'], [3, 'In 3 days'], [7, 'Next week']];
+  return chips.map(([d, l]) => `<button class="cb-chip${d === 1 ? ' sel' : ''}" onclick="cbPickDate('${chipsId}','${inputId}',${d},this)">${l}</button>`).join('');
+}
+function cbPickDate(chipsId, inputId, d, btn) {
+  document.getElementById(inputId).value = localDateStrOffset(d);
+  document.querySelectorAll('#' + chipsId + ' .cb-chip').forEach(c => c.classList.toggle('sel', c === btn));
+}
+function cbInitPicker(chipsId, inputId) {
+  document.getElementById(chipsId).innerHTML = cbChipsHTML(chipsId, inputId);
+  document.getElementById(inputId).value = localDateStrOffset(1);
 }
 async function dialerCallbackDateDone() {
   const d = document.getElementById('dialer-cb-date').value;
@@ -4135,6 +4151,12 @@ async function applyOutcome(tabId, key, outcomeId, opts = {}) {
   notes.push({ at: now, outcome: oc.id, text: opts.note || '' });
 
   const patch = { notes, status: oc.status };
+  // Follow Up Scheduled: the picked callback date becomes a real follow-up task
+  if (opts.callbackDate) {
+    const tasks = (lead.tasks || []).slice();
+    tasks.push({ id: makeId(), name: 'Follow up call', date: opts.callbackDate, time: '', notes: opts.note || '', done: false });
+    patch.tasks = tasks;
+  }
   if (!SUBSTAGES[oc.status]) patch.subStage = lead.subStage && SUBSTAGES[oc.status] ? lead.subStage : '';
   // status history for the unified timeline
   const sh = (lead.statusHistory || []).slice();
@@ -4177,6 +4199,12 @@ async function applyHeirOutcome(tabId, key, hid, outcomeId, opts = {}) {
   notes.push({ at: now, outcome: oc.id, text: opts.note || '', heirId: hid, heirName: heir.name });
 
   const patch = { notes };
+  // Follow Up Scheduled: the picked callback date becomes a real follow-up task (heir noted)
+  if (opts.callbackDate) {
+    const tasks = (lead.tasks || []).slice();
+    tasks.push({ id: makeId(), name: 'Follow up call', date: opts.callbackDate, time: '', notes: (opts.note ? opts.note + ' — ' : '') + heir.name, done: false });
+    patch.tasks = tasks;
+  }
   // For zombie heirs: terminal outcomes (not interested, bad number) only affect THIS HEIR,
   // not the whole lead — other heirs can still be called.
   // The lead status only changes when ALL heirs are done.
@@ -4437,8 +4465,9 @@ function renderCallSession() {
       </div>
       <div class="cs-cbdate" id="cs-cbdate" style="display:none;">
         <div class="section-label">Callback date</div>
+        <div class="cb-chips" id="cs-cb-chips"></div>
         <div style="display:flex;gap:8px;">
-          <input type="date" id="cs-cb-date" />
+          <input type="date" id="cs-cb-date" onchange="document.querySelectorAll('#cs-cb-chips .cb-chip').forEach(c=>c.classList.remove('sel'))" />
           <button class="btn-gold" data-cs-cb-confirm>Set</button>
         </div>
       </div>
@@ -4466,7 +4495,7 @@ async function csOutcome(outcomeId) {
   const oc = SESSION_OUTCOMES.find(o => o.id === outcomeId);
   if (!oc) return;
   if (oc.promptSubstage) { csPendingOutcome = outcomeId; document.getElementById('cs-substage').style.display = 'block'; return; }
-  if (oc.promptDate) { csPendingOutcome = outcomeId; document.getElementById('cs-cbdate').style.display = 'block'; return; }
+  if (oc.promptDate) { csPendingOutcome = outcomeId; cbInitPicker('cs-cb-chips', 'cs-cb-date'); document.getElementById('cs-cbdate').style.display = 'block'; return; }
   await csApplyOutcome(outcomeId, {});
 }
 async function csSubstageDone(subStage) {
