@@ -4113,14 +4113,12 @@ function resurrectionInfo(lead) {
 
 /* ---------------- Post-call automation ---------------- */
 const SESSION_OUTCOMES = [
-  { id: 'ghost',             label: '👻 Ghost / No Answer',      status: 'trying',         touch: 'ghost_call',    advance: true, tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
-  { id: 'voicemail',         label: '📩 Voicemail Left',         status: 'trying',         touch: 'voicemail',     advance: true, tip: 'You left a voicemail. Marks this attempt done and moves to the next touch.' },
-  { id: 'double_dial',       label: '📞📞 Double Dial + VM + SMS', status: 'trying',      touch: 'double_dial',   advance: true, promptSms: 'intro', tip: 'Called twice back-to-back with voicemail. Then asks if you want to send the intro text.' },
-  { id: 'talked',            label: '💬 Qualified',             status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
-  { id: 'callback_scheduled',label: '📅 Follow Up Scheduled',    status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true, tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
-  { id: 'not_interested',    label: '🚫 Not Interested',         status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
-  { id: 'bad_number',        label: '❌ Bad Number',             status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
-  { id: 'dead_lead',         label: '☠️ Dead Lead',              status: 'dead',           touch: 'dead_lead',     advance: false, tip: 'Lead is dead — no longer callable. Removes them from the dialer queue immediately. No retrace flag.' },
+  { id: 'no_answer',          label: '📵 No Answer',            status: 'trying',         touch: 'no_answer',    advance: true,  tip: 'No answer. Marks this attempt done and moves to the next touch in the cadence.' },
+  { id: 'talked',             label: '💬 Qualified',            status: 'callback',       touch: 'talked',        advance: false, promptSubstage: true, tip: 'You spoke with them. Asks if they are Must Underwrite or Submit Offer, then moves them to Qualified Leads.' },
+  { id: 'callback_scheduled', label: '📅 Follow Up Scheduled',  status: 'followup',       touch: 'callback_sched',advance: false, promptDate: true,   tip: 'They asked you to call back later. Asks for the date, then moves them to Follow Ups.' },
+  { id: 'not_interested',     label: '🚫 Not Interested',       status: 'not_interested', touch: 'not_interested',advance: false, tip: 'They said they are not interested. Moves them to Not Interested so they drop out of the calling queue.' },
+  { id: 'bad_number',         label: '❌ Bad Number',           status: 'dead',           touch: 'bad_number',    advance: false, flagRetrace: true, tip: 'Number is disconnected or wrong. Moves them to Dead / Bad Number and flags the lead for a new phone lookup.' },
+  { id: 'dead_lead',          label: '☠️ Dead Lead',            status: 'dead',           touch: 'dead_lead',     advance: false, tip: 'Lead is dead — no longer callable. Removes them from the dialer queue immediately. No retrace flag.' },
 ];
 
 // Log an outcome: status + timeline + cadence + follow-up task, all in one tap.
