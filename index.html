@@ -1442,6 +1442,7 @@ function logActivity(tabId, lead, action, detail) {
     leadKey: lead.key,
     address: fullAddressStr(lead),
     director: lead.acquisitionDirector || 'Unassigned',
+    byDirector: directorName || 'Unknown',
     action, detail: detail || '',
     ts: new Date().toISOString(),
   }).catch(e => console.error('activity log failed', e));
@@ -2597,10 +2598,10 @@ async function renderReport(opts) {
     const calls = entries.filter(e => e.action === 'call' || e.action === 'outcome');
     const stageChanges = entries.filter(e => e.action === 'status');
 
-    // Calls by director
+    // Calls by director — who actually made the call (byDirector), not lead assignment
     const callsByDir = {};
     calls.forEach(e => {
-      const d = e.director || 'Unassigned';
+      const d = (e.byDirector && e.byDirector !== 'Unknown') ? e.byDirector : (e.director || 'Unassigned');
       callsByDir[d] = (callsByDir[d] || 0) + 1;
     });
     const dirLabels = Object.keys(callsByDir).sort((a, b) => callsByDir[b] - callsByDir[a]);
