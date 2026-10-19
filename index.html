@@ -2664,6 +2664,10 @@ async function renderReport(opts) {
     }
     const calls = entries.filter(e => e.action === 'call' || e.action === 'outcome');
     const stageChanges = entries.filter(e => e.action === 'status');
+    // Contact rate: answered / attempted
+    const answeredOutcomes = ['talked', 'callback_scheduled', 'not_interested', 'deal'];
+    const answered = calls.filter(c => c.action === 'outcome' && answeredOutcomes.includes(c.outcome)).length;
+    const contactRate = calls.length ? Math.round((answered / calls.length) * 100) : 0;
 
     // Calls by director — who actually made the call (byDirector), not lead assignment
     const callsByDir = {};
@@ -2770,6 +2774,7 @@ async function renderReport(opts) {
     body.innerHTML = `
       <div class="kpi-cards">
         <div class="kpi-card"><span class="kpi-num" style="color:#5b8fd4;">${calls.length}</span><span class="kpi-label">Calls Made · ${rangeLabel}</span></div>
+        <div class="kpi-card"><span class="kpi-num" style="color:#e8b84b;">${contactRate}%</span><span class="kpi-label">Contact Rate · ${rangeLabel}</span></div>
         <div class="kpi-card"><span class="kpi-num" style="color:#c084fc;">${stageChanges.length}</span><span class="kpi-label">Pipeline Changes · ${rangeLabel}</span></div>
         <div class="kpi-card"><span class="kpi-num" style="color:#d4a843;">${offersSubmitted}</span><span class="kpi-label">Offers Submitted · Now</span></div>
         <div class="kpi-card"><span class="kpi-num" style="color:#4caf82;">${activeLeads}</span><span class="kpi-label">Active Leads · Now</span></div>
