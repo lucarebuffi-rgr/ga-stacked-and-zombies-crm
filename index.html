@@ -826,6 +826,50 @@
 }
 .dialer-sub { background: rgba(255,255,255,.03); border: 1px solid #2f4d78; border-radius: 12px; padding: 14px; margin-top: 10px; }
 
+
+/* ===== MOBILE TOUCH-TARGET + LAYOUT POLISH (2026-10-19) ===== */
+@media (max-width:640px){
+  /* Header icons: 44px touch targets */
+  .icon-btn{ width:44px !important; height:44px !important; font-size:20px !important; }
+  .user-chip{ height:44px !important; font-size:14px !important; padding:0 16px !important; }
+
+  /* Modal close buttons: 44px tap area */
+  .modal-close-btn{ min-width:44px; min-height:44px; font-size:20px; padding:8px 12px; }
+
+  /* Sign-in gate: compact card on small screens */
+  #signin-gate .gate-card{ padding:32px 24px; max-width:340px; }
+  #signin-gate h1{ font-size:20px; }
+
+  /* Directors modal: thumb-sized action buttons */
+  .dir-row{ padding:12px; }
+  .dir-act{ min-height:44px; padding:10px 14px; font-size:14px; }
+  .dir-del{ min-width:44px; min-height:44px; font-size:18px; }
+
+  /* SMS template picker chips */
+  .sms-tpl{ min-height:44px; padding:10px 16px; font-size:14px; }
+
+  /* Family tree viewer controls */
+  .tree-zoom-btn, .tree-close-btn{ width:44px; height:44px; }
+  .tree-view-head{ padding:12px; gap:8px; }
+
+  /* Dialer map buttons */
+  .dialer-map-btn{ width:44px; height:44px; }
+  .dialer-tree-icon{ padding:10px 8px; margin-left:4px; }
+
+  /* Call session: bigger End button */
+  .cs-end{ min-height:44px; padding:10px 16px; font-size:14px; display:inline-flex; align-items:center; }
+
+  /* Family tree phone links: full 44px rows on mobile */
+  .v-card .v-phone a{ display:block; padding:12px 8px; font-size:15px; min-height:44px; }
+
+  /* KPI chart panels: shorter charts on phones */
+  .kpi-panel .chart-wrap{ height:220px; }
+
+  /* Modal actions: full-width buttons on mobile */
+  .modal-actions{ padding:0 16px 16px; }
+  .modal-actions .btn-ghost{ flex:1; min-height:48px; justify-content:center; }
+}
+
 </style>
 </head>
 <body>
