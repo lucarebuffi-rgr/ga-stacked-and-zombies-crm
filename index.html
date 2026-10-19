@@ -1436,7 +1436,8 @@ function saveOverlay(tabId, key, data) {
     { ...data, updatedAt: new Date().toISOString() }, { merge: true });
 }
 function logActivity(tabId, lead, action, detail) {
-  if (!isLucaSignedIn()) return; // activity log is Luca-only; never write signed out or as another account
+  // Log all activity; byDirector stamps who did it (Unknown if not signed in).
+  // Firestore rules are the security boundary — we never silently drop logs.
   db.collection('hotLeadsActivityLog').add({
     tab: tabId,
     leadKey: lead.key,
