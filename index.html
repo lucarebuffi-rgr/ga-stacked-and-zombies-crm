@@ -836,6 +836,7 @@
           <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
           <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
           <a class="btn-ghost icon-btn" href="?sop=1" target="_blank" rel="noopener" title="SOP — How to use this CRM">📋</a>
+          <button class="btn-ghost icon-btn" id="sms-tpl-btn" onclick="openSmsTemplates()" title="SMS Templates">💬</button>
         </div>
         <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 28px;font-size:16px;">📞 Dialer</a>
       </div>
@@ -3490,6 +3491,25 @@ document.getElementById('user-chip').addEventListener('click', async () => {
     </div>
   </div>
 </div>
+<div id="sms-templates-overlay" class="modal-overlay">
+  <div class="modal-card" style="max-width:640px;">
+    <div class="modal-header">
+      <h2>💬 SMS Templates</h2>
+      <button class="modal-close-btn" onclick="closeSmsTemplates()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="addr-sub" style="margin-bottom:12px;">Placeholders: <code>{name}</code> = first name · <code>{addr}</code> = property address. These are used everywhere the CRM sends texts (dialer, lead cards, SOP buttons).</div>
+      <div id="sms-templates-fields"></div>
+      <div class="modal-error" id="sms-templates-error"></div>
+      <div id="sms-templates-saved" style="display:none;color:#4caf82;font-weight:700;margin-top:8px;">Saved ✓</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeSmsTemplates()">Close</button>
+      <button class="btn-ghost" onclick="resetSmsTemplates()">Reset to defaults</button>
+      <button class="btn-gold" onclick="saveSmsTemplates()">💾 Save Templates</button>
+    </div>
+  </div>
+</div>
 <script>
 function smsUseTemplate(kind, btn) {
   document.querySelectorAll('.sms-tpl').forEach(b => b.classList.remove('active'));
@@ -3853,18 +3873,83 @@ function buildCallQueue(tabId) {
   return items.sort((a, b) => b.score - a.score);
 }
 
-/* ---------------- SMS templates ---------------- */
+/* ---------------- SMS templates (editable via \u0001F4AC SMS Templates) ---------------- */
+const DEFAULT_SMS_TEMPLATES = {
+  intro: "Hi {name}, this is Luca \u2014 I just tried reaching you about {addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?",
+  day2: "Hi {name}, this is Luca \u2014 I tried reaching you about {addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?",
+  day6: "Hi {name}, Luca again \u2014 following up on {addr}. Still interested in hearing a cash offer? No pressure either way.",
+  stacked1: "This is Luca... I'm looking to speak with the owner of {addr}.\n{name}?",
+  stacked2: "Hey {name}, Luca here again.\nJust wanted to make sure you saw my last text?",
+  stacked3: "Hi {name}, not trying to bother you..\nSimply wanted to see if you were looking to sell {addr}?",
+};
+const SMS_TEMPLATE_META = [
+  { id: 'intro',    label: '\U0001F9DF Zombies \u00B7 Intro (post-call prompt)' },
+  { id: 'day2',     label: '\U0001F9DF Zombies \u00B7 Day 2 intro' },
+  { id: 'day6',     label: '\U0001F9DF Zombies \u00B7 Day 6 follow-up' },
+  { id: 'stacked1', label: '\U0001F4DA Stacked \u00B7 SMS 1 (Day 1)' },
+  { id: 'stacked2', label: '\U0001F4DA Stacked \u00B7 SMS 2 (Day 2)' },
+  { id: 'stacked3', label: '\U0001F4DA Stacked \u00B7 SMS 3 (Day 6)' },
+];
+// Live templates \u2014 loaded from Firestore settings/smsTemplates, else defaults.
+let smsTemplates = Object.assign({}, DEFAULT_SMS_TEMPLATES);
+async function loadSmsTemplates() {
+  try {
+    const snap = await db.collection('settings').doc('smsTemplates').get();
+    if (snap.exists) {
+      const d = snap.data() || {};
+      for (const k of Object.keys(DEFAULT_SMS_TEMPLATES)) {
+        if (typeof d[k] === 'string' && d[k].trim()) smsTemplates[k] = d[k];
+      }
+    }
+  } catch (e) { /* fall back to hardcoded defaults */ }
+}
 function smsTemplate(kind, lead, nameOverride) {
-  const name = nameOverride ? nameOverride.split(' ')[0] : ((lead.mainPocName || '').split(' ')[0] || 'there');
-  const addr = lead.address || 'the property';
-  if (kind === 'intro') return `Hi ${name}, this is Luca — I just tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
-  if (kind === 'day2')  return `Hi ${name}, this is Luca — I tried reaching you about ${addr}. I buy houses in the area and wanted to see if you'd consider an offer. Worth a quick chat?`;
-  if (kind === 'day6')  return `Hi ${name}, Luca again — following up on ${addr}. Still interested in hearing a cash offer? No pressure either way.`;
-  // Stacked-lead templates (Luca, 2026-10-14)
-  if (kind === 'stacked1') return `This is Luca... I'm looking to speak with the owner of ${addr}.\n${name}?`;
-  if (kind === 'stacked2') return `Hey ${name}, Luca here again.\nJust wanted to make sure you saw my last text?`;
-  if (kind === 'stacked3') return `Hi ${name}, not trying to bother you..\nSimply wanted to see if you were looking to sell ${addr}?`;
-  return '';
+  const name = nameOverride ? nameOverride.split(' ')[0] : ((((lead || {}).mainPocName || '').split(' ')[0]) || 'there');
+  const addr = (lead || {}).address || 'the property';
+  const tpl = smsTemplates[kind] || '';
+  return tpl.split('{name}').join(name).split('{addr}').join(addr);
+}
+/* ---------------- SMS Templates editor ---------------- */
+function openSmsTemplates() {
+  const wrap = document.getElementById('sms-templates-fields');
+  wrap.innerHTML = SMS_TEMPLATE_META.map(m => `
+    <div class="modal-field" style="margin-bottom:14px;">
+      <label style="font-weight:700;">${escapeHtml(m.label)}</label>
+      <textarea id="sms-tpl-${m.id}" rows="3" style="width:100%;padding:10px;border-radius:10px;border:1px solid #22385a;background:#0b1626;color:#e9edf3;font-size:15px;box-sizing:border-box;">${escapeHtml(smsTemplates[m.id] || '')}</textarea>
+    </div>`).join('');
+  document.getElementById('sms-templates-error').textContent = '';
+  document.getElementById('sms-templates-saved').style.display = 'none';
+  document.getElementById('sms-templates-overlay').classList.add('open');
+}
+function closeSmsTemplates() {
+  document.getElementById('sms-templates-overlay').classList.remove('open');
+}
+async function saveSmsTemplates() {
+  const errEl = document.getElementById('sms-templates-error');
+  const okEl = document.getElementById('sms-templates-saved');
+  errEl.textContent = ''; okEl.style.display = 'none';
+  const data = { updatedAt: new Date().toISOString() };
+  for (const m of SMS_TEMPLATE_META) {
+    const v = document.getElementById('sms-tpl-' + m.id).value;
+    if (!v.trim()) { errEl.textContent = 'Template "' + m.label + '" cannot be empty.'; return; }
+    data[m.id] = v;
+  }
+  try {
+    await db.collection('settings').doc('smsTemplates').set(data, { merge: true });
+    smsTemplates = Object.assign({}, DEFAULT_SMS_TEMPLATES, data);
+    delete smsTemplates.updatedAt;
+    okEl.style.display = 'block';
+    showToast('SMS templates saved \u2713', 'success');
+  } catch (e) {
+    errEl.textContent = 'Save failed: ' + (e.message || e);
+  }
+}
+function resetSmsTemplates() {
+  for (const m of SMS_TEMPLATE_META) {
+    const ta = document.getElementById('sms-tpl-' + m.id);
+    if (ta) ta.value = DEFAULT_SMS_TEMPLATES[m.id];
+  }
+  document.getElementById('sms-templates-saved').style.display = 'none';
 }
 // Template buttons per tab — zombies keep the classic set until Luca sends theirs
 function smsKindsForTab(tabId) {
@@ -4602,6 +4687,9 @@ async function bulkApplyOutcome(outcomeId) {
   render();
 }
 
+
+// Load editable SMS templates (Firestore settings/smsTemplates, else defaults)
+loadSmsTemplates();
 </script>
 </body>
 </html>
