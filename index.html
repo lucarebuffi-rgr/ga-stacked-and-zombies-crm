@@ -3709,8 +3709,9 @@ function quoConfigured() { return !!(QUO_PROXY_URL && QUO_PROXY_URL.length > 4);
 function ensureQuoContact(name, phone, company) {
   try {
     if (!quoConfigured()) return;
-    const digits = digitsOnly(phone || '');
+    let digits = digitsOnly(phone || '');
     if (!digits) return;
+    if (digits.length === 10) digits = '1' + digits;
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
     const firstName = parts[0] || 'Seller';
     const lastName = parts.slice(1).join(' ');
