@@ -75,9 +75,18 @@
   .header-actions { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
   .sync-btn { font-size: 12px; padding: 8px 12px; color: #8a97a8; white-space: nowrap; }
   .sync-btn.error { color: #e07a77; border-color: #e07a77; }
-  .icon-btn { padding: 8px 11px !important; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; }
-  .user-chip { font-size: 16px; color: #8a97a8; background: rgba(18,37,64,.6); border: 1px solid #1d3350; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+  .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 10px; font-size: 18px; padding: 0 !important; }
+  .user-chip { font-size: 13px; font-weight: 600; color: #8a97a8; background: rgba(18,37,64,.6); border: 1px solid #1d3350; border-radius: 10px; height: 38px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0 14px; gap: 6px; }
   .user-chip:hover { border-color: #d4a843; color: #d4a843; }
+  .dir-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #0f2036; border: 1px solid #22385a; border-radius: 8px; margin-bottom: 8px; }
+  .dir-row.inactive { opacity: 0.55; }
+  .dir-info { flex: 1; min-width: 0; }
+  .dir-name { font-weight: 700; font-size: 14px; }
+  .dir-email { font-size: 12px; color: #8a97a8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dir-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: #1a3050; color: #8a97a8; }
+  .dir-badge.off { background: #3a2a20; color: #c98a5a; }
+  .dir-act { background: none; border: 1px solid #22385a; border-radius: 6px; color: #cddaf0; font-size: 12px; padding: 5px 9px; cursor: pointer; }
+  .dir-del { background: none; border: none; color: #e07a77; font-size: 15px; padding: 4px 6px; cursor: pointer; }
   .sync-btn { padding: 6px 8px; font-size: 14px; }
   .btn-gold {
     background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border: 1px solid rgba(255,255,255,.14); border-radius: 10px; padding: 10px 18px;
@@ -835,7 +844,8 @@
           <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
           <button class="btn-ghost icon-btn" onclick="openKpiModal()" title="KPIs">📊</button>
           <button class="btn-ghost icon-btn" onclick="openSopModal()" title="SOP — How to use this CRM">📋</button>
-          <button class="btn-ghost icon-btn" id="sms-tpl-btn" onclick="openSmsTemplates()" title="SMS Templates">💬</button>
+          <button class="btn-ghost icon-btn" id="sms-tpl-btn" data-admin-only onclick="openSmsTemplates()" title="SMS Templates">💬</button>
+          <button class="btn-ghost icon-btn" data-admin-only onclick="openDirectorsModal()" title="Directors">👥</button>
         </div>
         <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 28px;font-size:16px;">📞 Dialer</a>
       </div>
@@ -947,6 +957,27 @@
   <div class="sop-wrap" id="sop-body"></div>
 </div>
 
+<div id="directors-overlay" class="modal-overlay" style="z-index:210;">
+  <div class="modal-card" style="max-width:480px;">
+    <div class="modal-header">
+      <h2>👥 Directors</h2>
+      <button class="modal-close-btn" id="directors-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:#8a97a8;margin:0 0 12px;line-height:1.5;">Directors sign in with Google — their email links them to their director profile. Their calls, SMS, and status changes are attributed to them automatically.</p>
+      <div id="directors-list"></div>
+      <div class="section-label" style="margin-top:16px;">Add Director</div>
+      <div class="modal-field"><label>Name</label><input type="text" id="dir-name" placeholder="e.g. Jane Smith" /></div>
+      <div class="modal-field"><label>Sign-in email</label><input type="email" id="dir-email" placeholder="e.g. jane@royalgroupsrealty.com" /></div>
+      <div class="modal-error" id="directors-error"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="directors-cancel">Close</button>
+      <button class="btn-gold" id="directors-add">+ Add Director</button>
+    </div>
+  </div>
+</div>
+
 <div id="add-lead-overlay" class="modal-overlay">
   <div class="modal-card">
     <div class="modal-header">
@@ -1033,10 +1064,13 @@ auth.onAuthStateChanged(u => {
   const banner = document.getElementById('acct-banner');
   const wrongAccount = !!(u && !LUCA_EMAILS.includes(u.email));
   if (wrongAccount) {
+    const identW = directorIdentityForEmail(u.email);
+    directorId = identW.id; directorName = identW.name;
     btn.style.display = 'none';
     chip.style.display = 'inline-flex';
-    chip.textContent = '👤';
+    chip.textContent = '👤 ' + (directorName || 'Signed in');
     chip.title = (u.email || 'signed in') + ' — tap to sign out';
+    loadDirectors().then(updateAdminOnlyVisibility);
     banner.style.display = 'block';
     banner.querySelector('.acct-banner-msg').textContent =
       '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com. Nothing you enter will save until you switch accounts.';
@@ -1046,11 +1080,14 @@ auth.onAuthStateChanged(u => {
     else if (isSopMode) renderSop();
     else if (isSopMode) renderSop();
   } else if (u) {
+    const ident = directorIdentityForEmail(u.email);
+    directorId = ident.id; directorName = ident.name;
     btn.style.display = 'none';
     chip.style.display = 'inline-flex';
-    chip.textContent = '👤';
+    chip.textContent = '👤 ' + (directorName || 'Signed in');
     chip.title = (u.email || 'signed in') + ' — tap to sign out';
     banner.style.display = 'none';
+    loadDirectors().then(updateAdminOnlyVisibility);
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
     if (isReportMode) renderReport();
@@ -1058,9 +1095,11 @@ auth.onAuthStateChanged(u => {
     else if (isSopMode) renderSop();
     else { startOverlayListening(); cleanupAutoTasks(); }
   } else {
+    directorId = null; directorName = null;
     btn.style.display = 'inline-flex';
     chip.style.display = 'none';
     banner.style.display = 'none';
+    updateAdminOnlyVisibility();
     stopOverlayListening();
     if (isReportMode) renderReportLocked();
     else if (isDialerMode) renderDialerLocked();
@@ -3961,6 +4000,128 @@ function smsTemplate(kind, lead, nameOverride) {
   return tpl.split('{name}').join(name).split('{addr}').join(addr);
 }
 /* ---------------- SMS Templates editor ---------------- */
+/* ---------------- Directors management (👥 header button, admin-only) ----------------
+   Firestore: settings/directors → {directors: [{id, name, email, active, createdAt}]}
+   A director's sign-in email maps them to their profile automatically. */
+const DIRECTOR_EMAIL_MAP = {
+  'luca.rebuffi@royalgroupsrealty.com': 'luca-rebuffi',
+  'athena.rebuffi@gmail.com': 'luca-rebuffi',
+  'rebuffilu@gmail.com': 'luca-rebuffi',
+};
+const DIRECTOR_NAMES = { 'luca-rebuffi': 'Luca Rebuffi' };
+const DEFAULT_DIRECTOR_SEED = [
+  { id: 'luca-rebuffi',   name: 'Luca Rebuffi',   email: 'luca.rebuffi@royalgroupsrealty.com', active: true },
+  { id: 'jalen-albright', name: 'Jalen Albright', email: '', active: true },
+  { id: 'salena-carter',  name: 'Salena Carter',  email: '', active: true },
+  { id: 'ricky-roland',   name: 'Ricky Roland',   email: '', active: true },
+  { id: 'tony-oddo',      name: 'Tony Oddo',      email: '', active: true },
+  { id: 'ali-layton',     name: 'Ali Layton',     email: '', active: true },
+];
+let directorsList = [];
+let directorId = null, directorName = null;
+function directorIdentityForEmail(email) {
+  const e = String(email || '').toLowerCase().trim();
+  const dyn = (directorsList || []).find(d => String(d.email || '').toLowerCase().trim() === e && d.active !== false);
+  if (dyn) return { id: dyn.id, name: dyn.name, email: e };
+  const id = DIRECTOR_EMAIL_MAP[e] || ('user-' + e.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''));
+  const name = DIRECTOR_NAMES[id] || (e ? e.split('@')[0] : 'Signed in');
+  return { id, name, email: e };
+}
+async function loadDirectors() {
+  try {
+    const doc = await db.collection('settings').doc('directors').get();
+    if (doc.exists && doc.data() && Array.isArray(doc.data().directors) && doc.data().directors.length) {
+      directorsList = doc.data().directors;
+    } else {
+      directorsList = DEFAULT_DIRECTOR_SEED.map(d => ({ ...d, createdAt: new Date().toISOString() }));
+      db.collection('settings').doc('directors')
+        .set({ directors: directorsList, updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {});
+    }
+  } catch (e) { directorsList = DEFAULT_DIRECTOR_SEED.map(d => ({ ...d })); }
+}
+function updateAdminOnlyVisibility() {
+  // Admin-only: 💬 SMS Templates and 👥 Directors visible only to Luca Rebuffi
+  // (director luca-rebuffi, or unsigned). Hidden for other directors.
+  const isOwner = !directorId || directorId === 'luca-rebuffi';
+  document.querySelectorAll('[data-admin-only]').forEach(el => {
+    el.style.display = isOwner ? '' : 'none';
+  });
+}
+function openDirectorsModal() {
+  renderDirectorsList();
+  const err = document.getElementById('directors-error');
+  if (err) err.textContent = '';
+  document.getElementById('directors-overlay').classList.add('open');
+}
+function closeDirectorsModal() { document.getElementById('directors-overlay').classList.remove('open'); }
+function renderDirectorsList() {
+  const el = document.getElementById('directors-list');
+  if (!el) return;
+  el.innerHTML = directorsList.map(d => `
+    <div class="dir-row${d.active === false ? ' inactive' : ''}">
+      <div class="dir-info">
+        <div class="dir-name">${escapeHtml(d.name)}${d.id === 'luca-rebuffi' ? ' <span class="dir-badge">owner</span>' : ''}</div>
+        <div class="dir-email">${escapeHtml(d.email || 'no sign-in email set')}</div>
+      </div>
+      ${d.active === false ? '<span class="dir-badge off">inactive</span>' : ''}
+      <button class="dir-act" onclick="editDirectorEmail('${d.id}')" title="Set sign-in email">✏️</button>
+      <button class="dir-act" onclick="toggleDirectorActive('${d.id}')">${d.active === false ? 'Activate' : 'Deactivate'}</button>
+      ${d.id === 'luca-rebuffi' ? '' : `<button class="dir-del" onclick="removeDirector('${d.id}')" title="Remove">🗑</button>`}
+    </div>`).join('') || '<div class="empty-state">No directors yet.</div>';
+}
+function editDirectorEmail(id) {
+  const d = directorsList.find(x => x.id === id);
+  if (!d) return;
+  const email = prompt(`Sign-in email for ${d.name}:`, d.email || '');
+  if (email === null) return;
+  const clean = email.trim().toLowerCase();
+  if (clean && directorsList.some(x => x.id !== id && String(x.email || '').toLowerCase() === clean)) {
+    showToast('That email is already on the roster.', 'error');
+    return;
+  }
+  d.email = clean;
+  saveDirectors().then(renderDirectorsList);
+  showToast('Saved ✓');
+}
+async function saveDirectors() {
+  try {
+    await db.collection('settings').doc('directors')
+      .set({ directors: directorsList, updatedAt: new Date().toISOString() }, { merge: true });
+  } catch (e) { showToast('Could not save directors.', 'error'); }
+}
+function addDirector() {
+  const name = (document.getElementById('dir-name').value || '').trim();
+  const email = (document.getElementById('dir-email').value || '').trim().toLowerCase();
+  const err = document.getElementById('directors-error');
+  if (!name) { err.textContent = "Enter the director's name."; return; }
+  if (directorsList.some(d => d.name.toLowerCase() === name.toLowerCase())) { err.textContent = 'That name is already on the roster.'; return; }
+  if (email && directorsList.some(d => String(d.email || '').toLowerCase() === email)) { err.textContent = 'That email is already on the roster.'; return; }
+  const id = 'dir-' + name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') + '-' + Date.now().toString(36);
+  directorsList.push({ id, name, email, active: true, createdAt: new Date().toISOString() });
+  document.getElementById('dir-name').value = '';
+  document.getElementById('dir-email').value = '';
+  err.textContent = '';
+  saveDirectors().then(renderDirectorsList);
+  showToast(`${name} added ✓`, 'success');
+}
+function toggleDirectorActive(id) {
+  const d = directorsList.find(x => x.id === id);
+  if (!d) return;
+  d.active = d.active === false ? true : false;
+  saveDirectors().then(renderDirectorsList);
+}
+function removeDirector(id) {
+  const d = directorsList.find(x => x.id === id);
+  if (!d || d.id === 'luca-rebuffi') return;
+  if (!confirm(`Remove ${d.name} from the directors roster? Their past calls stay attributed.`)) return;
+  directorsList = directorsList.filter(x => x.id !== id);
+  saveDirectors().then(renderDirectorsList);
+}
+document.getElementById('directors-close').addEventListener('click', closeDirectorsModal);
+document.getElementById('directors-cancel').addEventListener('click', closeDirectorsModal);
+document.getElementById('directors-add').addEventListener('click', addDirector);
+document.getElementById('directors-overlay').addEventListener('click', e => { if (e.target.id === 'directors-overlay') closeDirectorsModal(); });
+
 function openSmsTemplates() {
   const wrap = document.getElementById('sms-templates-fields');
   wrap.innerHTML = SMS_TEMPLATE_META.map(m => `
