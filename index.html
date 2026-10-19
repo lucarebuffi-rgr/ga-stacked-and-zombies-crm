@@ -4730,6 +4730,8 @@ async function sendSmsFromSheet() {
   const btn = document.getElementById('sms-send-btn');
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
+    // Create named Quo contact BEFORE sending, so Quo doesn't auto-create a nameless one
+    ensureQuoContact(heir ? heir.name : (lead.mainPocName || lead.address), phone, fullAddressStr(lead));
     await sendSmsViaQuo(phone, text);
     const smsLog = (lead.smsLog || []).slice();
     smsLog.push({ at: new Date().toISOString(), content: text, dir: 'out', heirId: heir ? heir.hid : null, heirName: heir ? heir.name : null });
