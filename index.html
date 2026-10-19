@@ -833,7 +833,6 @@
         <div style="display:flex;gap:7px;align-items:center;">
           <button class="user-chip" id="user-chip" style="display:none;" title="Sign out">👤</button>
           <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
-          <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
           <button class="btn-ghost icon-btn" onclick="openKpiModal()" title="KPIs">📊</button>
           <button class="btn-ghost icon-btn" onclick="openSopModal()" title="SOP — How to use this CRM">📋</button>
           <button class="btn-ghost icon-btn" id="sms-tpl-btn" onclick="openSmsTemplates()" title="SMS Templates">💬</button>
@@ -1305,9 +1304,6 @@ function newestCodeDate(lead) {
 }
 
 async function loadSheets() {
-  const btn = document.getElementById('refresh-btn');
-  btn.title = 'Loading sheets…';
-  btn.classList.remove('error');
   sheetError = null;
   try {
     const [zVals, sVals] = await Promise.all([
@@ -1317,21 +1313,12 @@ async function loadSheets() {
     sheetRows.zombie = parseSheet(zVals, 'zombie');
     sheetRows.stacked = parseSheet(sVals, 'stacked');
     lastSyncAt = new Date().toISOString();
-    btn.title = `Synced · ${timeAgo(lastSyncAt)} — tap to refresh`;
     updateTabCounts();
     render();
   } catch (e) {
     console.error(e);
     sheetError = e;
-    btn.classList.add('error');
-    if (e.status === 403) {
-      btn.textContent = '⟳ Sheets blocked (403)';
-    } else if (e.status === 400 && /API key/i.test(e.body || '')) {
-      btn.textContent = '⟳ Bad API key';
-    } else {
-      btn.title = 'Sync error — tap to retry';
-    }
-    note.classList.add('error');
+    showToast('Sheet sync error — will retry automatically', 'error');
     render();
   }
 }
@@ -3459,7 +3446,7 @@ document.getElementById('add-lead-save').addEventListener('click', saveNewLead);
 document.getElementById('add-lead-overlay').addEventListener('click', e => {
   if (e.target.id === 'add-lead-overlay') closeAddLeadModal();
 });
-document.getElementById('refresh-btn').addEventListener('click', loadSheets);
+
 function signInWithGoogle(selectAccount) {
   const provider = new firebase.auth.GoogleAuthProvider();
   // Steer Google toward Luca's account: without login_hint, a sign-in (or a
@@ -3488,11 +3475,8 @@ if (isReportMode) {
   // Overlay subscriptions start from the auth state handler (only when signed
   // in); sheet data is public and loads regardless.
   loadSheets();
-  // keep the "synced x ago" in the refresh button's tooltip
-  setInterval(() => {
-    const btn = document.getElementById('refresh-btn');
-    if (lastSyncAt && !sheetError) btn.title = `Synced · ${timeAgo(lastSyncAt)} — tap to refresh`;
-  }, 60000);
+  // Auto-refresh sheet data every 2 minutes — no manual refresh needed
+  setInterval(() => { loadSheets(); }, 120000);
 }
 // User chip click → confirm and sign out
 document.getElementById('user-chip').addEventListener('click', async () => {
