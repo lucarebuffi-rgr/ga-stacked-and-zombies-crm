@@ -843,7 +843,7 @@
           <button class="user-chip" id="user-chip" style="display:none;" title="Sign out">👤</button>
           <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
           <button class="btn-ghost icon-btn" onclick="openKpiModal()" title="KPIs">📊</button>
-          <button class="btn-ghost icon-btn" onclick="openSopModal()" title="SOP — How to use this CRM">📋</button>
+          <button class="btn-ghost icon-btn" onclick="openSopModal()" title="SOP — How to use this CRM" style="color:#e07a77;">❓</button>
           <button class="btn-ghost icon-btn" id="sms-tpl-btn" data-admin-only onclick="openSmsTemplates()" title="SMS Templates">💬</button>
           <button class="btn-ghost icon-btn" data-admin-only onclick="openDirectorsModal()" title="Directors">👥</button>
         </div>
@@ -1647,7 +1647,7 @@ function renderCard(lead) {
           ${lead.needsRetrace ? '<span class="retrace-flag">🔄 Needs re-trace</span>' : ''}
           ${resurrectCardHTML(lead)}
         </div>
-        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''}
+        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -2011,6 +2011,7 @@ function getDeceasedName(lead) {
 function familyTreeHTML(lead, opts) {
   opts = opts || {};
   var highlight = (opts.highlight || '').toLowerCase();
+  var _ftTabId = opts.tabId || (typeof tab !== 'undefined' ? tab : 'zombie');
   var rawText = lead ? lead.familyTree : '';
   var data = (lead && lead.familyTreeData && Array.isArray(lead.familyTreeData.heirs) && lead.familyTreeData.heirs.length)
     ? lead.familyTreeData : parseFamilyTreeText(rawText);
@@ -2052,7 +2053,7 @@ function familyTreeHTML(lead, opts) {
     return '<div class="v-card ' + (cls || '') + (isCurrent ? ' current-heir' : '') + '"><div class="v-name">' + (isDeadHeir ? '☠️ ' : '') + escapeHtml(fullName(h) || '—') + '</div>' +
       '<div class="v-rel">' + escapeHtml(relLabel || h.relationship || '') + '</div>' +
       (sub ? '<div class="v-sub">' + escapeHtml(sub) + '</div>' : '') +
-      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\',\'' + escapeHtml(fullAddressStr(lead) || '').replace(/'/g, "\\'") + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
+      (h.phone ? '<div class="v-phone"><a href="tel:' + digitsOnly(h.phone) + '" onclick="logDialClick(_ftTabId,\'' + escapeHtml(lead.key) + '\');ensureQuoContact(\'' + escapeHtml(fullName(h) || '').replace(/'/g, "\\'") + '\',\'' + digitsOnly(h.phone) + '\',\'' + escapeHtml(fullAddressStr(lead) || '').replace(/'/g, "\\'") + '\')">' + escapeHtml(h.phone) + '</a></div>' : '') + cadHtml + '</div>';
   };
   var html = '<div class="vtree-wrap"><div class="tree-zoom-stage"><div class="vtree">';
   if (groups.parents.length) {
@@ -3073,7 +3074,7 @@ function renderDialerMain() {
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
       ${cadenceTracker(target)}
       ${phone ? `
-        <a class="dial-call" href="tel:${digits}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(phone))}</a>
+        <a class="dial-call" href="tel:${digits}" onclick="logDialClick(dialer.tabId,'${escapeHtml(lead.key)}');ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(phone))}</a>
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
       ` : '<div class="dialer-nophone">No phone on file</div>'}
     </div>
@@ -3305,7 +3306,7 @@ function showDialerFamilyTree(e) {
       if (hn) highlightName = hn;
     }
   } catch (err) {}
-  let treeHtml = familyTreeHTML(lead, { highlight: highlightName });
+  let treeHtml = familyTreeHTML(lead, { highlight: highlightName, tabId: dialer.tabId });
   // Parse for header info
   let deceasedName = '', heirCount = 0;
   try {
@@ -3651,6 +3652,29 @@ function ensureQuoContact(name, phone, company) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body),
     }).catch(() => {});
+  } catch (e) { /* silent */ }
+}
+
+// Fire-and-forget: log a dial tap in the Call Log when user taps any tel: link.
+// Never blocks, never delays the tel: link, never throws.
+// Increments callAttempts, updates lastCalledAt, logs 'dial_clicked' activity.
+function logDialClick(tabId, leadKey) {
+  try {
+    if (!tabId || !leadKey) return;
+    const lead = getLead(tabId, leadKey);
+    if (!lead) return;
+    const now = new Date().toISOString();
+    lead.callAttempts = (lead.callAttempts || 0) + 1;
+    lead.lastCalledAt = now;
+    // Fire-and-forget Firestore write (silent if not signed in)
+    try {
+      saveOverlay(tabId, leadKey, { callAttempts: lead.callAttempts, lastCalledAt: now }).catch(() => {});
+    } catch (e) {}
+    // Log to activity feed (handles its own auth check)
+    try { logActivity(tabId, lead, 'dial_clicked', 'Tapped to dial'); } catch (e) {}
+    // Update UI call count display (debounced)
+    clearTimeout(window._dialLogRenderT);
+    window._dialLogRenderT = setTimeout(() => { try { render(); } catch (e) {} }, 800);
   } catch (e) { /* silent */ }
 }
 
@@ -4357,7 +4381,7 @@ function heirsHTML(lead) {
           <span class="heir-status" style="background:${st.color}22;color:${st.color};border:1px solid ${st.color}55">${st.label}</span>
         </div>
         <div class="heir-actions">
-          ${h.phone ? `<a class="call-link mono" href="tel:${digitsOnly(h.phone)}" onclick="ensureQuoContact('${escapeHtml(h.name || '').replace(/'/g, "\\'")}', '${digitsOnly(h.phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(h.phone))}</a>` : '<span class="heir-nophone">no phone</span>'}
+          ${h.phone ? `<a class="call-link mono" href="tel:${digitsOnly(h.phone)}" onclick="logDialClick(tab,\'${escapeHtml(lead.key)}\');ensureQuoContact('${escapeHtml(h.name || '').replace(/'/g, "\\'")}', '${digitsOnly(h.phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(h.phone))}</a>` : '<span class="heir-nophone">no phone</span>'}
           <select data-heir-status="${escapeHtml(lead.key)}" data-heir-id="${h.id}">
             ${HEIR_STATUSES.map(s => `<option value="${s.id}" ${h.status === s.id ? 'selected' : ''}>${s.label}</option>`).join('')}
           </select>
@@ -4743,7 +4767,7 @@ function renderCallSession() {
       <div class="cs-badges"><span class="status-badge" style="background:${st.color}22;color:${st.color};border-color:${st.color}55">${st.label}</span> ${codeBadges(lead)}</div>
       ${lead.whyHot && !isHeirTarget ? `<div class="cs-why">“${escapeHtml(lead.whyHot)}”</div>` : ''}
       <div class="cs-cadence">${cadenceLine(isHeirTarget ? heir : lead)}${ci.overdue ? ' <span class="overdue-badge">OVERDUE</span>' : ''}</div>
-      ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
+      ${phone ? `<a class="cs-dial" href="tel:${digitsOnly(phone)}" onclick="logDialClick(callSession.tabId,'${escapeHtml(lead.key)}');ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digitsOnly(phone)}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}');csMarkDialed()">📞 ${escapeHtml(formatPhone(phone))}</a>
       <button class="cs-text" onclick="openSmsSheet(callSession.tabId, '${escapeHtml(lead.key)}', ${ci.stepDef.type === 'sms' ? "'day2'" : 'null'}${isHeirTarget ? `, '${escapeHtml(heir.hid)}'` : ''})">💬 Text</button>` : '<div class="cs-nophone">No phone on file</div>'}
       ${heirSwitcher}
       ${tl.length ? `<div class="cs-timeline"><div class="section-label">Recent</div>${tl.map(it => `<div class="cs-tl-row"><span>${it.icon}</span><span>${escapeHtml(it.title)}</span><span class="timeline-ts">${it.ts ? new Date(it.ts).toLocaleString(undefined, { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</span></div>`).join('')}</div>` : ''}
