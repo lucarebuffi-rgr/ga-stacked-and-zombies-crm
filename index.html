@@ -3715,7 +3715,7 @@ function ensureQuoContact(name, phone, company) {
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
     const firstName = parts[0] || 'Seller';
     const lastName = parts.slice(1).join(' ');
-    const body = { action: 'createContact', firstName, lastName, phone: digits };
+    const body = { action: 'createContact', directorId: directorId || 'luca-rebuffi', firstName, lastName, phone: digits };
     if (company) body.company = company;
     fetch(QUO_PROXY_URL, {
       method: 'POST',
@@ -3764,7 +3764,7 @@ async function sendSmsViaQuo(phone, message) {
     res = await fetch(QUO_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'sendSms', to: digits, content: message.trim() }),
+      body: JSON.stringify({ action: 'sendSms', directorId: directorId || 'luca-rebuffi', to: digits, content: message.trim() }),
       signal: ctrl.signal,
     });
   } catch (e) {
