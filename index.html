@@ -834,8 +834,8 @@
           <button class="user-chip" id="user-chip" style="display:none;" title="Sign out">👤</button>
           <button class="btn-ghost" id="auth-btn" style="display:none;">Sign in with Google</button>
           <button class="btn-ghost sync-btn icon-btn" id="refresh-btn" title="Refresh sheets">⟳</button>
-          <a class="btn-ghost icon-btn" href="?report=1" target="_blank" rel="noopener" title="KPIs">📊</a>
-          <a class="btn-ghost icon-btn" href="?sop=1" target="_blank" rel="noopener" title="SOP — How to use this CRM">📋</a>
+          <button class="btn-ghost icon-btn" onclick="openKpiModal()" title="KPIs">📊</button>
+          <button class="btn-ghost icon-btn" onclick="openSopModal()" title="SOP — How to use this CRM">📋</button>
           <button class="btn-ghost icon-btn" id="sms-tpl-btn" onclick="openSmsTemplates()" title="SMS Templates">💬</button>
         </div>
         <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 28px;font-size:16px;">📞 Dialer</a>
@@ -2526,8 +2526,9 @@ async function initReportMode() {
   if (auth.currentUser) renderReport();
   else renderReportLocked();
 }
-function renderReportLocked() {
-  document.getElementById('report-body').innerHTML =
+function renderReportLocked(bodyId) {
+  bodyId = bodyId || 'report-body';
+  document.getElementById(bodyId).innerHTML =
     '<div class="empty-state"><div class="big">🔒</div>' +
     '<div style="font-weight:600;margin-bottom:10px;">Sign in to view the activity report</div>' +
     '<button class="btn-gold" id="report-signin-btn">Sign in with Google</button></div>';
@@ -2540,13 +2541,17 @@ function destroyReportCharts() {
   reportCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
   reportCharts = [];
 }
-async function renderReport() {
-  if (!currentUser) { renderReportLocked(); return; }
-  document.querySelectorAll('[data-report-range]').forEach(btn => {
-    btn.classList.toggle('active', parseInt(btn.getAttribute('data-report-range'), 10) === reportRangeDays);
+async function renderReport(opts) {
+  opts = opts || {};
+  const bodyId = opts.bodyId || 'report-body';
+  const rangeAttr = opts.rangeAttr || 'data-report-range';
+  const idPrefix = opts.idPrefix || 'kpi-';
+  if (!currentUser) { renderReportLocked(bodyId); return; }
+  document.querySelectorAll('[' + rangeAttr + ']').forEach(btn => {
+    btn.classList.toggle('active', parseInt(btn.getAttribute(rangeAttr), 10) === reportRangeDays);
   });
   destroyReportCharts();
-  const body = document.getElementById('report-body');
+  const body = document.getElementById(bodyId);
   body.innerHTML = '<div class="empty-state"><div class="big"><span class="spin">⟳</span></div>Loading KPIs…</div>';
   try {
     if (typeof Chart !== 'undefined') {
@@ -2678,22 +2683,22 @@ async function renderReport() {
         <div class="kpi-panel">
           <h3>📞 Calls by Director</h3>
           <div class="kpi-sub">${rangeLabel} · call outcomes logged</div>
-          <div class="chart-wrap"><canvas id="kpi-calls-dir"></canvas></div>
+          <div class="chart-wrap"><canvas id="${idPrefix}calls-dir"></canvas></div>
         </div>
         <div class="kpi-panel">
           <h3>🥧 Pipeline Distribution</h3>
           <div class="kpi-sub">Current lead count per stage · both tabs</div>
-          <div class="chart-wrap"><canvas id="kpi-pipeline"></canvas></div>
+          <div class="chart-wrap"><canvas id="${idPrefix}pipeline"></canvas></div>
         </div>
         <div class="kpi-panel">
           <h3>🔀 Stage Changes</h3>
           <div class="kpi-sub">${rangeLabel} · where leads moved to</div>
-          <div class="chart-wrap"><canvas id="kpi-stage-flow"></canvas></div>
+          <div class="chart-wrap"><canvas id="${idPrefix}stage-flow"></canvas></div>
         </div>
         <div class="kpi-panel">
           <h3>📈 Calls Over Time</h3>
           <div class="kpi-sub">${rangeLabel} · calls made per ${reportRangeDays === 1 ? 'hour' : reportRangeDays === 0 ? 'week' : 'day'}</div>
-          <div class="chart-wrap"><canvas id="kpi-calls-time"></canvas></div>
+          <div class="chart-wrap"><canvas id="${idPrefix}calls-time"></canvas></div>
         </div>
       </div>`;
 
@@ -2703,7 +2708,7 @@ async function renderReport() {
     }
 
     // Calls by director — horizontal bars
-    reportCharts.push(new Chart(document.getElementById('kpi-calls-dir'), {
+    reportCharts.push(new Chart(document.getElementById(idPrefix + 'calls-dir'), {
       type: 'bar',
       data: { labels: dirLabels.length ? dirLabels : ['No data'], datasets: [{ data: dirLabels.length ? dirLabels.map(d => callsByDir[d]) : [0], backgroundColor: '#d4a843', borderRadius: 6, barThickness: 22 }] },
       options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, ticks: { precision: 0 } } } },
@@ -2711,7 +2716,7 @@ async function renderReport() {
 
     // Pipeline distribution — doughnut with stage colors
     const pipeLabels = STATUSES.map(s => s.label);
-    reportCharts.push(new Chart(document.getElementById('kpi-pipeline'), {
+    reportCharts.push(new Chart(document.getElementById(idPrefix + 'pipeline'), {
       type: 'doughnut',
       data: { labels: pipeLabels, datasets: [{ data: STATUSES.map(s => pipelineCounts[s.id]), backgroundColor: STATUSES.map(s => s.color), borderColor: '#0d1b2e', borderWidth: 3 }] },
       options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, padding: 12 } } } },
@@ -2719,14 +2724,14 @@ async function renderReport() {
 
     // Stage changes by destination — bars
     const destLabels = Object.keys(destCounts).sort((a, b) => destCounts[b] - destCounts[a]);
-    reportCharts.push(new Chart(document.getElementById('kpi-stage-flow'), {
+    reportCharts.push(new Chart(document.getElementById(idPrefix + 'stage-flow'), {
       type: 'bar',
       data: { labels: destLabels.length ? destLabels : ['No data'], datasets: [{ data: destLabels.length ? destLabels.map(l => destCounts[l]) : [0], backgroundColor: '#c084fc', borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } } } },
     }));
 
     // Calls over time — line
-    reportCharts.push(new Chart(document.getElementById('kpi-calls-time'), {
+    reportCharts.push(new Chart(document.getElementById(idPrefix + 'calls-time'), {
       type: 'line',
       data: { labels: bucketLabels, datasets: [{ data: bucketCounts, borderColor: '#5b8fd4', backgroundColor: 'rgba(91,143,212,.15)', fill: true, tension: .35, pointRadius: 3, pointBackgroundColor: '#5b8fd4' }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } },
@@ -2795,12 +2800,8 @@ function renderDialerLocked() {
 }
 
 /* ---------------- SOP mode (?sop=1) ---------------- */
-function renderSop() {
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('report-screen').style.display = 'none';
-  document.getElementById('dialer-screen').style.display = 'none';
-  document.getElementById('sop-screen').style.display = 'block';
-  document.getElementById('sop-body').innerHTML = `
+function sopHtml() {
+  return `
     <h1>📋 Standard Operating Procedure</h1>
     <div class="sop-sub">How to work leads in the GA Stacked & Zombies CRM — step by step.</div>
 
@@ -2913,6 +2914,38 @@ function renderSop() {
       <p>Click the <strong>📊</strong> icon in the main CRM header to open the KPI dashboard. It shows calls made, pipeline changes, offers submitted, and charts breaking down activity by stage and over time.</p>
     </div>
   `;
+}
+
+function renderSop() {
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('report-screen').style.display = 'none';
+  document.getElementById('dialer-screen').style.display = 'none';
+  document.getElementById('sop-screen').style.display = 'block';
+  document.getElementById('sop-body').innerHTML = sopHtml();
+}
+
+function openSopModal() {
+  document.getElementById('sop-modal-body').innerHTML = sopHtml();
+  document.getElementById('sop-modal-overlay').classList.add('open');
+}
+function closeSopModal() {
+  document.getElementById('sop-modal-overlay').classList.remove('open');
+}
+
+function openKpiModal() {
+  document.getElementById('kpi-modal-overlay').classList.add('open');
+  // Wire range buttons for the modal
+  document.querySelectorAll('[data-kpi-modal-range]').forEach(btn => {
+    btn.onclick = () => {
+      reportRangeDays = parseInt(btn.getAttribute('data-kpi-modal-range'), 10);
+      renderReport({ bodyId: 'kpi-modal-body', rangeAttr: 'data-kpi-modal-range', idPrefix: 'kpim-' });
+    };
+  });
+  renderReport({ bodyId: 'kpi-modal-body', rangeAttr: 'data-kpi-modal-range', idPrefix: 'kpim-' });
+}
+function closeKpiModal() {
+  destroyReportCharts();
+  document.getElementById('kpi-modal-overlay').classList.remove('open');
 }
 
 function renderDialerChoice() {
@@ -3507,6 +3540,40 @@ document.getElementById('user-chip').addEventListener('click', async () => {
       <button class="btn-ghost" onclick="closeSmsTemplates()">Close</button>
       <button class="btn-ghost" onclick="resetSmsTemplates()">Reset to defaults</button>
       <button class="btn-gold" onclick="saveSmsTemplates()">💾 Save Templates</button>
+    </div>
+  </div>
+</div>
+
+<div id="kpi-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeKpiModal()">
+  <div class="modal-card" style="max-width:900px;max-height:92vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h2>📊 KPIs</h2>
+      <button class="modal-close-btn" onclick="closeKpiModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="agenda-btn" data-kpi-modal-range="1">Today</button>
+        <button class="agenda-btn" data-kpi-modal-range="7">Last 7 Days</button>
+        <button class="agenda-btn" data-kpi-modal-range="30">Last 30 Days</button>
+        <button class="agenda-btn" data-kpi-modal-range="0">All Time</button>
+      </div>
+      <div id="kpi-modal-body"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeKpiModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="sop-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeSopModal()">
+  <div class="modal-card" style="max-width:720px;max-height:92vh;overflow-y:auto;">
+    <div class="modal-header">
+      <h2>📋 Standard Operating Procedure</h2>
+      <button class="modal-close-btn" onclick="closeSopModal()">✕</button>
+    </div>
+    <div class="modal-body" id="sop-modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeSopModal()">Close</button>
     </div>
   </div>
 </div>
