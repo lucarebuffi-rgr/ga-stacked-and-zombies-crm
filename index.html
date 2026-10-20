@@ -1297,6 +1297,17 @@ function parseSheetDate(s) {
   if (!m) return 0;
   return new Date(+m[3], +m[1] - 1, +m[2]).getTime();
 }
+function sheetDateStr(v) {
+  // A sheet cell holding an unformatted date arrives from the API as a raw
+  // spreadsheet serial (days since 1899-12-30) — convert it to the MM/DD/YYYY
+  // string every other date in the CRM uses. Non-serial values pass through.
+  const s = (v || '').trim();
+  if (!/^\d+$/.test(s)) return v;
+  const n = +s;
+  if (n < 30000 || n > 80000) return v;
+  const d = new Date(Date.UTC(1899, 11, 30) + n * 86400000);
+  return (d.getUTCMonth() + 1) + '/' + d.getUTCDate() + '/' + d.getUTCFullYear();
+}
 function localDateStr(d) {
   const p = n => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
@@ -1377,17 +1388,17 @@ function parseSheet(values, tabId) {
     const codes = {};
     for (const code of TABS[tabId].codes) {
       const d = get(row, code.toLowerCase());
-      if (d) codes[code] = d;
+      if (d) codes[code] = sheetDateStr(d);
     }
     rows.push({
       key: normalizeAddressKey(address, city, state, zip),
       address, city, state, zip,
       codes,
       whyHot: tabId === 'zombie' ? get(row, 'whyhot') : '',
-      dateFlagged: tabId === 'zombie' ? get(row, 'dateflagged') : '',
+      dateFlagged: tabId === 'zombie' ? sheetDateStr(get(row, 'dateflagged')) : '',
       tdAmount: get(row, 'tdamount'),
       tdYears: get(row, 'tdyearsdelinquent') || get(row, 'tdyears'),
-      pfAuctionDate: get(row, 'pfauctiondate'),
+      pfAuctionDate: sheetDateStr(get(row, 'pfauctiondate')),
       beds: get(row, 'beds'),
       baths: get(row, 'baths'),
       sqft: get(row, 'sqft'),
