@@ -669,9 +669,12 @@
   .heir-add-row input { flex:1 1 100%; }
 }
 
-/* ---------- Dialer mode (?dialer=1) ---------- */
-#dialer-screen { min-height: 100vh; min-height: 100dvh; background: #0d1b2e; }
-.dialer-wrap { max-width: 600px; margin: 0 auto; padding: 24px 16px 48px; }
+/* ---------- Dialer overlay (in-CRM popup; auto-opens on ?dialer=1) ---------- */
+#dialer-screen { position: fixed; inset: 0; z-index: 900; background: rgba(4,10,20,.8); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.dialer-wrap { max-width: 680px; margin: 4vh auto; max-height: 92vh; max-height: 92dvh; overflow-y: auto; background: #0d1b2e; border: 1px solid #1e3554; border-radius: 18px; box-shadow: 0 24px 60px rgba(0,0,0,.55); padding: 24px 16px 48px; box-sizing: border-box; }
+@media (max-width:640px){
+  .dialer-wrap { margin: 0; max-width: none; width: 100%; height: 100vh; height: 100dvh; max-height: none; border: none; border-radius: 0; }
+}
 .dialer-choice-title { text-align: center; font-size: 26px; font-weight: 800; color: #e9edf3; margin: 32px 0 8px; }
 .dialer-choice-sub { text-align: center; color: #8a97a8; font-size: 14px; margin-bottom: 28px; }
 .dialer-choice-btns { display: grid; gap: 16px; }
@@ -913,7 +916,7 @@
           <button class="btn-ghost icon-btn" id="sms-tpl-btn" data-admin-only onclick="openSmsTemplates()" title="SMS Templates">💬</button>
           <button class="btn-ghost icon-btn" data-admin-only onclick="openDirectorsModal()" title="Directors">👥</button>
         </div>
-        <a class="btn-gold" href="?dialer=1" target="_blank" rel="noopener" style="text-decoration:none;padding:14px 28px;font-size:16px;">📞 Dialer</a>
+        <button class="btn-gold" onclick="openDialerOverlay()" style="padding:14px 28px;font-size:16px;">📞 Dialer</button>
       </div>
     </div>
     <div class="header-inner">
@@ -2934,11 +2937,22 @@ function buildDialerQueue(tabId) {
 }
 
 function initDialerMode() {
-  document.getElementById('app-screen').style.display = 'none';
-  document.getElementById('report-screen').style.display = 'none';
-  document.getElementById('dialer-screen').style.display = 'block';
+  // ?dialer=1 deep link: boot straight into the dialer popup over the app.
+  openDialerOverlay();
   loadSheets(); // public sheet data; overlays arrive via the auth listener
+}
+
+// Presentation only: the dialer lives in a fixed overlay above the app. The
+// app screen is never hidden, so closing the popup returns to the lead list
+// exactly where it was. Body scroll locks the same way as the call session.
+function openDialerOverlay() {
+  document.getElementById('dialer-screen').style.display = 'block';
+  document.body.style.overflow = 'hidden';
   renderDialer();
+}
+function closeDialerOverlay() {
+  document.getElementById('dialer-screen').style.display = 'none';
+  document.body.style.overflow = '';
 }
 
 function renderDialer() {
@@ -2954,7 +2968,8 @@ function renderDialerLocked() {
     '<div style="font-weight:700;font-size:18px;color:#e9edf3;margin:12px 0;">' +
     (wrongAcct ? 'Signed in as ' + escapeHtml(currentUser.email || '') + ' — switch to your director account' : 'Sign in to use the dialer') +
     '</div><button class="btn-gold" id="dialer-signin-btn" style="margin:0 auto;">' +
-    (wrongAcct ? 'Switch Google account' : 'Sign in with Google') + '</button></div>';
+    (wrongAcct ? 'Switch Google account' : 'Sign in with Google') + '</button>' +
+    '<div style="margin-top:14px;"><button class="btn-ghost" onclick="closeDialerOverlay()">✕ Close</button></div></div>';
   document.getElementById('dialer-signin-btn').addEventListener('click', async () => {
     if (currentUser) { try { await auth.signOut(); } catch (e) {} }
     signInWithGoogle(true);
@@ -2970,7 +2985,7 @@ function sopHtml() {
     <div class="sop-section">
       <h2>1. Starting Your Calling Session</h2>
       <ol>
-        <li>Click the <strong>📞 Dialer</strong> button in the top-right of the main CRM. It opens in a new tab.</li>
+        <li>Click the <strong>📞 Dialer</strong> button in the top-right of the main CRM. It opens as a popup right here in the CRM — tap <strong>✕ Exit</strong> to go back to the list picker, then <strong>✕ Close</strong> to return to your leads.</li>
         <li>Choose <strong>🧟 Zombies</strong> or <strong>📚 Stacked</strong>.</li>
         <li>The dialer shows you <strong>one lead at a time</strong> — only leads in <strong>New</strong> or <strong>Trying to Reach</strong>.</li>
         <li>For zombie leads, each heir with a phone number gets their own turn in the queue.</li>
@@ -3114,6 +3129,7 @@ function renderDialerChoice() {
   const zq = buildDialerQueue('zombie');
   const sq = buildDialerQueue('stacked');
   document.getElementById('dialer-body').innerHTML = `
+    <div style="display:flex;justify-content:flex-end;"><button class="btn-ghost" onclick="closeDialerOverlay()">✕ Close</button></div>
     <div class="dialer-choice-title">📞 Dialer</div>
     <div class="dialer-choice-sub">New + Trying to Reach only · pick a list to dial</div>
     <div class="dialer-choice-btns">
