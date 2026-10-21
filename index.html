@@ -3824,7 +3824,10 @@ async function sendSmsViaQuo(phone, message) {
     res = await fetch(QUO_PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'sendSms', directorId: directorId || 'luca-rebuffi', fromNumberId: 'PNNjboAqko', to: digits, content: message.trim() }),
+      // Luca's sends are locked to the GA number (PNNjboAqko). Other directors
+      // send from their OWN Quo account, so fromNumberId is omitted for them and
+      // the proxy falls back to their QUO_FROM_NUMBERS entry (their own number).
+      body: JSON.stringify({ action: 'sendSms', directorId: directorId || 'luca-rebuffi', ...((!directorId || directorId === 'luca-rebuffi') ? { fromNumberId: 'PNNjboAqko' } : {}), to: digits, content: message.trim() }),
       signal: ctrl.signal,
     });
   } catch (e) {
