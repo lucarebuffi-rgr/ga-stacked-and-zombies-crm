@@ -9,7 +9,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GA Stacked & Zombies">
-<title>GA Stacked &amp; Zombies</title><link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png">
+<title>GA Stacked &amp; Zombies</title>
+<script>
+// Origin lock: this app no longer runs on github.io — show a dead 404 there.
+if (location.hostname === 'lucarebuffi-rgr.github.io') {
+  document.write('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 Not Found</title><style>body{margin:0;background:#ffffff;color:#24292e;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;text-align:center}.box{max-width:640px;margin:0 auto;padding:80px 24px}h1{font-size:120px;line-height:1;margin:0 0 8px;color:#d1d5da;font-weight:300}.big{font-size:24px;margin:0 0 12px}.small{font-size:14px;color:#586069;margin:0}</style></head><body><div class="box"><h1>404</h1><p class="big">File not found</p><p class="small">The site configured at this address does not contain the requested file.</p></div></body></html>');
+  document.close();
+  window.stop();
+  throw new Error('404 Not Found');
+}
+</script><link rel="icon" type="image/png" href="favicon.png"><link rel="apple-touch-icon" href="favicon.png">
 
 <!-- Firebase (no build step — loaded straight from Google's CDN) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -881,6 +890,103 @@
     #lead-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; align-items: start; }
     #lead-list .lead-card { margin-bottom: 0; }
     #lead-list .empty-state { grid-column: 1 / -1; }
+  }
+
+  /* ===== DIALER SESSION COMPACTION (2026-10-21) =====
+     Goal: the whole session — lead card, cadence tracker, call/text, notes and
+     ALL dispositions — fits inside the dialer popup with NO panel scrolling.
+     Session-scoped only: the list picker / done views keep their roomier layout,
+     and shared classes (e.g. .key-banner in the lead detail view) are untouched
+     outside .dialer-card. Panel geometry/backdrop (.dialer-wrap base rules) unchanged. */
+  .dialer-wrap:has(.dialer-card) { padding: 14px 16px 16px; }
+  .dialer-top { margin-bottom: 8px; }
+  .dialer-stats { margin-bottom: 8px; }
+  .dialer-card { padding: 13px 16px; margin-bottom: 10px; }
+  .dialer-name { font-size: 22px; }
+  .dialer-rel { font-size: 13px; margin: 2px 0 8px; }
+  /* Address + city share one line (wraps gracefully on narrow screens) */
+  .dialer-addr-row { margin-bottom: 8px; }
+  .dialer-addr-row > div:first-child { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+  .dialer-addr { font-size: 15px; margin-bottom: 0; }
+  .dialer-city { font-size: 13px; padding-left: 0; }
+  .dialer-map-btn { width: 36px; height: 36px; }
+  .dialer-badges { margin-bottom: 8px; }
+  /* Key banners (auction / taxes due): one compact row inside the dialer only */
+  .dialer-card .key-banner { padding: 7px 12px; margin-bottom: 8px; border-radius: 10px; }
+  .dialer-card .key-banner > div:first-child { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+  .dialer-card .key-banner .kb-sub { margin-top: 0; }
+  .dialer-card .key-banner .kb-value { font-size: 19px; }
+  .dialer-why { font-size: 13px; margin-bottom: 8px; }
+  /* Cadence tracker */
+  .cad-tracker { padding: 10px 12px; margin-bottom: 10px; }
+  .cad-header { margin-bottom: 6px; }
+  .cad-now { font-size: 15px; margin-bottom: 2px; }
+  .cad-hint { margin-bottom: 6px; }
+  .cad-dots { gap: 5px; margin-bottom: 8px; }
+  .cad-next { padding-top: 7px; }
+  .cad-undo-btn { margin-top: 6px; padding: 5px 8px; }
+  .cad-recycle-info { margin-top: 8px; }
+  .cad-recycle-btn { margin-top: 8px; padding: 9px; }
+  /* Call / text buttons */
+  .dial-call { font-size: 20px; padding: 12px 16px; margin-bottom: 8px; }
+  .dial-text { font-size: 15px; padding: 10px; }
+  .dialer-nophone { padding: 10px; }
+  /* Notes: ~2 visible lines (box still scrolls internally for longer notes) */
+  .dialer-notes { margin-top: 8px; }
+  #dialer-note-input { height: 64px; }
+  .dialer-notes .section-label, .dialer-outcomes .section-label { margin-bottom: 6px !important; }
+  /* Dispositions: true grid — 3 across on wide panels, 2 across on narrow phones */
+  .dialer-outcomes { margin-top: 10px; }
+  .dialer-outcome-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; justify-content: stretch; }
+  .dialer-outcome-grid .dialer-outcome, .dialer-outcome-grid .dialer-outcome:nth-child(n+4) { flex: none; min-width: 0; max-width: none; }
+  @media (max-width: 499px) { .dialer-outcome-grid { grid-template-columns: 1fr 1fr; } }
+  .dialer-outcome { padding: 9px 8px; min-height: 40px; }
+  .dialer-sub { padding: 10px; margin-top: 8px; }
+
+  /* Short viewports: tighter pass so ≥800px-tall windows (and short laptops) never scroll */
+  @media (max-height: 820px) {
+    .dialer-wrap:has(.dialer-card) { padding: 10px 14px 12px; }
+    .dialer-top { margin-bottom: 6px; }
+    .dialer-stats { margin-bottom: 6px; }
+    .dialer-card { padding: 10px 14px; margin-bottom: 8px; }
+    .dialer-name { font-size: 20px; }
+    .cad-tracker { padding: 8px 10px; margin-bottom: 8px; }
+    .cad-hint { display: none; } /* step label above still names the touch; hint returns on taller screens */
+    .cad-dots { margin-bottom: 6px; }
+    .cad-dot { width: 24px; height: 24px; font-size: 10px; }
+    .cad-next { padding-top: 5px; }
+    .dial-call { font-size: 19px; padding: 10px 14px; }
+    .dial-text { padding: 8px; }
+    #dialer-note-input { height: 56px; }
+    .dialer-outcome { min-height: 36px; padding: 7px 8px; }
+    .dialer-card .key-banner { padding: 6px 10px; }
+    .dialer-card .key-banner .kb-value { font-size: 17px; }
+  }
+
+  /* Phones (full-height sheet): density pass — overrides the older "roomier touch targets" rules above */
+  @media (max-width: 640px) {
+    .dialer-wrap:has(.dialer-card) { padding: 12px 12px calc(14px + env(safe-area-inset-bottom)); }
+    .dialer-name { font-size: 21px; }
+    .dialer-map-btn { width: 40px; height: 40px; }
+    .dialer-outcome { min-height: 44px; font-size: 14px; }
+    .dialer-nav-row { margin-bottom: 8px; }
+    .dialer-nav-btn { min-height: 40px; }
+    #dialer-note-input { height: 66px; }
+  }
+
+  /* Small phones (≤740px tall, e.g. iPhone SE): final squeeze — session stats yield first */
+  @media (max-width: 640px) and (max-height: 740px) {
+    .dialer-wrap:has(.dialer-card) { padding: 8px 10px calc(10px + env(safe-area-inset-bottom)); }
+    .dialer-stats { display: none; }
+    .dialer-card { padding: 9px 12px; margin-bottom: 8px; }
+    .dialer-name { font-size: 20px; }
+    .cad-hint { display: none; }
+    .cad-dot { width: 24px; height: 24px; font-size: 10px; }
+    .dial-call { padding: 10px; }
+    .dial-text { padding: 8px; }
+    #dialer-note-input { height: 52px; }
+    .dialer-outcome { min-height: 38px; }
+    .dialer-nav-btn { min-height: 36px; }
   }
 </style>
 </head>
