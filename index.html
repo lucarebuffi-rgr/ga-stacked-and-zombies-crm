@@ -182,6 +182,8 @@
   .substage-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(212,168,67,.12); color: #e8c476; border: 1px solid rgba(212,168,67,.4); white-space: nowrap; }
   .fire-badge { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(224,149,74,.12); color: #e8a05c; border: 1px solid rgba(224,149,74,.4); white-space: nowrap; }
   .lead-address { font-size: 13px; color: #aeb9c7; margin-top: 5px; padding-left: 22px; }
+  .lead-poc { font-size: 12.5px; color: #d8c391; margin-top: 3px; padding-left: 22px; }
+  .phone-plain { color: #8a97a8; font-size: 13px; }
   .lead-whyhot { font-size: 12px; color: #8a97a8; margin-top: 4px; font-style: italic; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* motivation code badges */
@@ -1394,6 +1396,8 @@ function parseSheet(values, tabId) {
       key: normalizeAddressKey(address, city, state, zip),
       address, city, state, zip,
       codes,
+      pocName: get(row, 'mainpoc'),
+      phone: get(row, 'phone'),
       whyHot: tabId === 'zombie' ? get(row, 'whyhot') : '',
       dateFlagged: tabId === 'zombie' ? sheetDateStr(get(row, 'dateflagged')) : '',
       tdAmount: get(row, 'tdamount'),
@@ -1467,8 +1471,14 @@ function stopOverlayListening() {
 }
 function mergedLead(tabId, row) {
   const ov = overlays[tabId][row.key] || {};
-  return { ...row, ...ov, status: ov.status || 'new' };
+  const merged = { ...row, ...ov, status: ov.status || 'new' };
+  // Sheet Main POC / Phone are the fallback: a value typed into the CRM wins,
+  // but an empty CRM value must never blank out what the sheet carries.
+  if (!(ov.mainPocName || '').trim() && row.pocName) merged.mainPocName = row.pocName;
+  if (!(ov.phone || '').trim() && row.phone) merged.phone = row.phone;
+  return merged;
 }
+function hasCallablePhone(lead) { return digitsOnly(lead.phone || '').length >= 7; }
 // Manual leads: added via "+ Add Lead", stored ONLY in the Firestore overlay
 // (the sheets stay read-only, so a manual lead has no sheet row).
 function manualLeads(tabId) {
@@ -1722,12 +1732,13 @@ function renderCard(lead) {
           </div>
           <div class="lead-address">📍 ${escapeHtml(titleCaseAddress(lead.address))}, ${escapeHtml(titleCaseAddress(lead.city))} ${escapeHtml(lead.state)} ${escapeHtml(lead.zip)}</div>
           <div class="code-badges">${codeBadges(lead)}</div>
+          ${tab === 'zombie' && lead.pocName && !(lead.familyTreeData && lead.familyTreeData.topHeir) ? `<div class="lead-poc">Main POC: ${escapeHtml(lead.pocName)}</div>` : ''}
           ${['new','trying','followup'].includes(lead.status) ? cadenceCardHTML(lead) : ''}
           ${probateCardHTML(lead)}
           ${lead.needsRetrace ? '<span class="retrace-flag">🔄 Needs re-trace</span>' : ''}
           ${resurrectCardHTML(lead)}
         </div>
-        ${phone ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : ''}
+        ${hasCallablePhone(lead) ? `<div class="card-action-row"><a class="call-link mono" href="tel:${digitsOnly(phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(phone))}</a><button class="text-btn" data-text-lead="${escapeHtml(lead.key)}">💬 Text</button></div>` : (phone ? `<div class="card-action-row"><span class="phone-plain mono">📞 ${escapeHtml(phone)}</span></div>` : '')}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </a>
@@ -1848,7 +1859,7 @@ function renderDetail(lead) {
       </div>` : ''}
 
       <div class="fin-grid" style="margin-bottom:14px;">
-        ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div><div class="fin-field"><label>Main POC Phone (saved in CRM — sheets have no phone column)</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div><div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
+        ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div><div class="fin-field"><label>Main POC Phone (CRM entry wins; the sheet Phone column is the fallback)</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div><div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
         <div class="fin-field">
           <label>Motivation signals</label>
           <div class="code-badges" style="margin-top:8px;">${codeBadges(lead) || '<span style="font-size:12px;color:#8a97a8;">none</span>'}</div>
@@ -2788,7 +2799,10 @@ async function renderReport(opts) {
         const sheetKeys = new Set(rows.map(r => r.key));
         rows.forEach(row => {
           const ov = ovMap[tabId][row.key] || {};
-          allRows.push({ ...row, ...ov, status: ov.status || 'new', subStage: ov.subStage || '' });
+          const merged = { ...row, ...ov, status: ov.status || 'new', subStage: ov.subStage || '' };
+          if (!(ov.mainPocName || '').trim() && row.pocName) merged.mainPocName = row.pocName;
+          if (!(ov.phone || '').trim() && row.phone) merged.phone = row.phone;
+          allRows.push(merged);
         });
         Object.values(ovMap[tabId]).forEach(ov => {
           if (ov.manual && ov.key && !sheetKeys.has(ov.key)) {
@@ -2904,7 +2918,7 @@ function buildDialerQueue(tabId) {
         items.push({ key: l.key, heirId: h.hid, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
       }
     } else {
-      if (!(l.phone || '').trim()) continue;
+      if (!hasCallablePhone(l)) continue;
       const ci = getCadenceInfo(l);
       items.push({ key: l.key, heirId: null, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
     }
@@ -4097,7 +4111,7 @@ function buildCallQueue(tabId) {
         items.push({ key: l.key, heirId: h.hid, score: scoreHeirTarget(l, h) });
       }
     } else {
-      if (!(l.phone || '').trim()) continue;
+      if (!hasCallablePhone(l)) continue;
       items.push({ key: l.key, heirId: null, score: scoreLead(l) });
     }
   }
