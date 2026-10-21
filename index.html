@@ -3691,7 +3691,7 @@ document.getElementById('user-chip').addEventListener('click', async () => {
       <button class="modal-close-btn" onclick="closeSmsTemplates()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="addr-sub" style="margin-bottom:12px;">Placeholders: <code>{name}</code> = first name · <code>{addr}</code> = property address. These are used everywhere the CRM sends texts (dialer, lead cards, SOP buttons).</div>
+      <div class="addr-sub" style="margin-bottom:12px;">Placeholders: <code>{name}</code> = first name · <code>{addr}</code> = property address · <code>{director}</code> = your first name. Templates written with "Luca" auto-swap to the signed-in director's first name when anyone else sends. Used everywhere the CRM sends texts (dialer, lead cards, SOP buttons).</div>
       <div id="sms-templates-fields"></div>
       <div class="modal-error" id="sms-templates-error"></div>
       <div id="sms-templates-saved" style="display:none;color:#4caf82;font-weight:700;margin-top:8px;">Saved ✓</div>
@@ -4158,10 +4158,26 @@ async function loadSmsTemplates() {
     }
   } catch (e) { /* fall back to hardcoded defaults */ }
 }
+// The signed-in director's first name. Templates are written in Luca's voice;
+// applyDirectorName() swaps the sender name to whoever is actually sending.
+function directorFirstName() {
+  const n = String(directorName || '').trim();
+  return n ? n.split(' ')[0] : 'Luca';
+}
+// Runs on the RAW template, before lead placeholders are filled, so a lead
+// who is himself named Luca is never renamed. Supports the {director} token;
+// the legacy literal "Luca" is swapped too, so every existing template
+// (defaults + Firestore-edited) speaks in the sender's name automatically.
+function applyDirectorName(tpl) {
+  const first = directorFirstName();
+  let out = String(tpl).split('{director}').join(first);
+  if (first !== 'Luca') out = out.replace(/\bLuca\b/g, first);
+  return out;
+}
 function smsTemplate(kind, lead, nameOverride) {
   const name = nameOverride ? nameOverride.split(' ')[0] : ((((lead || {}).mainPocName || '').split(' ')[0]) || 'there');
   const addr = (lead || {}).address || 'the property';
-  const tpl = smsTemplates[kind] || '';
+  const tpl = applyDirectorName(smsTemplates[kind] || '');
   return tpl.split('{name}').join(name).split('{addr}').join(addr);
 }
 /* ---------------- SMS Templates editor ---------------- */
