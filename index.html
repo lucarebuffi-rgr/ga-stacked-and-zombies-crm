@@ -1115,20 +1115,27 @@ const auth = firebase.auth();
    itself still comes from the link-shared sheets, which are public anyway. */
 const LUCA_EMAILS = ['luca.rebuffi@royalgroupsrealty.com', 'rebuffilu@gmail.com'];
 let currentUser = null;
-// The Firestore rules allow reads AND writes ONLY as one of LUCA_EMAILS. A Google
-// sign-in as any other account (e.g. the Athena mailbox, which a silent
-// re-auth can pick as the browser's default session) gets every read and
-// write denied — so the app must treat "signed in as someone else" as
-// effectively signed out, and say so loudly.
+// Access model: Luca (LUCA_EMAILS) plus any ACTIVE director on the roster
+// (settings/directors) signed in with their roster email. The Firestore rules
+// mirror this with isTeam() — the roster emails are also listed there, so a
+// director added in the modal needs their email added to the rules too. A
+// sign-in as any other account is denied by the rules, so the app treats it
+// as effectively signed out, and says so loudly.
 function isLucaSignedIn() {
-  return !!(currentUser && LUCA_EMAILS.includes(currentUser.email));
+  if (!currentUser) return false;
+  if (LUCA_EMAILS.includes(currentUser.email)) return true;
+  const e = String(currentUser.email || '').toLowerCase().trim();
+  return (directorsList || []).some(d => d.active !== false && String(d.email || '').toLowerCase().trim() === e);
 }
-auth.onAuthStateChanged(u => {
+auth.onAuthStateChanged(async u => {
   currentUser = u;
   const btn = document.getElementById('auth-btn');
   const chip = document.getElementById('user-chip');
   const banner = document.getElementById('acct-banner');
-  const wrongAccount = !!(u && !LUCA_EMAILS.includes(u.email));
+  // Load the roster BEFORE judging the account: a director's authorization
+  // (and their real director ID, used for Quo routing) comes from the roster.
+  if (u) { try { await loadDirectors(); } catch (e) {} }
+  const wrongAccount = !!(u && !isLucaSignedIn());
   if (wrongAccount) {
     const identW = directorIdentityForEmail(u.email);
     directorId = identW.id; directorName = identW.name;
@@ -1136,10 +1143,10 @@ auth.onAuthStateChanged(u => {
     chip.style.display = 'inline-flex';
     chip.textContent = '👤 ' + (directorName || 'Signed in');
     chip.title = (u.email || 'signed in') + ' — tap to sign out';
-    loadDirectors().then(updateAdminOnlyVisibility);
+    updateAdminOnlyVisibility();
     banner.style.display = 'block';
     banner.querySelector('.acct-banner-msg').textContent =
-      '⚠️ Signed in as ' + u.email + ' — this CRM only saves data as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com. Nothing you enter will save until you switch accounts.';
+      '⚠️ Signed in as ' + u.email + ' — this account is not on the directors roster, so nothing you enter will save. Switch to your director Google account, or ask Luca to add this email to the roster.';
     stopOverlayListening();
     document.getElementById('signin-gate').style.display = 'none';
     if (isReportMode) renderReportLocked();
@@ -1154,7 +1161,7 @@ auth.onAuthStateChanged(u => {
     chip.textContent = '👤 ' + (directorName || 'Signed in');
     chip.title = (u.email || 'signed in') + ' — tap to sign out';
     banner.style.display = 'none';
-    loadDirectors().then(updateAdminOnlyVisibility);
+    updateAdminOnlyVisibility();
     // Overlay + report subscriptions start only after sign-in (async callback,
     // so isReportMode below is always initialized by the time this runs).
     document.getElementById('signin-gate').style.display = 'none';
@@ -1179,7 +1186,7 @@ function requireAuth() {
   if (currentUser) {
     // Signed in, but as the wrong Google account — the Firestore rules would
     // deny the write, so block here with guidance instead of failing silently.
-    showToast('Wrong Google account — use "Switch Google account" above to sign in as luca.rebuffi@royalgroupsrealty.com or rebuffilu@gmail.com', 'error');
+    showToast('Wrong Google account — this one is not on the directors roster. Use "Switch Google account" above to sign in with your director account', 'error');
   } else {
     showToast('Sign in with Google to save changes', 'error');
     const btn = document.getElementById('auth-btn');
@@ -2945,7 +2952,7 @@ function renderDialerLocked() {
   document.getElementById('dialer-body').innerHTML =
     '<div class="dialer-done"><div style="font-size:48px;">🔒</div>' +
     '<div style="font-weight:700;font-size:18px;color:#e9edf3;margin:12px 0;">' +
-    (wrongAcct ? 'Signed in as ' + escapeHtml(currentUser.email || '') + ' — switch to a Luca account' : 'Sign in to use the dialer') +
+    (wrongAcct ? 'Signed in as ' + escapeHtml(currentUser.email || '') + ' — switch to your director account' : 'Sign in to use the dialer') +
     '</div><button class="btn-gold" id="dialer-signin-btn" style="margin:0 auto;">' +
     (wrongAcct ? 'Switch Google account' : 'Sign in with Google') + '</button></div>';
   document.getElementById('dialer-signin-btn').addEventListener('click', async () => {
