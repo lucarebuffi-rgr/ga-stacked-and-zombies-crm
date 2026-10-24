@@ -2573,7 +2573,7 @@ function attachCardListeners() {
       const key = a.getAttribute('data-call-link');
       const lead = getLead(tab, key);
       if (lead) {
-        ensureQuoContact(lead.mainPocName || lead.address, lead.phone, fullAddressStr(lead));
+        ensureQuoContact(lead.mainPocName || '', lead.phone, fullAddressStr(lead));
         logActivity(tab, lead, 'dial', 'Clicked to dial');
       }
     });
@@ -3331,7 +3331,7 @@ function renderDialerMain() {
       ${lead.whyHot ? `<div class="dialer-why">&ldquo;${escapeHtml(lead.whyHot)}&rdquo;</div>` : ''}
       ${cadenceTracker(target)}
       ${phone ? `
-        <a class="dial-call" href="tel:${digits}" onclick="logDialClick(dialer.tabId,'${escapeHtml(lead.key)}');ensureQuoContact('${escapeHtml(name).replace(/'/g, "\\'")}', '${digits}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(phone))}</a>
+        <a class="dial-call" href="tel:${digits}" onclick="logDialClick(dialer.tabId,'${escapeHtml(lead.key)}');ensureQuoContact('${escapeHtml((isHeir ? heir.name : lead.mainPocName) || '').replace(/'/g, "\\'")}', '${digits}', '${escapeHtml(fullAddressStr(lead)).replace(/'/g, "\\'")}')">📞 ${escapeHtml(formatPhone(phone))}</a>
         <button class="dial-text" onclick="${smsArgs}">💬 Text</button>
       ` : '<div class="dialer-nophone">No phone on file</div>'}
     </div>
@@ -3902,7 +3902,10 @@ function ensureQuoContact(name, phone, company) {
     if (!digits) return;
     if (digits.length === 10) digits = '1' + digits;
     const parts = (name || '').trim().split(/\s+/).filter(Boolean);
-    const firstName = parts[0] || 'Seller';
+    // Never invent a name: an unknown name stays blank (Quo shows the
+    // number) and the proxy's refresh renames it once the CRM learns it.
+    // The old 'Seller' placeholder saved wrong names that then stuck.
+    const firstName = parts[0] || '';
     const lastName = parts.slice(1).join(' ');
     const body = { action: 'createContact', directorId: directorId || 'luca-rebuffi', firstName, lastName, phone: digits };
     if (company) body.company = company;
@@ -4938,7 +4941,7 @@ async function sendSmsFromSheet() {
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
     // Create named Quo contact BEFORE sending, so Quo doesn't auto-create a nameless one
-    ensureQuoContact(heir ? heir.name : (lead.mainPocName || lead.address), phone, fullAddressStr(lead));
+    ensureQuoContact(heir ? (heir.name || '') : (lead.mainPocName || ''), phone, fullAddressStr(lead));
     await sendSmsViaQuo(phone, text);
     const smsLog = (lead.smsLog || []).slice();
     smsLog.push({ at: new Date().toISOString(), content: text, dir: 'out', heirId: heir ? heir.hid : null, heirName: heir ? heir.name : null });
@@ -5018,7 +5021,7 @@ function renderCallSession() {
   const tl = buildTimeline(lead).slice(0, 3);
   const st = STATUS_MAP[lead.status] || STATUSES[0];
   const phone = isHeirTarget ? (heir.phone || '') : (lead.phone || '');
-  const name = isHeirTarget ? heir.name : (lead.mainPocName || lead.address);
+  const name = isHeirTarget ? heir.name : (lead.mainPocName || '');
   // Heir switcher: jump to another callable heir on this lead without leaving the session
   let heirSwitcher = '';
   if (callSession.tabId === 'zombies') {
