@@ -803,7 +803,7 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
 .dialer-outcome:active { background: rgba(212,168,67,.15); border-color: #d4a843; }
   .dialer-nav { display: none; }
   .dialer-card-wrap { position: relative; }
-  .dialer-side-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 52px; height: 80px; border-radius: 12px; background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; font-size: 22px; cursor: pointer; font-family: inherit; z-index: 5; display: flex; align-items: center; justify-content: center; }
+  .dialer-side-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 64px; height: 96px; border-radius: 12px; background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; font-size: 30px; cursor: pointer; font-family: inherit; z-index: 5; display: flex; align-items: center; justify-content: center; }
   .dialer-side-btn:hover { border-color: #d4a843; color: #e8c476; }
   .cb-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
   .cb-chip { background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit; min-height: 48px; }
@@ -811,13 +811,20 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
   .dialer-side-prev { left: -8px; }
   .dialer-side-next { right: -8px; }
   @media (min-width: 500px) { .dialer-side-prev { left: -64px; } .dialer-side-next { right: -64px; } }
-  /* Mobile: side arrows move to a clean nav row under the card */
-  .dialer-nav-row { display: none; }
+  /* Lead toggle: a big nav row under the card on every screen size */
+  .dialer-nav-row { display: flex; gap: 10px; margin: 0 0 14px; }
+  .dialer-nav-btn {
+    flex: 1; min-height: 60px; border-radius: 12px; font-size: 18px; font-weight: 700;
+    background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba;
+    cursor: pointer; font-family: inherit;
+  }
+  .dialer-nav-btn:active { border-color: #d4a843; color: #e8c476; }
+  .dialer-nav-next { background: linear-gradient(180deg, #e3b95c, #c9992f); color: #0d1b2e; border-color: rgba(255,255,255,.14); }
   @media (max-width: 499px) {
     .dialer-side-btn { display: none; }
     .dialer-nav-row { display: flex; gap: 10px; margin: 0 0 14px; }
     .dialer-nav-btn {
-      flex: 1; min-height: 52px; border-radius: 12px; font-size: 16px; font-weight: 700;
+      flex: 1; min-height: 60px; border-radius: 12px; font-size: 18px; font-weight: 700;
       background: rgba(18,37,64,.85); border: 1px solid #2f4d78; color: #9aa7ba;
       cursor: pointer; font-family: inherit;
     }
@@ -1637,7 +1644,24 @@ function addedDateStr(lead) {
 function saveOverlay(tabId, key, data) {
   if (!requireAuth()) return Promise.reject(new Error('not-signed-in'));
   return db.collection(TABS[tabId].collection).doc(key).set(
-    { ...data, updatedAt: new Date().toISOString() }, { merge: true });
+    { ...data, updatedAt: new Date().toISOString() }, { merge: true }).then(() => {
+    // Mirror the write into local state right away, so the next render reads
+    // fresh values instead of waiting for the Firestore snapshot echo.
+    // (The echo later overwrites with the same data — idempotent.)
+    if (!overlays[tabId]) overlays[tabId] = {};
+    overlays[tabId][key] = { ...(overlays[tabId][key] || { key }), ...data };
+  });
+}
+
+// Persist a lead's CRM-mutable fields to its Firestore overlay.
+// (Called by the dialer, recycle, undo and log-call flows; it was missing,
+// so every one of those flows threw after writing and never re-rendered.)
+function saveLead(tabId, lead) {
+  if (!lead || !lead.key) return Promise.resolve();
+  const fields = ['status', 'callAttempts', 'lastCalledAt', 'recycleCount', 'recycleUntil', 'cadenceStep', 'attempts', 'cycleStartDate'];
+  const patch = {};
+  for (const f of fields) if (lead[f] !== undefined) patch[f] = lead[f];
+  return saveOverlay(tabId, lead.key, patch);
 }
 function logActivity(tabId, lead, action, detail) {
   // Log all activity; byDirector stamps who did it (Unknown if not signed in).
@@ -3338,8 +3362,8 @@ function renderDialerMain() {
     <button class="dialer-side-btn dialer-side-next" onclick="dialerNext()" title="Next">›</button>
     </div>
     <div class="dialer-nav-row">
-      <button class="dialer-nav-btn" onclick="dialerPrev()">‹ Prev</button>
-      <button class="dialer-nav-btn" onclick="dialerNext()">Next ›</button>
+      <button class="dialer-nav-btn dialer-nav-prev" onclick="dialerPrev()">‹ Prev</button>
+      <button class="dialer-nav-btn dialer-nav-next" onclick="dialerNext()">Next ›</button>
     </div>
     <div class="dialer-notes">
       <div class="section-label" style="margin-bottom:8px;">Notes</div>
@@ -3465,39 +3489,48 @@ function getDialerNote() {
   const el = document.getElementById('dialer-note-input');
   return el ? el.value.trim() : '';
 }
+// Guard against double-taps: one tap = one logged outcome, even if the
+// button is tapped again while the first save is still in flight.
+let dialerApplying = false;
 async function dialerApplyOutcome(outcomeId, opts) {
+  if (dialerApplying) return;
   const cur = dialerCurrent();
   if (!cur || !dialer) return;
-  const { lead, heir, item } = cur;
-  const oc = heir
-    ? await applyHeirOutcome(dialer.tabId, lead.key, heir.hid, outcomeId, opts)
-    : await applyOutcome(dialer.tabId, lead.key, outcomeId, opts);
-  if (!oc) return; // requireAuth blocked — already toasted
-  dialer.stats.called++;
-  if (outcomeId === 'talked') dialer.stats.talked++;
+  dialerApplying = true;
+  try {
+    const { lead, heir, item } = cur;
+    const oc = heir
+      ? await applyHeirOutcome(dialer.tabId, lead.key, heir.hid, outcomeId, opts)
+      : await applyOutcome(dialer.tabId, lead.key, outcomeId, opts);
+    if (!oc) return; // requireAuth blocked — already toasted
+    dialer.stats.called++;
+    if (outcomeId === 'talked') dialer.stats.talked++;
 
-  // Update total call count on the lead
-  if (heir) {
-    // For zombies: total up all heir attempts
-    let totalCalls = 0;
-    try {
-      const allHeirs = callableHeirs(lead);
-      totalCalls = allHeirs.reduce((sum, h) => sum + (h.attempts || 0), 0);
-    } catch (e) {}
-    lead.callAttempts = totalCalls;
-  } else {
-    // For stacked: increment lead's call count
-    lead.callAttempts = (lead.callAttempts || 0) + 1;
-  }
-  lead.lastCalledAt = new Date().toISOString();
-  await saveLead(dialer.tabId, lead);
+    // Update total call count on the lead
+    if (heir) {
+      // For zombies: total up all heir attempts
+      let totalCalls = 0;
+      try {
+        const allHeirs = callableHeirs(lead);
+        totalCalls = allHeirs.reduce((sum, h) => sum + (h.attempts || 0), 0);
+      } catch (e) {}
+      lead.callAttempts = totalCalls;
+    } else {
+      // For stacked: increment lead's call count
+      lead.callAttempts = (lead.callAttempts || 0) + 1;
+    }
+    lead.lastCalledAt = new Date().toISOString();
+    await saveLead(dialer.tabId, lead);
 
-  dialer.done.add(dialerTargetKey(item));
-  if (oc.promptSms) {
-    openSmsSheet(dialer.tabId, lead.key, 'intro', heir ? heir.hid : null);
-    showToast('Send the intro SMS, then continue →');
+    dialer.done.add(dialerTargetKey(item));
+    if (oc.promptSms) {
+      openSmsSheet(dialer.tabId, lead.key, 'intro', heir ? heir.hid : null);
+      showToast('Send the intro SMS, then continue →');
+    }
+    renderDialerMain();
+  } finally {
+    dialerApplying = false;
   }
-  renderDialerMain();
 }
 function dialerNext() {
   if (!dialer) return;
