@@ -4981,8 +4981,9 @@ async function sendSmsFromSheet() {
     const notes = (lead.notes || []).slice();
     notes.push({ at: new Date().toISOString(), outcome: 'sms_sent', text: text.slice(0, 200), heirId: heir ? heir.hid : null, heirName: heir ? heir.name : null });
     await saveOverlay(tab, key, { smsLog, notes });
-    if (heir) await advanceHeirCadence(tab, key, heir.hid, heir.src, 'sms');
-    else await advanceCadence(tab, key, 'sms');
+    // SMS sends never advance the cadence (Luca, 2026-10-28): only call
+    // disposition buttons move a lead to the next touch. The SMS is logged
+    // above (smsLog + notes) and nothing else changes.
     logActivity(tab, lead, 'sms', 'SMS sent' + (heir ? ' to ' + heir.name : '') + ': ' + text.slice(0, 120));
     showToast('SMS sent ✓');
     closeSmsSheet();
