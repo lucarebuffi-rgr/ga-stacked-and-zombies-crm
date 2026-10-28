@@ -416,6 +416,7 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
   .modal-overlay { position: fixed; inset: 0; background: rgba(4,10,20,.8); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; backdrop-filter: blur(4px); }
   .modal-overlay.open { display: flex; }
   .modal-card { background: linear-gradient(180deg, #13253f, #0e1c33); border: 1px solid rgba(212,168,67,.25); border-radius: 16px; width: 100%; max-width: 480px; box-shadow: 0 24px 60px rgba(0,0,0,.65); }
+  .modal-card-lead { max-width: 720px; max-height: 92vh; overflow-y: auto; }
   .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 0; }
   .modal-header h2 { margin: 0; font-size: 18px; color: #e9edf3; letter-spacing: -0.01em; }
   .modal-close-btn { background: none; border: none; color: #8a97a8; font-size: 18px; cursor: pointer; border-radius: 8px; padding: 4px 8px; }
@@ -1846,13 +1847,13 @@ function renderCard(lead) {
   const status = STATUS_MAP[lead.status] || STATUSES[0];
   const isOpen = expandedKey === lead.key;
   const isFire = !!lead.fireLead;
-  const notes = lead.notes || [];
   const phone = lead.phone || '';
   const isSelected = selectedIds.has(lead.key);
   const isDormant = DORMANT_INDICATOR_STAGES.includes(lead.status) && !hasOpenTask(lead);
 
-  let detail = '';
-  if (isOpen) detail = renderDetail(lead);
+  // The detail no longer renders inline below the card — it opens in the
+  // lead bubble (see syncLeadModal in render()).
+  const detail = '';
 
   return `
     <div class="lead-card ${isFire ? 'is-fire' : ''}">
@@ -1938,6 +1939,7 @@ function render() {
     document.getElementById('agenda-controls').style.display = 'flex';
     renderAgenda();
   }
+  syncLeadModal();
   attachCardListeners();
 }
 
@@ -3055,15 +3057,18 @@ function buildDialerQueue(tabId) {
         // Skip heir if in recycling cooldown
         if (h.recycleUntil && new Date(h.recycleUntil) > now) continue;
         const ci = getCadenceInfo(h);
-        items.push({ key: l.key, heirId: h.hid, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
+        items.push({ key: l.key, heirId: h.hid, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts, status: l.status });
       }
     } else {
       if (!hasCallablePhone(l)) continue;
       const ci = getCadenceInfo(l);
-      items.push({ key: l.key, heirId: null, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts });
+      items.push({ key: l.key, heirId: null, overdue: ci.overdue ? 1 : 0, attempts: ci.attempts, status: l.status });
     }
   }
-  return items.sort((a, b) => (b.overdue - a.overdue) || (a.attempts - b.attempts));
+  // New leads first, then Trying to Reach (Luca, 2026-10-28); within each
+  // group, overdue first, then fewest attempts (previous order preserved).
+  const statusRank = { new: 0, trying: 1 };
+  return items.sort((a, b) => (statusRank[a.status] - statusRank[b.status]) || (b.overdue - a.overdue) || (a.attempts - b.attempts));
 }
 
 function initDialerMode() {
@@ -3253,6 +3258,39 @@ function openKpiModal() {
 function closeKpiModal() {
   destroyReportCharts();
   document.getElementById('kpi-modal-overlay').classList.remove('open');
+}
+
+/* ---------------- Lead-detail bubble (CRM view) ---------------- */
+// Clicking a lead opens its detail in a modal bubble (same pattern as the
+// KPI bubble) instead of expanding it inline below the card. The list
+// underneath stays rendered, so closing the bubble returns to the list.
+// Called from render() before attachCardListeners, so every control inside
+// the bubble gets wired exactly as the inline detail was.
+function syncLeadModal() {
+  const overlay = document.getElementById('lead-modal-overlay');
+  if (!overlay) return;
+  const body = document.getElementById('lead-modal-body');
+  const lead = expandedKey ? getLead(tab, expandedKey) : null;
+  if (!lead) {
+    overlay.classList.remove('open');
+    if (body) body.innerHTML = '';
+    return;
+  }
+  const title = document.getElementById('lead-modal-title');
+  if (title) title.textContent = tab === 'stacked'
+    ? (lead.mainPocName || titleCaseAddress(lead.address))
+    : (getDeceasedName(lead) || titleCaseAddress(lead.address));
+  const addr = document.getElementById('lead-modal-address');
+  if (addr) addr.textContent = '📍 ' + fullAddressStr(lead);
+  if (body) body.innerHTML = renderDetail(lead);
+  overlay.classList.add('open');
+}
+function closeLeadModal() {
+  expandedKey = null;
+  const overlay = document.getElementById('lead-modal-overlay');
+  if (overlay) overlay.classList.remove('open');
+  const body = document.getElementById('lead-modal-body');
+  if (body) body.innerHTML = '';
 }
 
 function renderDialerChoice() {
@@ -3855,6 +3893,22 @@ document.getElementById('user-chip').addEventListener('click', async () => {
       <button class="btn-ghost" onclick="closeSmsTemplates()">Close</button>
       <button class="btn-ghost" onclick="resetSmsTemplates()">Reset to defaults</button>
       <button class="btn-gold" onclick="saveSmsTemplates()">💾 Save Templates</button>
+    </div>
+  </div>
+</div>
+
+<div id="lead-modal-overlay" class="modal-overlay" onclick="if(event.target===this)closeLeadModal()">
+  <div class="modal-card modal-card-lead">
+    <div class="modal-header">
+      <h2 id="lead-modal-title"></h2>
+      <button class="modal-close-btn" onclick="closeLeadModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="lead-modal-address" style="font-size:12px;color:#8a97a8;margin-bottom:12px;"></div>
+      <div id="lead-modal-body"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeLeadModal()">Close</button>
     </div>
   </div>
 </div>
