@@ -996,6 +996,34 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
     .dialer-outcome { min-height: 38px; }
     .dialer-nav-btn { min-height: 36px; }
   }
+
+  /* ===== MOBILE POPUP AUDIT FIXES (2026-10-28) — mobile only, no desktop change =====
+     Found: lead-bubble money/POC inputs at 14px (iOS auto-zooms on focus),
+     SMS-template textareas at inline 15px, family-tree textarea at 14px, modal
+     headers scrolling away, sheets missing safe-area + dvh, add-lead city/state/zip
+     row squeezing, sms-templates 3-button row overflowing, sms-sheet foot/safe-area. */
+  @media (max-width: 640px) {
+    /* No iOS auto-zoom inside any popup: every popup input at 16px+ */
+    .fin-field input, .fin-field select { font-size:16px; min-height:48px; }
+    .outcome-row select { font-size:16px; }
+    #sms-templates-fields textarea { font-size:16px !important; }
+    textarea[data-tree-input] { font-size:16px; }
+    /* Sticky sheet headers (matches Probates): title + ✕ stay reachable while scrolling */
+    .modal-header { position:sticky; top:0; background:#13253f; z-index:2; padding:14px 16px 12px; border-radius:16px 16px 0 0; }
+    /* Sheets fit the visible viewport + clear the iPhone home indicator */
+    .modal-card { max-height:92vh; max-height:92dvh; }
+    #kpi-modal-overlay .modal-card, #sop-modal-overlay .modal-card { max-height:92dvh !important; }
+    .modal-actions { flex-wrap:wrap; padding-bottom:calc(16px + env(safe-area-inset-bottom)); }
+    /* Add-lead city/state/zip row: stack instead of squeezing fixed 90/110px fields */
+    .modal-field-row { flex-direction:column; }
+    .modal-field-row .modal-field { flex:1 1 auto !important; }
+    /* Directors rows: name/email on their own line, buttons below */
+    .dir-row { flex-wrap:wrap; }
+    .dir-row .dir-info { flex:1 1 100%; }
+    /* SMS sheet: clear the home indicator, let the foot wrap on narrow phones */
+    .sms-panel { padding-bottom:calc(30px + env(safe-area-inset-bottom)); }
+    .sms-foot { flex-wrap:wrap; gap:8px; }
+  }
 </style>
 </head>
 <body>
