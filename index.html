@@ -1028,23 +1028,23 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
   /* ===== LEAD BUBBLE AESTHETICS (2026-10-29) — looks only, no behavior change ===== */
   /* Header block: name + address read as one unit (address divider under the name). */
   #lead-modal-overlay .modal-header h2 { font-size: 20px; }
-  #lead-modal-overlay #lead-modal-address { font-size: 13.5px !important; color: #e9edf3 !important; margin-bottom: 0 !important; padding-bottom: 14px; border-bottom: 1px solid #1e3554; }
+  #lead-modal-overlay #lead-modal-address { font-size: 15px !important; color: #ffffff !important; font-weight: 600 !important; margin-bottom: 0 !important; padding-bottom: 14px; border-bottom: 1px solid #1e3554; }
   /* Detail sits flat in the card instead of a second dark box. */
   #lead-modal-body .lead-detail { background: transparent; border-top: none; padding: 0; }
   /* Status row: a touch more air between stage control and the action bar. */
   #lead-modal-body .status-bar { margin-bottom: 16px; }
   /* Quick action bar: one deliberate unit, phone prominent. */
-  #lead-modal-body .quick-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,.03); border: 1px solid #1e3554; border-radius: 12px; padding: 10px 12px; margin-bottom: 18px; }
-  #lead-modal-body .quick-bar .call-link { flex: 1; font-size: 15px; padding: 10px 16px; background: rgba(232,196,118,.10); border: 1px solid rgba(232,196,118,.35); border-radius: 10px; min-width: 190px; }
-  #lead-modal-body .quick-bar .quick-link-btn { width: 40px; height: 40px; border-radius: 10px; }
+  #lead-modal-overlay .quick-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,.03); border: 1px solid #1e3554; border-radius: 12px; padding: 10px 12px; margin-bottom: 12px; }
+  #lead-modal-overlay .quick-bar .call-link { flex: 1; font-size: 15px; padding: 10px 16px; background: rgba(232,196,118,.10); border: 1px solid rgba(232,196,118,.35); border-radius: 10px; min-width: 190px; }
+  #lead-modal-overlay .quick-bar .quick-link-btn { width: 40px; height: 40px; border-radius: 10px; }
   /* Section rhythm: labels with presence, log-call form as one unit. */
   #lead-modal-body .section-label { font-size: 12px; }
   #lead-modal-body .detail-section > .section-label { color: #d4a843; }
   #lead-modal-body .logcall-section { background: rgba(255,255,255,.03); border: 1px solid #1e3554; border-radius: 12px; padding: 14px; }
   @media (max-width: 640px) {
     /* Keep the popup-audit mobile sizes: big call button + 52px map buttons. */
-    #lead-modal-body .quick-bar .call-link { font-size: 18px; }
-    #lead-modal-body .quick-bar .quick-link-btn { width: 52px; height: 52px; }
+    #lead-modal-overlay .quick-bar .call-link { font-size: 18px; }
+    #lead-modal-overlay .quick-bar .quick-link-btn { width: 52px; height: 52px; }
   }
 </style>
 </head>
@@ -2049,16 +2049,6 @@ function renderDetail(lead) {
       <div class="substage-track">
         ${SUBSTAGES[lead.status].map(ss => `<div class="substage-step ${lead.subStage === ss ? 'active' : ''}" data-substage-step="${escapeHtml(lead.key)}" data-substage-value="${escapeHtml(ss)}">${escapeHtml(ss)}</div>`).join('')}
       </div>` : ''}
-
-      <div class="quick-bar">
-        ${hasCallablePhone(lead) ? `<a class="call-link mono" href="tel:${digitsOnly(lead.phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(lead.phone))}</a>` : (lead.phone ? `<span class="phone-plain mono">📞 ${escapeHtml(lead.phone)}</span>` : '')}
-        <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
-          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="quick-link-btn" href="https://www.google.com/maps/place/${encodeURIComponent(fullAddressStr(lead))}" target="_blank" rel="noopener" title="Google Maps / Street View">
-          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.6 6.6 11.7 7.1 12.16a.6.6 0 0 0 .8 0c.5-.46 7.1-6.56 7.1-12.16C19.5 5.36 16.14 2 12 2z" fill="#ffffff"/><circle cx="12" cy="9.5" r="3" fill="#e0483a"/></svg>
-        </a>
-      </div>
 
       <div class="fin-grid" style="margin-bottom:14px;">
         ${isStacked ? `<div class="fin-field"><label>Main POC — living contact (name)</label><input type="text" placeholder="e.g. Ashlee Melson" value="${escapeHtml(lead.mainPocName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mainPocName" /></div><div class="fin-field"><label>Main POC Phone (CRM entry wins; the sheet Phone column is the fallback)</label><input type="tel" placeholder="(555) 123-4567" value="${escapeHtml(lead.phone || '')}" data-phone-input="${escapeHtml(lead.key)}" /></div><div class="fin-field"><label>Deceased Owner — name only (never call)</label><input type="text" placeholder="e.g. Kathyleen Melson" value="${escapeHtml(lead.deceasedOwnerName || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="deceasedOwnerName" /></div>` : ''}
@@ -3334,12 +3324,24 @@ function syncLeadModal() {
   if (!lead) {
     overlay.classList.remove('open');
     if (body) body.innerHTML = '';
+    const qb0 = document.getElementById('lead-modal-quickbar');
+    if (qb0) qb0.innerHTML = '';
     return;
   }
   const title = document.getElementById('lead-modal-title');
   if (title) title.textContent = tab === 'stacked'
     ? (lead.mainPocName || titleCaseAddress(lead.address))
     : (getDeceasedName(lead) || titleCaseAddress(lead.address));
+  const qb = document.getElementById('lead-modal-quickbar');
+  if (qb) qb.innerHTML = `<div class="quick-bar">
+        ${hasCallablePhone(lead) ? `<a class="call-link mono" href="tel:${digitsOnly(lead.phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(lead.phone))}</a>` : (lead.phone ? `<span class="phone-plain mono">📞 ${escapeHtml(lead.phone)}</span>` : '')}
+        <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
+          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a class="quick-link-btn" href="https://www.google.com/maps/place/${encodeURIComponent(fullAddressStr(lead))}" target="_blank" rel="noopener" title="Google Maps / Street View">
+          <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C7.86 2 4.5 5.36 4.5 9.5c0 5.6 6.6 11.7 7.1 12.16a.6.6 0 0 0 .8 0c.5-.46 7.1-6.56 7.1-12.16C19.5 5.36 16.14 2 12 2z" fill="#ffffff"/><circle cx="12" cy="9.5" r="3" fill="#e0483a"/></svg>
+        </a>
+      </div>`;
   const addr = document.getElementById('lead-modal-address');
   if (addr) addr.textContent = '📍 ' + fullAddressStr(lead);
   if (body) body.innerHTML = renderDetail(lead);
@@ -3964,6 +3966,7 @@ document.getElementById('user-chip').addEventListener('click', async () => {
       <button class="modal-close-btn" onclick="closeLeadModal()">✕</button>
     </div>
     <div class="modal-body">
+      <div id="lead-modal-quickbar"></div>
       <div id="lead-modal-address" style="font-size:12px;color:#8a97a8;margin-bottom:12px;"></div>
       <div id="lead-modal-body"></div>
     </div>
