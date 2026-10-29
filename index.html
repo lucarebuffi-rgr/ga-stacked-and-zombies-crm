@@ -1024,6 +1024,28 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
     .sms-panel { padding-bottom:calc(30px + env(safe-area-inset-bottom)); }
     .sms-foot { flex-wrap:wrap; gap:8px; }
   }
+
+  /* ===== LEAD BUBBLE AESTHETICS (2026-10-29) — looks only, no behavior change ===== */
+  /* Header block: name + address read as one unit (address divider under the name). */
+  #lead-modal-overlay .modal-header h2 { font-size: 20px; }
+  #lead-modal-overlay #lead-modal-address { font-size: 13.5px !important; color: #e9edf3 !important; margin-bottom: 0 !important; padding-bottom: 14px; border-bottom: 1px solid #1e3554; }
+  /* Detail sits flat in the card instead of a second dark box. */
+  #lead-modal-body .lead-detail { background: transparent; border-top: none; padding: 0; }
+  /* Status row: a touch more air between stage control and the action bar. */
+  #lead-modal-body .status-bar { margin-bottom: 16px; }
+  /* Quick action bar: one deliberate unit, phone prominent. */
+  #lead-modal-body .quick-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: rgba(255,255,255,.03); border: 1px solid #1e3554; border-radius: 12px; padding: 10px 12px; margin-bottom: 18px; }
+  #lead-modal-body .quick-bar .call-link { flex: 1; font-size: 15px; padding: 10px 16px; background: rgba(232,196,118,.10); border: 1px solid rgba(232,196,118,.35); border-radius: 10px; min-width: 190px; }
+  #lead-modal-body .quick-bar .quick-link-btn { width: 40px; height: 40px; border-radius: 10px; }
+  /* Section rhythm: labels with presence, log-call form as one unit. */
+  #lead-modal-body .section-label { font-size: 12px; }
+  #lead-modal-body .detail-section > .section-label { color: #d4a843; }
+  #lead-modal-body .logcall-section { background: rgba(255,255,255,.03); border: 1px solid #1e3554; border-radius: 12px; padding: 14px; }
+  @media (max-width: 640px) {
+    /* Keep the popup-audit mobile sizes: big call button + 52px map buttons. */
+    #lead-modal-body .quick-bar .call-link { font-size: 18px; }
+    #lead-modal-body .quick-bar .quick-link-btn { width: 52px; height: 52px; }
+  }
 </style>
 </head>
 <body>
@@ -2028,7 +2050,7 @@ function renderDetail(lead) {
         ${SUBSTAGES[lead.status].map(ss => `<div class="substage-step ${lead.subStage === ss ? 'active' : ''}" data-substage-step="${escapeHtml(lead.key)}" data-substage-value="${escapeHtml(ss)}">${escapeHtml(ss)}</div>`).join('')}
       </div>` : ''}
 
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="quick-bar">
         ${hasCallablePhone(lead) ? `<a class="call-link mono" href="tel:${digitsOnly(lead.phone)}" data-call-link="${escapeHtml(lead.key)}" onclick="logDialClick(tab,'${escapeHtml(lead.key)}')">📞 ${escapeHtml(formatPhone(lead.phone))}</a>` : (lead.phone ? `<span class="phone-plain mono">📞 ${escapeHtml(lead.phone)}</span>` : '')}
         <a class="quick-link-btn" href="https://www.zillow.com/homes/${encodeURIComponent(fullAddressStr(lead))}_rb/" target="_blank" rel="noopener" title="View on Zillow">
           <svg viewBox="0 0 24 24" width="17" height="17" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5L2.5 10.5h2.7v10h5.3v-6.2h2.9v6.2h5.3v-10h2.7L12 2.5z" fill="#ffffff"/><path d="M8.3 14.6h6.9l-6.4 3.5h6.4" stroke="#0f6fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -2088,7 +2110,7 @@ function renderDetail(lead) {
 
       ${isZombie ? probateWatchHTML(lead) : ''}
 
-      <div class="detail-section">
+      <div class="detail-section logcall-section">
         <div class="section-label">📞 Log a Call</div>
         <select id="logcall-outcome-${escapeHtml(lead.key)}" class="logcall-select" style="width:100%;padding:10px;border-radius:10px;background:#16294a;border:1px solid #2c4a75;color:#e9edf3;font-size:14px;margin-bottom:8px;">
           <option value="ghost">👻 No Answer</option>
