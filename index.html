@@ -1046,6 +1046,39 @@ if (location.hostname === 'lucarebuffi-rgr.github.io') {
     #lead-modal-overlay .quick-bar .call-link { font-size: 18px; }
     #lead-modal-overlay .quick-bar .quick-link-btn { width: 52px; height: 52px; }
   }
+  /* ===== PRODUCT POLISH (2026-10-29) — looks only, no behavior change ===== */
+  /* Patterns from research: HubSpot three-zone record + highlights panel (key
+     fields up top, sections as cards); Salesforce Lightning highlights panel +
+     actions grouped by type; Pipedrive scannable deal cards + attention colors;
+     Close one dominant call action; Refactoring UI one primary per view,
+     secondary = outline/soft-fill, destructive kept quiet, borders as last
+     separator, fixed elevation. Navy + gold identity unchanged.
+     MOBILE POLICY: same look on both widths except where a mobile need justifies
+     a difference. Desktop refinements live in min-width:641px only; nothing here
+     shrinks a tap target, drops an input below 16px, or restyles mobile sheets. */
+  /* Type + labels (same both widths; no size changes on mobile-governed text) */
+  #lead-modal-body .section-label { letter-spacing: .1em; text-transform: uppercase; }
+  .fin-field input { font-variant-numeric: tabular-nums; }
+  /* Cards: smooth the existing hover lift */
+  .lead-card { transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease; }
+  /* Empty state: finished card */
+  .empty-state { background: rgba(255,255,255,.02); border: 1px solid #1e3554; border-radius: 14px; }
+  /* Modal chrome: deeper elevation, close-button affordance */
+  .modal-card { box-shadow: 0 32px 80px rgba(0,0,0,.6); }
+  .modal-close-btn { transition: border-color .15s ease, color .15s ease; }
+  @media (hover:hover) {
+    .dial-call:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(212,168,67,.38); }
+    .dial-call:active { transform: translateY(0); }
+    .modal-close-btn:hover { border-color: rgba(212,168,67,.5); color: #e8c476; }
+  }
+  @media (min-width:641px) {
+    .lead-row { padding: 14px 16px; }
+    #lead-modal-body .section-label { margin: 22px 0 10px; }
+    .tab-btn { padding: 12px 20px; }
+    .controls { gap: 10px; }
+    .controls select, .search-wrap input { min-height: 42px; border-radius: 10px; }
+  }
+
 </style>
 </head>
 <body>
