@@ -3644,21 +3644,28 @@ async function dialerApplyOutcome(outcomeId, opts) {
     dialer.stats.called++;
     if (outcomeId === 'talked') dialer.stats.talked++;
 
-    // Update total call count on the lead
+    // Call-count write ONLY. NEVER saveLead here: `lead` is the snapshot from
+    // before the disposition, and saveLead writes status/cadenceStep/attempts
+    // from it — which silently reverted the disposition's own status move
+    // (2026-10-30: 11 New leads dispositioned in the dialer flipped back to
+    // New). This patch carries no status/cadence fields, so a revert is
+    // impossible on this path no matter how stale the snapshot is.
+    const fresh = getLead(dialer.tabId, lead.key) || lead;
+    const nowIso = new Date().toISOString();
+    let totalCalls;
     if (heir) {
       // For zombies: total up all heir attempts
-      let totalCalls = 0;
+      totalCalls = 0;
       try {
-        const allHeirs = callableHeirs(lead);
-        totalCalls = allHeirs.reduce((sum, h) => sum + (h.attempts || 0), 0);
+        totalCalls = callableHeirs(fresh).reduce((sum, h) => sum + (h.attempts || 0), 0);
       } catch (e) {}
-      lead.callAttempts = totalCalls;
     } else {
       // For stacked: increment lead's call count
-      lead.callAttempts = (lead.callAttempts || 0) + 1;
+      totalCalls = (fresh.callAttempts || 0) + 1;
     }
-    lead.lastCalledAt = new Date().toISOString();
-    await saveLead(dialer.tabId, lead);
+    lead.callAttempts = totalCalls;
+    lead.lastCalledAt = nowIso;
+    await saveOverlay(dialer.tabId, lead.key, { callAttempts: totalCalls, lastCalledAt: nowIso });
 
     dialer.done.add(dialerTargetKey(item));
     if (oc.promptSms) {
