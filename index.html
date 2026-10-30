@@ -2106,21 +2106,26 @@ function renderDetail(lead) {
       <div class="section-label">Deal Numbers</div>
       <div class="fin-grid" style="margin-bottom:14px;">
         <div class="fin-field">
-          <label>Lead Value</label>
-          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.leadValue || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="leadValue" /></div>
-        </div>
-        <div class="fin-field">
           <label>Asking Price</label>
           <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.askingPrice || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="askingPrice" /></div>
         </div>
         <div class="fin-field">
-          <label>LAO</label>
-          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.lao || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="lao" /></div>
-        </div>
-        <div class="fin-field">
-          <label>MAO</label>
+          <label>Cash MAO</label>
           <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.mao || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="mao" /></div>
         </div>
+        <div class="fin-field">
+          <label>Novation MAO</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.novationMao || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="novationMao" /></div>
+        </div>
+        ${lead.status === 'under_contract' ? `
+        <div class="fin-field">
+          <label>Contract Price</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.contractPrice || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="contractPrice" /></div>
+        </div>
+        <div class="fin-field">
+          <label>Projected Profit</label>
+          <div class="money-input"><span class="money-prefix">$</span><input type="text" inputmode="decimal" placeholder="0" value="${escapeHtml(lead.projectedProfit || '')}" data-field-input="${escapeHtml(lead.key)}" data-field-name="projectedProfit" /></div>
+        </div>` : ''}
       </div>
 
       ${showWhyHot ? `
