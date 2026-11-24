@@ -1402,11 +1402,11 @@ window.addEventListener('unhandledrejection', e => {
 /* ---------------- Config: tabs ---------------- */
 const TABS = {
   zombie:  { label: 'Zombies', emoji: '🧟', collection: 'zombieLeads',  sheetId: () => CONFIG.ZOMBIE_SHEET_ID,  codes: ['CV','L','PF','TD','WS'] },
-  stacked: { label: 'Stacked', emoji: '📚', collection: 'stackedLeads', sheetId: () => CONFIG.STACKED_SHEET_ID, codes: ['P','PF','CV','L','WS','TD'] },
+  stacked: { label: 'Stacked', emoji: '📚', collection: 'stackedLeads', sheetId: () => CONFIG.STACKED_SHEET_ID, codes: ['P','PF','CV','L','WS','TD','EV'] },
 };
 
 /* Motivation codes — P=Probates, PF=Pre-Foreclosures, CV=Code Violations,
-   L=Liens, WS=Water Shutoffs, TD=Tax Delinquencies (2+ yrs) */
+   L=Liens, WS=Water Shutoffs, TD=Tax Delinquencies (2+ yrs), EV=Evictions */
 const CODE_META = {
   P:  { label: 'Probates',          color: '#c084fc' },
   PF: { label: 'Pre-Foreclosures',  color: '#e0954a' },
@@ -1414,9 +1414,10 @@ const CODE_META = {
   L:  { label: 'Liens',             color: '#7fb3d9' },
   WS: { label: 'Water Shutoffs',    color: '#4caf82' },
   TD: { label: 'Tax Delinquencies', color: '#d4a843' },
+  EV: { label: 'Evictions',         color: '#e06a9e' },
 };
 /* Canonical badge display order */
-const CODE_ORDER = ['P','PF','CV','L','WS','TD'];
+const CODE_ORDER = ['P','PF','CV','L','WS','TD','EV'];
 
 /* ---------------- Config: statuses & call outcomes (same as probates CRM) ---------------- */
 const STATUSES = [
